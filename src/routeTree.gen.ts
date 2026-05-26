@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ProjetosRouteImport } from './routes/projetos'
 import { Route as PerfilRouteImport } from './routes/perfil'
+import { Route as NotificacoesRouteImport } from './routes/notificacoes'
 import { Route as MeusProjetosRouteImport } from './routes/meus-projetos'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -33,6 +34,11 @@ const ProjetosRoute = ProjetosRouteImport.update({
 const PerfilRoute = PerfilRouteImport.update({
   id: '/perfil',
   path: '/perfil',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificacoesRoute = NotificacoesRouteImport.update({
+  id: '/notificacoes',
+  path: '/notificacoes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MeusProjetosRoute = MeusProjetosRouteImport.update({
@@ -77,6 +83,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/meus-projetos': typeof MeusProjetosRoute
+  '/notificacoes': typeof NotificacoesRoute
   '/perfil': typeof PerfilRoute
   '/projetos': typeof ProjetosRouteWithChildren
   '/register': typeof RegisterRoute
@@ -89,6 +96,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/meus-projetos': typeof MeusProjetosRoute
+  '/notificacoes': typeof NotificacoesRoute
   '/perfil': typeof PerfilRoute
   '/projetos': typeof ProjetosRouteWithChildren
   '/register': typeof RegisterRoute
@@ -102,6 +110,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/meus-projetos': typeof MeusProjetosRoute
+  '/notificacoes': typeof NotificacoesRoute
   '/perfil': typeof PerfilRoute
   '/projetos': typeof ProjetosRouteWithChildren
   '/register': typeof RegisterRoute
@@ -116,6 +125,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/meus-projetos'
+    | '/notificacoes'
     | '/perfil'
     | '/projetos'
     | '/register'
@@ -128,6 +138,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/meus-projetos'
+    | '/notificacoes'
     | '/perfil'
     | '/projetos'
     | '/register'
@@ -140,6 +151,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/meus-projetos'
+    | '/notificacoes'
     | '/perfil'
     | '/projetos'
     | '/register'
@@ -153,6 +165,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
   MeusProjetosRoute: typeof MeusProjetosRoute
+  NotificacoesRoute: typeof NotificacoesRoute
   PerfilRoute: typeof PerfilRoute
   ProjetosRoute: typeof ProjetosRouteWithChildren
   RegisterRoute: typeof RegisterRoute
@@ -179,6 +192,13 @@ declare module '@tanstack/react-router' {
       path: '/perfil'
       fullPath: '/perfil'
       preLoaderRoute: typeof PerfilRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notificacoes': {
+      id: '/notificacoes'
+      path: '/notificacoes'
+      fullPath: '/notificacoes'
+      preLoaderRoute: typeof NotificacoesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/meus-projetos': {
@@ -253,6 +273,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
   MeusProjetosRoute: MeusProjetosRoute,
+  NotificacoesRoute: NotificacoesRoute,
   PerfilRoute: PerfilRoute,
   ProjetosRoute: ProjetosRouteWithChildren,
   RegisterRoute: RegisterRoute,

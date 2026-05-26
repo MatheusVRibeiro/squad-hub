@@ -26,6 +26,7 @@ type AuthContextValue = {
   isAuthenticated: boolean;
   isLoading: boolean;
   signIn: (data: SignInData) => Promise<void>;
+  signInTemp: (data?: SignInData) => Promise<void>;
   signUp: (data: SignUpData) => Promise<void>;
   signOut: () => void;
 };
@@ -56,11 +57,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = useCallback(
     async ({ email, password }: SignInData) => {
-      const { data } = await api.post<{ token: string; user: User }>("/sessions", {
+      // In development you can bypass the API by using the TEMP_LOGIN query param
+      // e.g. /login?tempLogin=1 — this will create a temporary user locally.
+      if (typeof window !== 'undefined' && window.location.search.includes('tempLogin')) {
+        const tempUser: User = {
+          id: 'temp',
+          name: email.split('@')[0] ?? 'Usuário temporário',
+          email,
+        };
+        persist('temp-token', tempUser);
+        return;
+      }
+
+      const { data } = await api.post<{ token: string; user: User }>('/sessions', {
         email,
         password,
       });
       persist(data.token, data.user);
+    },
+    [persist],
+  );
+
+  const signInTemp = useCallback(
+    async (payload?: SignInData) => {
+      const email = payload?.email ?? 'temp@example.com';
+      const tempUser: User = {
+        id: 'temp',
+        name: email.split('@')[0] ?? 'Usuário temporário',
+        email,
+      };
+      persist('temp-token', tempUser);
     },
     [persist],
   );
@@ -88,10 +114,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAuthenticated: !!user,
       isLoading,
       signIn,
+      signInTemp,
       signUp,
       signOut,
     }),
-    [user, isLoading, signIn, signUp, signOut],
+    [user, isLoading, signIn, signInTemp, signUp, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

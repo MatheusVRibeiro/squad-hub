@@ -26,7 +26,7 @@ import { createProject } from "@/services/projectDetail";
 const schema = z.object({
   name: z.string().min(3, "Mínimo 3 caracteres").max(80),
   description: z.string().min(10, "Descreva com pelo menos 10 caracteres").max(500),
-  membersLimit: z.coerce.number().int().min(2, "Mínimo 2").max(20, "Máximo 20"),
+  membersLimit: z.number().int().min(2, "Mínimo 2").max(20, "Máximo 20"),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -157,7 +157,13 @@ function NovoProjetoPage() {
                       <FormItem>
                         <FormLabel>Tamanho do squad</FormLabel>
                         <FormControl>
-                          <Input type="number" min={2} max={20} {...field} />
+                          <Input
+                            type="number"
+                            min={2}
+                            max={20}
+                            value={field.value ?? ""}
+                            onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

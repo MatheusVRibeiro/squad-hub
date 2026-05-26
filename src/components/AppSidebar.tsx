@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Compass, FolderKanban, LogOut, Settings, Sparkles, User } from "lucide-react";
+import { Compass, FolderKanban, LogOut, PlusCircle, Settings, Sparkles, User } from "lucide-react";
 
 import {
   Sidebar,
@@ -18,6 +18,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const items = [
   { title: "Explorar Projetos", url: "/projetos", icon: Compass },
+  { title: "Criar Projeto", url: "/projetos/novo", icon: PlusCircle },
   { title: "Meus Projetos", url: "/meus-projetos", icon: FolderKanban },
   { title: "Meu Perfil", url: "/perfil", icon: User },
   { title: "Configurações", url: "/configuracoes", icon: Settings },

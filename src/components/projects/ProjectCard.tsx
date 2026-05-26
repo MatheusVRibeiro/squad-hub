@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { Calendar, Check, Loader2, Users } from "lucide-react";
 import { toast } from "sonner";
@@ -48,7 +49,13 @@ export function ProjectCard({ project, index = 0 }: { project: Project; index?: 
       <Card className="group flex h-full flex-col rounded-2xl border-border/60 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md">
         <CardHeader className="space-y-3">
           <div className="flex items-start justify-between gap-3">
-            <h3 className="line-clamp-1 text-base font-semibold leading-tight">{project.name}</h3>
+            <Link
+              to="/projetos/$id"
+              params={{ id: project.id }}
+              className="line-clamp-1 text-base font-semibold leading-tight hover:text-primary"
+            >
+              {project.name}
+            </Link>
             <Badge variant="outline" className={cn("shrink-0 rounded-full text-xs", statusStyles[project.status])}>
               {project.status}
             </Badge>

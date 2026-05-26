@@ -1,26 +1,24 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Loader2 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
-export const Route = createFileRoute("/")({
-  component: Index,
-});
+function Index() {
+  const { isAuthenticated, isLoading } = useAuth();
+  const navigate = useNavigate();
 
-// IMPORTANT: Replace this placeholder. For sites with multiple pages (About, Services, Contact, etc.),
-// create separate route files (about.tsx, services.tsx, contact.tsx) — don't put all pages in this file.
-function PlaceholderIndex() {
+  useEffect(() => {
+    if (isLoading) return;
+    navigate({ to: isAuthenticated ? "/dashboard" : "/login" });
+  }, [isAuthenticated, isLoading, navigate]);
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <Loader2 className="h-6 w-6 animate-spin text-primary" />
     </div>
   );
 }
 
-function Index() {
-  return <PlaceholderIndex />;
-}
+export const Route = createFileRoute("/")({
+  component: Index,
+});

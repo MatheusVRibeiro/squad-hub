@@ -1,4 +1,4 @@
-import { Bell, LogOut, Search, User } from "lucide-react";
+import { LogOut, Search, User } from "lucide-react";
 
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
+import { NotificationsMenu } from "@/components/NotificationsMenu";
 
 function greeting() {
   const h = new Date().getHours();
@@ -56,9 +57,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               />
             </div>
 
-            <Button variant="ghost" size="icon" className="ml-auto md:ml-0" aria-label="Notificações">
-              <Bell className="h-4 w-4" />
-            </Button>
+            <div className="ml-auto md:ml-0">
+              <NotificationsMenu />
+            </div>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

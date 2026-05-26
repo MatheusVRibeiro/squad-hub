@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2, Plus, X } from "lucide-react";
 import { toast } from "sonner";
@@ -13,6 +14,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ReputationOverview } from "@/components/profile/ReputationOverview";
+import { Achievements } from "@/components/profile/Achievements";
+import { ProjectHistory } from "@/components/profile/ProjectHistory";
+import { Reviews } from "@/components/profile/Reviews";
+import { fetchReputation } from "@/services/reputation";
 
 function PerfilPage() {
   const { user } = useAuth();
@@ -22,6 +30,11 @@ function PerfilPage() {
   const [skills, setSkills] = useState<string[]>(user?.skills ?? []);
   const [draft, setDraft] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const { data: reputation, isLoading: loadingRep } = useQuery({
+    queryKey: ["reputation", user?.id ?? user?.email],
+    queryFn: () => fetchReputation(user?.id),
+  });
 
   const initials =
     name
@@ -54,7 +67,7 @@ function PerfilPage() {
   return (
     <ProtectedRoute>
       <AppLayout>
-        <div className="mx-auto w-full max-w-3xl space-y-6">
+        <div className="mx-auto w-full max-w-4xl space-y-6">
           <div className="space-y-1">
             <p className="text-sm text-muted-foreground">Você</p>
             <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Meu perfil</h1>
@@ -62,7 +75,7 @@ function PerfilPage() {
 
           <Card className="overflow-hidden rounded-2xl border-border/60">
             <div className="h-20 bg-gradient-to-r from-primary via-primary/60 to-primary/30" />
-            <CardContent className="-mt-10 space-y-6 p-6">
+            <CardContent className="-mt-10 space-y-4 p-6">
               <div className="flex items-end gap-4">
                 <Avatar className="h-20 w-20 border-4 border-background">
                   <AvatarFallback className="bg-primary/10 text-lg text-primary">
@@ -74,8 +87,27 @@ function PerfilPage() {
                   <p className="truncate text-sm text-muted-foreground">{user?.email}</p>
                 </div>
               </div>
+            </CardContent>
+          </Card>
 
-              <div className="grid gap-4 sm:grid-cols-2">
+          {loadingRep || !reputation ? (
+            <Skeleton className="h-24 w-full rounded-2xl" />
+          ) : (
+            <ReputationOverview reputation={reputation} />
+          )}
+
+          <Tabs defaultValue="sobre" className="space-y-4">
+            <TabsList className="flex w-full justify-start overflow-x-auto rounded-xl">
+              <TabsTrigger value="sobre">Sobre</TabsTrigger>
+              <TabsTrigger value="historico">Histórico</TabsTrigger>
+              <TabsTrigger value="avaliacoes">Avaliações</TabsTrigger>
+              <TabsTrigger value="conquistas">Conquistas</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="sobre">
+              <Card className="rounded-2xl border-border/60">
+                <CardContent className="space-y-6 p-6">
+                  <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="name">Nome</Label>
                   <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
@@ -148,8 +180,34 @@ function PerfilPage() {
                   Salvar alterações
                 </Button>
               </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="historico">
+              {loadingRep || !reputation ? (
+                <Skeleton className="h-48 w-full rounded-2xl" />
+              ) : (
+                <ProjectHistory items={reputation.history} />
+              )}
+            </TabsContent>
+
+            <TabsContent value="avaliacoes">
+              {loadingRep || !reputation ? (
+                <Skeleton className="h-48 w-full rounded-2xl" />
+              ) : (
+                <Reviews items={reputation.reviews} />
+              )}
+            </TabsContent>
+
+            <TabsContent value="conquistas">
+              {loadingRep || !reputation ? (
+                <Skeleton className="h-48 w-full rounded-2xl" />
+              ) : (
+                <Achievements items={reputation.achievements} />
+              )}
+            </TabsContent>
+          </Tabs>
         </div>
       </AppLayout>
     </ProtectedRoute>

@@ -84,16 +84,42 @@ export const MOCK_PROJECTS: Project[] = [
 ];
 
 /**
+ * Auxiliares de persistência local para desenvolvimento sem backend
+ */
+export function getLocalProjects(): Project[] {
+  if (typeof window === "undefined") return MOCK_PROJECTS;
+  const stored = window.localStorage.getItem("@montesquad:projects");
+  if (!stored) {
+    window.localStorage.setItem("@montesquad:projects", JSON.stringify(MOCK_PROJECTS));
+    return MOCK_PROJECTS;
+  }
+  try {
+    return JSON.parse(stored);
+  } catch {
+    return MOCK_PROJECTS;
+  }
+}
+
+export function saveLocalProjects(projects: Project[]) {
+  if (typeof window !== "undefined") {
+    window.localStorage.setItem("@montesquad:projects", JSON.stringify(projects));
+  }
+}
+
+/**
  * Busca projetos do backend. Em caso de erro (ex: backend offline durante o
- * preview), retorna mock data para não quebrar a experiência.
+ * preview), retorna mock data persistido no localStorage para não quebrar a experiência.
  */
 export async function fetchProjects(): Promise<Project[]> {
   try {
     const { data } = await api.get<Project[]>("/projetos");
-    if (Array.isArray(data) && data.length > 0) return data;
-    return MOCK_PROJECTS;
+    if (Array.isArray(data) && data.length > 0) {
+      saveLocalProjects(data);
+      return data;
+    }
+    return getLocalProjects();
   } catch {
-    return MOCK_PROJECTS;
+    return getLocalProjects();
   }
 }
 
@@ -101,7 +127,7 @@ export async function requestProjectJoin(projectId: string): Promise<void> {
   try {
     await api.post(`/projetos/${projectId}/solicitacoes`);
   } catch {
-    // Fallback silencioso para preview sem backend
+    // Fallback silencioso para preview sem backend: cria candidatura local
     await new Promise((r) => setTimeout(r, 600));
   }
 }

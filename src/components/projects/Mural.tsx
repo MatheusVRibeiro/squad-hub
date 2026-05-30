@@ -6,7 +6,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
-import type { MuralMessage } from "@/services/projectDetail";
+import { addLocalMuralMessage, type MuralMessage } from "@/services/projectDetail";
+import { notificationsIntegration } from "@/services/notificationsIntegration";
 
 function initials(name: string) {
   return name
@@ -25,46 +26,57 @@ function fromNow(iso: string) {
   return `${Math.floor(d / 86400)} d atrás`;
 }
 
-export function Mural({ initial }: { initial: MuralMessage[] }) {
+export function Mural({ 
+  initial, 
+  projectId, 
+  projectName, 
+  readOnly 
+}: { 
+  initial: MuralMessage[]; 
+  projectId: string; 
+  projectName: string; 
+  readOnly?: boolean; 
+}) {
   const { user } = useAuth();
   const [messages, setMessages] = useState<MuralMessage[]>(initial);
   const [draft, setDraft] = useState("");
 
-  function send() {
+  async function send() {
     if (!draft.trim()) return;
-    setMessages((m) => [
-      ...m,
-      {
-        id: `local-${Date.now()}`,
-        author: user?.name ?? "Você",
-        content: draft.trim(),
-        createdAt: new Date().toISOString(),
-      },
-    ]);
+    const authorName = user?.name || "Você";
+    const content = draft.trim();
+    
+    // 1. Salva localmente via serviço offline
+    const newMessage = await addLocalMuralMessage(projectId, authorName, content);
+    
+    setMessages((m) => [...m, newMessage]);
     setDraft("");
+
+    // 2. Dispara notificação integrada
+    notificationsIntegration.notifyMuralMessage(projectName, authorName, content, projectId);
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-3.5">
         {messages.map((m) => (
           <motion.div
             key={m.id}
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex gap-3 rounded-2xl border bg-card p-3"
+            className="flex gap-4 rounded-2xl border border-border/50 bg-card/65 p-4 shadow-sm backdrop-blur-sm transition-all duration-300 hover:border-primary/20 hover:shadow-md"
           >
-            <Avatar className="h-9 w-9 border">
-              <AvatarFallback className="bg-primary/10 text-primary text-xs">
+            <Avatar className="h-10 w-10 border shadow-inner">
+              <AvatarFallback className="bg-gradient-to-tr from-primary/10 to-primary/20 text-primary text-xs font-semibold">
                 {initials(m.author)}
               </AvatarFallback>
             </Avatar>
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1 space-y-1">
               <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-medium">{m.author}</p>
-                <span className="text-[11px] text-muted-foreground">{fromNow(m.createdAt)}</span>
+                <p className="text-sm font-semibold text-foreground/90">{m.author}</p>
+                <span className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">{fromNow(m.createdAt)}</span>
               </div>
-              <p className="mt-0.5 whitespace-pre-wrap text-sm text-muted-foreground">
+              <p className="whitespace-pre-wrap text-sm text-muted-foreground leading-relaxed">
                 {m.content}
               </p>
             </div>
@@ -72,24 +84,33 @@ export function Mural({ initial }: { initial: MuralMessage[] }) {
         ))}
       </div>
 
-      <div className="flex flex-col gap-2 rounded-2xl border bg-card p-3">
-        <Textarea
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          placeholder="Compartilhe uma atualização com o squad..."
-          className="min-h-[80px] resize-none border-0 bg-transparent p-0 shadow-none focus-visible:ring-0"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) send();
-          }}
-        />
-        <div className="flex items-center justify-between">
-          <span className="text-[11px] text-muted-foreground">⌘/Ctrl + Enter para enviar</span>
-          <Button size="sm" onClick={send} disabled={!draft.trim()} className="rounded-xl">
-            <Send className="mr-1.5 h-3.5 w-3.5" />
-            Publicar
-          </Button>
+      {!readOnly ? (
+        <div className="flex flex-col gap-3 rounded-2xl border border-border/70 bg-card/75 p-4 shadow-sm transition-all focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/10">
+          <Textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder="Compartilhe uma atualização com o squad..."
+            className="min-h-[90px] resize-none border-0 bg-transparent p-0 shadow-none focus-visible:ring-0 text-sm leading-relaxed"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                send();
+              }
+            }}
+          />
+          <div className="flex items-center justify-between pt-2 border-t border-border/30">
+            <span className="text-[10px] font-medium tracking-wider text-muted-foreground uppercase">Ctrl + Enter para enviar</span>
+            <Button size="sm" onClick={send} disabled={!draft.trim()} className="rounded-xl px-4 text-xs font-medium">
+              <Send className="mr-1.5 h-3.5 w-3.5" />
+              Publicar
+            </Button>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="rounded-2xl border border-dashed border-border/80 bg-muted/10 px-6 py-8 text-center text-sm text-muted-foreground">
+          🔒 Apenas membros do squad podem publicar atualizações no mural deste projeto.
+        </div>
+      )}
     </div>
   );
 }

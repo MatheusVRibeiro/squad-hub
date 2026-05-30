@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { Calendar, Check, Loader2, Users } from "lucide-react";
+import { Calendar, Check, Loader2, Users, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { type Project, requestProjectJoin } from "@/services/projects";
+import { type Project, requestProjectJoin, getLocalProjects, saveLocalProjects } from "@/services/projects";
+import { useAuth } from "@/contexts/AuthContext";
 
 const statusStyles: Record<Project["status"], string> = {
   Aberto: "bg-primary/10 text-primary border-primary/20",
@@ -46,7 +48,7 @@ export function ProjectCard({ project, index = 0 }: { project: Project; index?: 
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.04, duration: 0.3, ease: "easeOut" }}
     >
-      <Card className="group flex h-full flex-col rounded-2xl border-border/60 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md">
+      <Card className="group flex h-full flex-col rounded-3xl border-border/60 bg-gradient-to-b from-card to-card/98 transition-all duration-300 ease-out hover:-translate-y-1 hover:border-primary/50 hover:shadow-lg dark:to-card/95">
         <CardHeader className="space-y-3">
           <div className="flex items-start justify-between gap-3">
             <Link
@@ -56,9 +58,11 @@ export function ProjectCard({ project, index = 0 }: { project: Project; index?: 
             >
               {project.name}
             </Link>
-            <Badge variant="outline" className={cn("shrink-0 rounded-full text-xs", statusStyles[project.status])}>
-              {project.status}
-            </Badge>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <Badge variant="outline" className={cn("rounded-full text-xs", statusStyles[project.status])}>
+                {project.status}
+              </Badge>
+            </div>
           </div>
           <p className="line-clamp-2 text-sm text-muted-foreground">{project.description}</p>
         </CardHeader>

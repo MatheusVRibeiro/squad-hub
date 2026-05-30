@@ -42,22 +42,26 @@ export function AuthLayout({ title, subtitle, children, footer }: Props) {
       </div>
 
       {/* Form panel */}
-      <div className="flex items-center justify-center px-6 py-12 sm:px-10">
+      <div className="relative flex items-center justify-center overflow-hidden px-6 py-12 sm:px-10">
+        {/* Background decorative blurs */}
+        <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-primary/10 blur-3xl dark:bg-primary/5" />
+        <div className="pointer-events-none absolute -bottom-32 -left-16 h-72 w-72 rounded-full bg-primary/10 blur-3xl dark:bg-primary/5" />
+
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: "easeOut" }}
-          className="w-full max-w-md"
+          className="relative w-full max-w-md rounded-3xl border border-border/60 bg-card/60 p-8 shadow-xl backdrop-blur-md dark:bg-card/45"
         >
-          <div className="mb-8 flex items-center gap-2 lg:hidden">
+          <div className="mb-6 flex items-center gap-2 lg:hidden">
             <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary text-primary-foreground">
               <Sparkles className="h-4 w-4" />
             </span>
             <span className="text-lg font-semibold">MonteSquad</span>
           </div>
 
-          <div className="mb-8 space-y-2">
-            <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+          <div className="mb-6 space-y-2">
+            <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
             {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
           </div>
 

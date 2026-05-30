@@ -1,21 +1,146 @@
+import { useMemo } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Compass, FolderKanban, Settings, User } from "lucide-react";
+import {
+  Compass,
+  FolderKanban,
+  Settings,
+  User,
+  Trophy,
+  CheckSquare,
+  Bell,
+  Sparkles,
+} from "lucide-react";
+import {
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip as ReChartsTooltip,
+  Legend,
+  AreaChart,
+  Area,
+} from "recharts";
 
 import { AppLayout } from "@/layouts/AppLayout";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
+import { fetchProjects } from "@/services/projects";
+import { fetchReputation } from "@/services/reputation";
+import { fetchNotifications } from "@/services/notifications";
 
 const tiles = [
-  { icon: Compass, label: "Explorar Projetos", hint: "Descubra squads abertos", to: "/projetos" },
-  { icon: FolderKanban, label: "Meus Projetos", hint: "Gerencie seus squads", to: "/meus-projetos" },
+  { icon: Compass, label: "Explorar Projetos", hint: "Descubra squads", to: "/projetos" },
+  { icon: FolderKanban, label: "Meus Projetos", hint: "Gerencie squads", to: "/meus-projetos" },
   { icon: User, label: "Meu Perfil", hint: "Reputação e skills", to: "/perfil" },
-  { icon: Settings, label: "Configurações", hint: "Preferências da conta", to: "/configuracoes" },
+  { icon: Settings, label: "Configurações", hint: "Ajustes da conta", to: "/configuracoes" },
 ] as const;
 
 function DashboardPage() {
   const { user } = useAuth();
+
+  // Queries para dados agregados em tempo real
+  const { data: projects = [] } = useQuery({
+    queryKey: ["projects"],
+    queryFn: fetchProjects,
+  });
+
+  const { data: reputation } = useQuery({
+    queryKey: ["reputation", user?.id || user?.email],
+    queryFn: () => fetchReputation(user?.id),
+  });
+
+  const { data: notifications = [] } = useQuery({
+    queryKey: ["notifications"],
+    queryFn: fetchNotifications,
+  });
+
+  // 1. Dados para o gráfico de Pizza: Status dos Projetos
+  const projectStatusData = useMemo(() => {
+    const counts = { Aberto: 0, "Em andamento": 0, Finalizado: 0 };
+    projects.forEach((p) => {
+      if (counts[p.status] !== undefined) {
+        counts[p.status]++;
+      }
+    });
+    return [
+      { name: "Aberto", value: counts["Aberto"], color: "#6366f1" },
+      { name: "Em progresso", value: counts["Em andamento"], color: "#f59e0b" },
+      { name: "Finalizado", value: counts["Finalizado"], color: "#10b981" },
+    ].filter(item => item.value > 0);
+  }, [projects]);
+
+  // 2. Agregação dinâmica das tarefas de todos os projetos para o gráfico de Barras
+  const taskStatusData = useMemo(() => {
+    let todo = 0;
+    let doing = 0;
+    let done = 0;
+
+    projects.forEach((p) => {
+      if (typeof window !== "undefined") {
+        const detailStr = window.localStorage.getItem(`@montesquad:project-detail:${p.id}`);
+        if (detailStr) {
+          try {
+            const detail = JSON.parse(detailStr);
+            detail.tasks.forEach((t: any) => {
+              if (t.status === "todo") todo++;
+              else if (t.status === "doing") doing++;
+              else if (t.status === "done") done++;
+            });
+          } catch {
+            // ignore
+          }
+        } else {
+          // Defaults simulados por projeto se o detalhe não foi carregado ainda
+          todo += 1;
+          doing += 1;
+          done += 2;
+        }
+      }
+    });
+
+    return [
+      { name: "A fazer", quantidade: todo, fill: "#94a3b8" },
+      { name: "Em progresso", quantidade: doing, fill: "#f59e0b" },
+      { name: "Concluído", quantidade: done, fill: "#10b981" },
+    ];
+  }, [projects]);
+
+  // 3. Progresso semanal de XP (Evolução simulada)
+  const xpProgressionData = [
+    { dia: "Seg", xp: 120 },
+    { dia: "Ter", xp: 240 },
+    { dia: "Qua", xp: 350 },
+    { dia: "Qui", xp: 480 },
+    { dia: "Sex", xp: 520 },
+    { dia: "Sáb", xp: 590 },
+    { dia: "Dom", xp: reputation?.xp || 620 },
+  ];
+
+  const totalTasksCount = useMemo(() => {
+    return taskStatusData.reduce((acc, curr) => acc + curr.quantidade, 0);
+  }, [taskStatusData]);
+
+  const completedTasksCount = useMemo(() => {
+    return taskStatusData.find((t) => t.name === "Concluído")?.quantidade || 0;
+  }, [taskStatusData]);
+
+  const unreadNotifCount = useMemo(() => {
+    return notifications.filter((n) => !n.read).length;
+  }, [notifications]);
+
+  const xpProgressPercent = useMemo(() => {
+    if (!reputation) return 0;
+    return (reputation.xp / reputation.xpToNext) * 100;
+  }, [reputation]);
 
   return (
     <ProtectedRoute>
@@ -26,40 +151,227 @@ function DashboardPage() {
           transition={{ duration: 0.4 }}
           className="space-y-8"
         >
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">Bem-vindo de volta</p>
-            <h1 className="text-3xl font-semibold tracking-tight">
-              Olá, {user?.name?.split(" ")[0] ?? "dev"} 👋
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              A estrutura base e a autenticação estão prontas. Avance para os próximos passos quando
-              quiser.
-            </p>
+          {/* Header com Boas-vindas e Nível de XP */}
+          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <p className="text-sm text-muted-foreground">Workspace do Desenvolvedor</p>
+              </div>
+              <h1 className="text-3xl font-semibold tracking-tight">
+                Olá, {user?.name?.split(" ")[0] ?? "dev"} 👋
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Aqui está o panorama geral das suas atividades e squads no MonteSquad.
+              </p>
+            </div>
+
+            {/* Card de Nível e XP */}
+            <Card className="w-full rounded-2xl border-border/60 bg-gradient-to-br from-primary/5 via-card to-card md:max-w-xs">
+              <CardContent className="flex flex-col gap-3 p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary/10 text-primary">
+                      <Trophy className="h-4 w-4" />
+                    </span>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Nível Atual</p>
+                      <p className="text-sm font-semibold">Level {reputation?.level || 1}</p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-medium text-primary">
+                    {reputation?.xp || 0} / {reputation?.xpToNext || 1000} XP
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  <Progress value={xpProgressPercent} className="h-2" />
+                  <p className="text-[10px] text-right text-muted-foreground">
+                    Faltam {reputation ? reputation.xpToNext - reputation.xp : 380} XP para o próximo nível
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
+          {/* KPI Cards */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {tiles.map((tile, i) => (
-              <motion.div
-                key={tile.label}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.05 * i, duration: 0.3 }}
-              >
-                <Link to={tile.to} className="block">
-                  <Card className="group h-full cursor-pointer rounded-2xl border-border/60 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md">
-                    <CardContent className="flex items-start gap-4 p-6">
-                      <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-                        <tile.icon className="h-5 w-5" />
-                      </span>
-                      <div className="space-y-1">
-                        <p className="font-medium">{tile.label}</p>
-                        <p className="text-xs text-muted-foreground">{tile.hint}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              </motion.div>
-            ))}
+            <Card className="rounded-2xl border-border/60">
+              <CardContent className="flex items-center gap-4 p-6">
+                <span className="grid h-12 w-12 place-items-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                  <FolderKanban className="h-6 w-6" />
+                </span>
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground">Total de Projetos</p>
+                  <p className="text-2xl font-bold">{projects.length}</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-2xl border-border/60">
+              <CardContent className="flex items-center gap-4 p-6">
+                <span className="grid h-12 w-12 place-items-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                  <CheckSquare className="h-6 w-6" />
+                </span>
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground">Tarefas Entregues</p>
+                  <p className="text-2xl font-bold">{completedTasksCount} <span className="text-xs font-normal text-muted-foreground">/ {totalTasksCount}</span></p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-2xl border-border/60">
+              <CardContent className="flex items-center gap-4 p-6">
+                <span className="grid h-12 w-12 place-items-center rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
+                  <Bell className="h-6 w-6" />
+                </span>
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground">Avisos Pendentes</p>
+                  <p className="text-2xl font-bold">{unreadNotifCount}</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-2xl border-border/60">
+              <CardContent className="flex items-center gap-4 p-6">
+                <span className="grid h-12 w-12 place-items-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                  <Sparkles className="h-6 w-6" />
+                </span>
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground">Conquistas Ganhas</p>
+                  <p className="text-2xl font-bold">{reputation?.achievements.length || 0}</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Seção de Gráficos Recharts */}
+          <div className="grid gap-6 md:grid-cols-3">
+            {/* Gráfico 1: Evolução Semanal de Atividade / XP */}
+            <Card className="rounded-2xl border-border/60 md:col-span-2">
+              <CardHeader>
+                <CardTitle className="text-lg">Progresso Semanal (XP)</CardTitle>
+                <CardDescription>Fluxo acumulado de pontuações obtidas completando tarefas e revisões.</CardDescription>
+              </CardHeader>
+              <CardContent className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={xpProgressionData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorXp" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="dia" stroke="#94a3b8" fontSize={11} tickLine={false} />
+                    <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} />
+                    <ReChartsTooltip 
+                      contentStyle={{ background: "var(--card)", borderColor: "var(--border)", borderRadius: "12px", fontSize: "12px" }}
+                      labelStyle={{ fontWeight: "bold" }}
+                    />
+                    <Area type="monotone" dataKey="xp" name="XP Acumulado" stroke="#6366f1" strokeWidth={2.5} fillOpacity={1} fill="url(#colorXp)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Gráfico 2: Projetos por Status */}
+            <Card className="rounded-2xl border-border/60">
+              <CardHeader>
+                <CardTitle className="text-lg">Status dos Squads</CardTitle>
+                <CardDescription>Distribuição dos projetos na plataforma.</CardDescription>
+              </CardHeader>
+              <CardContent className="flex h-72 flex-col justify-center">
+                {projectStatusData.length === 0 ? (
+                  <p className="text-center text-xs text-muted-foreground">Nenhum projeto registrado.</p>
+                ) : (
+                  <>
+                    <div className="h-44">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={projectStatusData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={55}
+                            outerRadius={75}
+                            paddingAngle={4}
+                            dataKey="value"
+                          >
+                            {projectStatusData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <ReChartsTooltip
+                            contentStyle={{ background: "var(--card)", borderColor: "var(--border)", borderRadius: "12px", fontSize: "12px" }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    {/* Legenda customizada */}
+                    <div className="mt-4 flex justify-center gap-4 text-xs">
+                      {projectStatusData.map((entry) => (
+                        <div key={entry.name} className="flex items-center gap-1.5">
+                          <span className="h-3 w-3 rounded-full" style={{ backgroundColor: entry.color }} />
+                          <span className="font-medium text-muted-foreground">{entry.name} ({entry.value})</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Gráfico 3: Tarefas por Status */}
+            <Card className="rounded-2xl border-border/60 md:col-span-3">
+              <CardHeader>
+                <CardTitle className="text-lg">Métricas das Tarefas</CardTitle>
+                <CardDescription>Relação de status de todos os cartões nos Kanbans dos seus squads.</CardDescription>
+              </CardHeader>
+              <CardContent className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={taskStatusData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <XAxis dataKey="name" stroke="oklch(0.554 0.046 257.417)" fontSize={11} tickLine={false} />
+                    <YAxis stroke="oklch(0.554 0.046 257.417)" fontSize={11} tickLine={false} />
+                    <ReChartsTooltip
+                      contentStyle={{ background: "var(--card)", borderColor: "var(--border)", borderRadius: "12px", fontSize: "12px" }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: "11px" }} />
+                    <Bar dataKey="quantidade" name="Quantidade de tarefas" radius={[6, 6, 0, 0]}>
+                      {taskStatusData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Atalhos Rápidos */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">Atalhos da Plataforma</h3>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {tiles.map((tile, i) => (
+                <motion.div
+                  key={tile.label}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.05 * i, duration: 0.3 }}
+                >
+                  <Link to={tile.to} className="block">
+                    <Card className="group h-full cursor-pointer rounded-2xl border-border/60 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm">
+                      <CardContent className="flex items-start gap-4 p-6">
+                        <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                          <tile.icon className="h-5 w-5" />
+                        </span>
+                        <div className="space-y-1">
+                          <p className="font-medium text-sm">{tile.label}</p>
+                          <p className="text-xs text-muted-foreground">{tile.hint}</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
           </div>
         </motion.div>
       </AppLayout>

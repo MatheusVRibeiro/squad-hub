@@ -25,16 +25,16 @@ function MeusProjetosPage() {
   return (
     <ProtectedRoute>
       <AppLayout>
-        <div className="mx-auto w-full max-w-6xl space-y-6">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Workspace</p>
-              <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Meus projetos</h1>
+        <div className="mx-auto w-full max-w-6xl space-y-6 py-2">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div className="space-y-1.5">
+              <p className="text-xs font-bold tracking-widest text-primary uppercase">Workspace</p>
+              <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Meus projetos</h1>
               <p className="text-sm text-muted-foreground">
-                Squads que você criou ou administra.
+                Squads que você criou e gerencia como proprietário.
               </p>
             </div>
-            <Button asChild className="rounded-xl">
+            <Button asChild className="rounded-xl px-5 shadow-sm">
               <Link to="/projetos/novo">
                 <Plus className="mr-1.5 h-4 w-4" /> Novo projeto
               </Link>
@@ -44,11 +44,11 @@ function MeusProjetosPage() {
           {isLoading ? (
             <ProjectsSkeleton />
           ) : mine.length === 0 ? (
-            <div className="rounded-2xl border border-dashed bg-muted/30 p-12 text-center">
+            <div className="rounded-3xl border border-dashed border-border/80 bg-muted/10 p-12 text-center backdrop-blur-sm">
               <p className="text-sm text-muted-foreground">
-                Você ainda não criou nenhum projeto.
+                Você ainda não criou nenhum projeto na plataforma.
               </p>
-              <Button asChild className="mt-4 rounded-xl">
+              <Button asChild className="mt-4 rounded-xl shadow-sm">
                 <Link to="/projetos/novo">
                   <Plus className="mr-1.5 h-4 w-4" /> Criar primeiro projeto
                 </Link>

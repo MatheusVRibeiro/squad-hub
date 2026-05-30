@@ -1,5 +1,5 @@
 import { api } from "./api";
-import { MOCK_PROJECTS, type Project } from "./projects";
+import { getLocalProjects, saveLocalProjects, MOCK_PROJECTS, type Project } from "./projects";
 
 export type KanbanStatus = "todo" | "doing" | "done";
 
@@ -96,15 +96,62 @@ function mockDetail(p: Project): ProjectDetail {
   };
 }
 
+
+
+// ... type definitions remain the same ...
+
+export function getLocalProjectDetail(id: string): ProjectDetail {
+  if (typeof window === "undefined") {
+    const base = MOCK_PROJECTS.find((p) => p.id === id) ?? MOCK_PROJECTS[0];
+    return mockDetail(base);
+  }
+
+  const stored = window.localStorage.getItem(`@montesquad:project-detail:${id}`);
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch {
+      // ignore
+    }
+  }
+
+  // Se não existir o detalhe localmente, busca nas informações gerais do projeto
+  const projects = getLocalProjects();
+  const base = projects.find((p) => p.id === id) ?? projects[0] ?? MOCK_PROJECTS[0];
+  const detail = mockDetail(base);
+  window.localStorage.setItem(`@montesquad:project-detail:${id}`, JSON.stringify(detail));
+  return detail;
+}
+
+export function saveLocalProjectDetail(id: string, detail: ProjectDetail) {
+  if (typeof window !== "undefined") {
+    window.localStorage.setItem(`@montesquad:project-detail:${id}`, JSON.stringify(detail));
+
+    // Sincroniza informações gerais de volta na lista de projetos
+    const projects = getLocalProjects();
+    const index = projects.findIndex((p) => p.id === id);
+    if (index !== -1) {
+      projects[index] = {
+        ...projects[index],
+        membersCount: detail.members.length,
+        status: detail.status,
+      };
+      saveLocalProjects(projects);
+    }
+  }
+}
+
 export async function fetchProjectDetail(id: string): Promise<ProjectDetail> {
   try {
     const { data } = await api.get<ProjectDetail>(`/projetos/${id}`);
-    if (data && data.id) return data;
+    if (data && data.id) {
+      saveLocalProjectDetail(id, data);
+      return data;
+    }
+    return getLocalProjectDetail(id);
   } catch {
-    // fallback
+    return getLocalProjectDetail(id);
   }
-  const base = MOCK_PROJECTS.find((p) => p.id === id) ?? MOCK_PROJECTS[0];
-  return mockDetail(base);
 }
 
 export async function createProject(payload: {
@@ -119,7 +166,8 @@ export async function createProject(payload: {
   } catch {
     // fallback
   }
-  return {
+
+  const newProject: Project = {
     id: `local-${Date.now()}`,
     name: payload.name,
     description: payload.description,
@@ -130,4 +178,145 @@ export async function createProject(payload: {
     createdBy: "Você",
     createdAt: new Date().toISOString(),
   };
+
+  // Salva na lista de projetos local
+  const projects = getLocalProjects();
+  projects.push(newProject);
+  saveLocalProjects(projects);
+
+  // Cria e salva o detalhe inicial
+  const detail: ProjectDetail = {
+    ...newProject,
+    longDescription: payload.description + " Este squad se reúne semanalmente para alinhar metas e planejar próximos passos.",
+    tasks: [
+      { id: "t1", title: "Configurar repositório e README", status: "todo" },
+      { id: "t2", title: "Mapear backlog inicial", status: "todo" }
+    ],
+    messages: [
+      {
+        id: "m1",
+        author: "Você",
+        content: "Squad criado! Sejam bem-vindos.",
+        createdAt: new Date().toISOString()
+      }
+    ],
+    members: [
+      { id: "u-owner", name: "Você", role: "Owner", skills: payload.technologies.slice(0, 2) }
+    ],
+    applications: []
+  };
+  saveLocalProjectDetail(newProject.id, detail);
+
+  return newProject;
+}
+
+// Funções extras de mutação para desenvolvimento offline
+
+export async function addLocalTask(projectId: string, title: string): Promise<KanbanTask> {
+  try {
+    const { data } = await api.post<KanbanTask>(`/projetos/${projectId}/tarefas`, { title });
+    return data;
+  } catch {
+    // ignore
+  }
+
+  const detail = getLocalProjectDetail(projectId);
+  const newTask: KanbanTask = {
+    id: `task-${Date.now()}`,
+    title,
+    status: "todo"
+  };
+  detail.tasks.push(newTask);
+  saveLocalProjectDetail(projectId, detail);
+  return newTask;
+}
+
+export async function updateLocalTaskStatus(projectId: string, taskId: string, status: KanbanStatus): Promise<void> {
+  try {
+    await api.patch(`/projetos/${projectId}/tarefas/${taskId}`, { status });
+  } catch {
+    // ignore
+  }
+
+  const detail = getLocalProjectDetail(projectId);
+  detail.tasks = detail.tasks.map(t => t.id === taskId ? { ...t, status } : t);
+  saveLocalProjectDetail(projectId, detail);
+}
+
+export async function addLocalMuralMessage(projectId: string, author: string, content: string): Promise<MuralMessage> {
+  try {
+    const { data } = await api.post<MuralMessage>(`/projetos/${projectId}/mensagens`, { content });
+    return data;
+  } catch {
+    // ignore
+  }
+
+  const detail = getLocalProjectDetail(projectId);
+  const newMessage: MuralMessage = {
+    id: `msg-${Date.now()}`,
+    author,
+    content,
+    createdAt: new Date().toISOString()
+  };
+  detail.messages.unshift(newMessage); // mais recentes primeiro
+  saveLocalProjectDetail(projectId, detail);
+  return newMessage;
+}
+
+export async function updateLocalApplicationStatus(
+  projectId: string, 
+  applicationId: string, 
+  status: "approved" | "rejected"
+): Promise<void> {
+  try {
+    await api.patch(`/projetos/${projectId}/candidaturas/${applicationId}`, { status });
+  } catch {
+    // ignore
+  }
+
+  const detail = getLocalProjectDetail(projectId);
+  const app = detail.applications.find(a => a.id === applicationId);
+  if (app) {
+    app.status = status;
+    if (status === "approved") {
+      // Se aprovado, adiciona aos membros do projeto
+      const exists = detail.members.some(m => m.name === app.name);
+      if (!exists) {
+        detail.members.push({
+          id: `u-${app.id}`,
+          name: app.name,
+          role: "Membro",
+          skills: app.skills
+        });
+        detail.membersCount = detail.members.length;
+      }
+    }
+    saveLocalProjectDetail(projectId, detail);
+  }
+}
+
+export async function applyToProjectLocal(projectId: string, applicant: { name: string, message: string, skills: string[] }): Promise<void> {
+  const detail = getLocalProjectDetail(projectId);
+  const newApp: Application = {
+    id: `app-${Date.now()}`,
+    name: applicant.name,
+    message: applicant.message,
+    skills: applicant.skills,
+    createdAt: new Date().toISOString(),
+    status: "pending"
+  };
+  detail.applications.push(newApp);
+  saveLocalProjectDetail(projectId, detail);
+}
+
+export async function closeProjectLocal(projectId: string): Promise<void> {
+  try {
+    await api.patch(`/projetos/${projectId}/encerrar`);
+  } catch {
+    // ignore
+  }
+
+  const detail = getLocalProjectDetail(projectId);
+  detail.status = "Finalizado";
+  saveLocalProjectDetail(projectId, detail);
 }

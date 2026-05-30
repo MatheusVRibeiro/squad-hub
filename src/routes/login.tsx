@@ -65,50 +65,52 @@ function LoginPage() {
         </>
       }
     >
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="email">E-mail</Label>
-          <Input id="email" type="email" placeholder="voce@exemplo.com" {...register("email")} />
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        <div className="space-y-1.5">
+          <Label htmlFor="email" className="text-xs font-semibold text-foreground/80 tracking-wide uppercase">E-mail</Label>
+          <Input id="email" type="email" placeholder="voce@exemplo.com" className="h-11 rounded-xl border border-border/60 bg-background/40 px-4 focus-visible:ring-primary/20 text-sm" {...register("email")} />
           {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <Label htmlFor="password">Senha</Label>
+            <Label htmlFor="password" className="text-xs font-semibold text-foreground/80 tracking-wide uppercase">Senha</Label>
             <button
               type="button"
               onClick={() => toast.info("Em breve: recuperação de senha")}
-              className="text-xs text-primary hover:underline"
+              className="text-[10px] font-bold text-primary tracking-wide hover:underline uppercase"
             >
               Esqueci minha senha
             </button>
           </div>
-          <Input id="password" type="password" placeholder="••••••••" {...register("password")} />
+          <Input id="password" type="password" placeholder="••••••••" className="h-11 rounded-xl border border-border/60 bg-background/40 px-4 focus-visible:ring-primary/20 text-sm" {...register("password")} />
           {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
         </div>
 
-        <Button type="submit" className="h-10 w-full rounded-xl" disabled={submitting}>
-          {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Entrar"}
-        </Button>
+        <div className="space-y-2.5 pt-1">
+          <Button type="submit" className="h-11 w-full rounded-xl font-semibold shadow-md" disabled={submitting}>
+            {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Entrar"}
+          </Button>
 
-        <Button
-          type="button"
-          className="h-10 w-full rounded-xl bg-muted text-muted-foreground"
-          disabled={submitting}
-          onClick={async () => {
-            setSubmitting(true);
-            try {
-              const email = getValues("email");
-              await signInTemp?.({ email: email ?? "temp@example.com", password: "" });
-              toast.success("Entrando em modo temporário");
-              navigate({ to: "/dashboard" });
-            } finally {
-              setSubmitting(false);
-            }
-          }}
-        >
-          Entrar temporário
-        </Button>
+          <Button
+            type="button"
+            className="h-11 w-full rounded-xl bg-secondary/80 text-secondary-foreground hover:bg-secondary border border-border/50 transition-colors font-medium text-xs shadow-sm"
+            disabled={submitting}
+            onClick={async () => {
+              setSubmitting(true);
+              try {
+                const email = getValues("email");
+                await signInTemp?.({ email: email || "dev@example.com", password: "" });
+                toast.success("Entrando em modo temporário");
+                navigate({ to: "/dashboard" });
+              } finally {
+                setSubmitting(false);
+              }
+            }}
+          >
+            Entrar como visitante temporário
+          </Button>
+        </div>
       </form>
     </AuthLayout>
   );

@@ -36,25 +36,25 @@ export function ProjectsToolbar({
   technologies,
 }: Props) {
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border bg-card/60 p-3 backdrop-blur sm:flex-row sm:items-center">
+    <div className="flex flex-col gap-3 rounded-3xl border border-border/50 bg-card/65 p-4 shadow-md backdrop-blur-md sm:flex-row sm:items-center">
       <div className="relative flex-1">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Buscar por nome ou descrição..."
-          className="h-10 rounded-xl pl-9"
+          className="h-11 rounded-xl border border-border/60 bg-background/40 pl-10 pr-4 text-sm focus-visible:ring-primary/20"
           aria-label="Buscar projetos"
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
+      <div className="grid grid-cols-2 gap-2.5 sm:flex sm:items-center">
         <Select value={technology} onValueChange={onTechnologyChange}>
-          <SelectTrigger className="h-10 rounded-xl sm:w-40" aria-label="Tecnologia">
+          <SelectTrigger className="h-11 rounded-xl border border-border/60 bg-background/40 text-sm focus-visible:ring-primary/20 sm:w-44" aria-label="Tecnologia">
             <SelectValue placeholder="Tecnologia" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todas as techs</SelectItem>
+            <SelectItem value="all">Todas as tecnologias</SelectItem>
             {technologies.map((tech) => (
               <SelectItem key={tech} value={tech}>
                 {tech}
@@ -64,7 +64,7 @@ export function ProjectsToolbar({
         </Select>
 
         <Select value={status} onValueChange={(v) => onStatusChange(v as ProjectStatus | "all")}>
-          <SelectTrigger className="h-10 rounded-xl sm:w-36" aria-label="Status">
+          <SelectTrigger className="h-11 rounded-xl border border-border/60 bg-background/40 text-sm focus-visible:ring-primary/20 sm:w-40" aria-label="Status">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -76,7 +76,7 @@ export function ProjectsToolbar({
         </Select>
 
         <Select value={sort} onValueChange={(v) => onSortChange(v as SortKey)}>
-          <SelectTrigger className="col-span-2 h-10 rounded-xl sm:w-44" aria-label="Ordenação">
+          <SelectTrigger className="col-span-2 h-11 rounded-xl border border-border/60 bg-background/40 text-sm focus-visible:ring-primary/20 sm:w-44" aria-label="Ordenação">
             <SelectValue placeholder="Ordenar" />
           </SelectTrigger>
           <SelectContent>

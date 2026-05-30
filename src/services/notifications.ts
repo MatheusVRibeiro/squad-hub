@@ -60,14 +60,50 @@ const MOCK: AppNotification[] = [
   },
 ];
 
+export function getLocalNotifications(): AppNotification[] {
+  if (typeof window === "undefined") return MOCK;
+  const stored = window.localStorage.getItem("@montesquad:notifications");
+  if (!stored) {
+    window.localStorage.setItem("@montesquad:notifications", JSON.stringify(MOCK));
+    return MOCK;
+  }
+  try {
+    return JSON.parse(stored);
+  } catch {
+    return MOCK;
+  }
+}
+
+export function saveLocalNotifications(notifications: AppNotification[]) {
+  if (typeof window !== "undefined") {
+    window.localStorage.setItem("@montesquad:notifications", JSON.stringify(notifications));
+  }
+}
+
+export function addLocalNotification(n: Omit<AppNotification, "id" | "createdAt" | "read">): AppNotification {
+  const notifications = getLocalNotifications();
+  const newNotif: AppNotification = {
+    ...n,
+    id: `notif-${Date.now()}`,
+    createdAt: new Date().toISOString(),
+    read: false,
+  };
+  notifications.unshift(newNotif); // mais recentes primeiro
+  saveLocalNotifications(notifications);
+  return newNotif;
+}
+
 export async function fetchNotifications(): Promise<AppNotification[]> {
   try {
     const { data } = await api.get<AppNotification[]>("/notificacoes");
-    if (Array.isArray(data)) return data;
+    if (Array.isArray(data)) {
+      saveLocalNotifications(data);
+      return data;
+    }
+    return getLocalNotifications();
   } catch {
-    // fallback
+    return getLocalNotifications();
   }
-  return MOCK;
 }
 
 export async function markAllRead(): Promise<void> {
@@ -76,4 +112,7 @@ export async function markAllRead(): Promise<void> {
   } catch {
     // ignore
   }
+  const notifications = getLocalNotifications();
+  notifications.forEach((n) => (n.read = true));
+  saveLocalNotifications(notifications);
 }

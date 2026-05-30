@@ -9,6 +9,7 @@ export type User = {
   location?: string;
   skills?: string[];
   avatarUrl?: string;
+  role?: "admin" | "user";
 };
 
 export type SignInData = { email: string; password: string };
@@ -26,9 +27,10 @@ type AuthContextValue = {
   isAuthenticated: boolean;
   isLoading: boolean;
   signIn: (data: SignInData) => Promise<void>;
-  signInTemp: (data?: SignInData) => Promise<void>;
+  signInTemp: (data?: SignInData & { role?: "admin" | "user" }) => Promise<void>;
   signUp: (data: SignUpData) => Promise<void>;
   signOut: () => void;
+  updateUser: (nextUser: User) => void;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -52,6 +54,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const persist = useCallback((token: string, nextUser: User) => {
     window.localStorage.setItem(TOKEN_KEY, token);
     window.localStorage.setItem(USER_KEY, JSON.stringify(nextUser));
+    setUser(nextUser);
+  }, []);
+
+  const updateUser = useCallback((nextUser: User) => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(USER_KEY, JSON.stringify(nextUser));
+    }
     setUser(nextUser);
   }, []);
 
@@ -79,12 +88,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const signInTemp = useCallback(
-    async (payload?: SignInData) => {
+    async (payload?: SignInData & { role?: "admin" | "user" }) => {
       const email = payload?.email ?? 'temp@example.com';
       const tempUser: User = {
         id: 'temp',
         name: email.split('@')[0] ?? 'Usuário temporário',
         email,
+        role: payload?.role ?? 'user',
       };
       persist('temp-token', tempUser);
     },
@@ -117,8 +127,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signInTemp,
       signUp,
       signOut,
+      updateUser,
     }),
-    [user, isLoading, signIn, signInTemp, signUp, signOut],
+    [user, isLoading, signIn, signInTemp, signUp, signOut, updateUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

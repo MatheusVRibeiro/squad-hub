@@ -132,6 +132,15 @@
   --sidebar-ring: oklch(0.551 0.027 264.364);
 }
 
+:root {
+  --radius: 0.75rem; /* Softened corners for a more premium look */
+}
+
+@theme inline {
+  --font-sans: 'Inter', sans-serif;
+  --font-heading: 'Outfit', sans-serif;
+}
+
 @layer base {
   * {
     border-color: var(--color-border);
@@ -140,5 +149,18 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: var(--font-sans);
   }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.02em;
+  }
+}
+
+@utility glassmorphic {
+  background-color: color-mix(in srgb, var(--color-card) 75%, transparent);
+  backdrop-filter: blur(16px);
+  border-width: 1px;
+  border-color: color-mix(in srgb, var(--color-border) 45%, transparent);
 }

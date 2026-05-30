@@ -13,6 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import {
   Form,
   FormControl,
@@ -31,8 +32,13 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
+import { useQueryClient } from "@tanstack/react-query";
+
+// ... inside component ...
+
 function NovoProjetoPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [techs, setTechs] = useState<string[]>([]);
   const [draft, setDraft] = useState("");
 
@@ -56,6 +62,8 @@ function NovoProjetoPage() {
     try {
       const created = await createProject({ ...values, technologies: techs });
       toast.success("Projeto criado");
+      // Invalida a query de projetos para atualizar a lista imediatamente
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
       navigate({ to: "/projetos/$id", params: { id: created.id } });
     } catch {
       toast.error("Não foi possível criar o projeto");
@@ -65,27 +73,27 @@ function NovoProjetoPage() {
   return (
     <ProtectedRoute>
       <AppLayout>
-        <div className="mx-auto w-full max-w-2xl space-y-6">
-          <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Workspace</p>
-            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Criar projeto</h1>
-            <p className="text-sm text-muted-foreground">
-              Defina escopo, stack e tamanho do squad. Você será o owner.
+        <div className="mx-auto w-full max-w-2xl space-y-8 py-4">
+          <div className="space-y-2 text-center sm:text-left">
+            <p className="text-xs font-bold tracking-widest text-primary uppercase">Workspace</p>
+            <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Criar novo projeto</h1>
+            <p className="text-sm text-muted-foreground max-w-md">
+              Defina escopo, stack de tecnologias e o tamanho ideal do squad. Como criador, você será o proprietário.
             </p>
           </div>
 
-          <Card className="rounded-2xl border-border/60">
-            <CardContent className="p-6">
+          <Card className="rounded-3xl border border-border/50 bg-card/65 shadow-xl backdrop-blur-md">
+            <CardContent className="p-6 sm:p-8">
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                   <FormField
                     control={form.control}
                     name="name"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nome do projeto</FormLabel>
+                      <FormItem className="space-y-1.5">
+                        <FormLabel className="text-xs font-semibold text-foreground/80 tracking-wide uppercase">Nome do projeto</FormLabel>
                         <FormControl>
-                          <Input placeholder="Ex: API de Pagamentos" {...field} />
+                          <Input placeholder="Ex: API de Pagamentos" className="h-11 rounded-xl border-border/60 bg-background/40 px-4 focus-visible:ring-primary/20 text-sm" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -96,12 +104,13 @@ function NovoProjetoPage() {
                     control={form.control}
                     name="description"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Descrição</FormLabel>
+                      <FormItem className="space-y-1.5">
+                        <FormLabel className="text-xs font-semibold text-foreground/80 tracking-wide uppercase">Descrição curta</FormLabel>
                         <FormControl>
                           <Textarea
-                            rows={4}
-                            placeholder="O que o squad vai construir e qual o objetivo?"
+                            rows={3}
+                            placeholder="O que o squad vai construir e qual o objetivo principal?"
+                            className="rounded-xl border-border/60 bg-background/40 p-4 focus-visible:ring-primary/20 text-sm resize-none"
                             {...field}
                           />
                         </FormControl>
@@ -110,8 +119,8 @@ function NovoProjetoPage() {
                     )}
                   />
 
-                  <FormItem>
-                    <FormLabel>Tecnologias</FormLabel>
+                  <FormItem className="space-y-2">
+                    <Label className="text-xs font-semibold text-foreground/80 tracking-wide uppercase">Tecnologias necessárias</Label>
                     <div className="flex gap-2">
                       <Input
                         value={draft}
@@ -122,28 +131,30 @@ function NovoProjetoPage() {
                             addTech(draft);
                           }
                         }}
-                        placeholder="React, Node.js, Docker..."
+                        placeholder="React, Node.js, Docker... (Pressione Enter para adicionar)"
+                        className="h-11 rounded-xl border-border/60 bg-background/40 px-4 focus-visible:ring-primary/20 text-sm"
                       />
                       <Button
                         type="button"
                         variant="outline"
                         onClick={() => addTech(draft)}
-                        className="rounded-xl"
+                        className="h-11 w-11 rounded-xl border-border/60 flex items-center justify-center shrink-0 hover:bg-primary/10 hover:text-primary transition-colors"
                       >
                         <Plus className="h-4 w-4" />
                       </Button>
                     </div>
                     {techs.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1.5">
+                      <div className="mt-2.5 flex flex-wrap gap-1.5">
                         {techs.map((t) => (
                           <Badge
                             key={t}
                             variant="secondary"
-                            className="cursor-pointer rounded-full text-[11px]"
+                            className="cursor-pointer rounded-full px-2.5 py-0.5 text-[11px] font-medium tracking-wide border bg-muted/40 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-all flex items-center gap-1"
                             onClick={() => setTechs((arr) => arr.filter((x) => x !== t))}
+                            title="Clique para remover"
                           >
                             {t}
-                            <X className="ml-1 h-3 w-3" />
+                            <X className="h-3 w-3 shrink-0" />
                           </Badge>
                         ))}
                       </div>
@@ -154,13 +165,14 @@ function NovoProjetoPage() {
                     control={form.control}
                     name="membersLimit"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Tamanho do squad</FormLabel>
+                      <FormItem className="space-y-1.5">
+                        <FormLabel className="text-xs font-semibold text-foreground/80 tracking-wide uppercase">Tamanho limite do squad</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
                             min={2}
                             max={20}
+                            className="h-11 rounded-xl border-border/60 bg-background/40 px-4 focus-visible:ring-primary/20 text-sm w-32"
                             value={field.value ?? ""}
                             onChange={(e) => field.onChange(e.target.valueAsNumber)}
                           />
@@ -170,19 +182,19 @@ function NovoProjetoPage() {
                     )}
                   />
 
-                  <div className="flex justify-end gap-2 pt-2">
+                  <div className="flex justify-end gap-3 pt-4 border-t border-border/30">
                     <Button
                       type="button"
                       variant="ghost"
                       onClick={() => navigate({ to: "/projetos" })}
-                      className="rounded-xl"
+                      className="rounded-xl px-5 text-xs font-medium"
                     >
                       Cancelar
                     </Button>
                     <Button
                       type="submit"
                       disabled={form.formState.isSubmitting}
-                      className="rounded-xl"
+                      className="rounded-xl px-6 text-xs font-semibold shadow-md"
                     >
                       {form.formState.isSubmitting && (
                         <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />

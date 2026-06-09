@@ -44,7 +44,7 @@ function LoginPage() {
     } catch (err) {
       const message =
         axios.isAxiosError(err) && err.response?.data
-          ? (err.response.data as { message?: string }).message ?? "Não foi possível entrar"
+          ? ((err.response.data as { message?: string }).message ?? "Não foi possível entrar")
           : "Não foi possível entrar";
       toast.error(message);
     } finally {
@@ -67,14 +67,30 @@ function LoginPage() {
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div className="space-y-1.5">
-          <Label htmlFor="email" className="text-xs font-semibold text-foreground/80 tracking-wide uppercase">E-mail</Label>
-          <Input id="email" type="email" placeholder="voce@exemplo.com" className="h-11 rounded-xl border border-border/60 bg-background/40 px-4 focus-visible:ring-primary/20 text-sm" {...register("email")} />
+          <Label
+            htmlFor="email"
+            className="text-xs font-semibold text-foreground/80 tracking-wide uppercase"
+          >
+            E-mail
+          </Label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="voce@exemplo.com"
+            className="h-11 rounded-xl border border-border/60 bg-background/40 px-4 focus-visible:ring-primary/20 text-sm"
+            {...register("email")}
+          />
           {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
         </div>
 
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <Label htmlFor="password" className="text-xs font-semibold text-foreground/80 tracking-wide uppercase">Senha</Label>
+            <Label
+              htmlFor="password"
+              className="text-xs font-semibold text-foreground/80 tracking-wide uppercase"
+            >
+              Senha
+            </Label>
             <button
               type="button"
               onClick={() => toast.info("Em breve: recuperação de senha")}
@@ -83,12 +99,22 @@ function LoginPage() {
               Esqueci minha senha
             </button>
           </div>
-          <Input id="password" type="password" placeholder="••••••••" className="h-11 rounded-xl border border-border/60 bg-background/40 px-4 focus-visible:ring-primary/20 text-sm" {...register("password")} />
+          <Input
+            id="password"
+            type="password"
+            placeholder="••••••••"
+            className="h-11 rounded-xl border border-border/60 bg-background/40 px-4 focus-visible:ring-primary/20 text-sm"
+            {...register("password")}
+          />
           {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
         </div>
 
         <div className="space-y-2.5 pt-1">
-          <Button type="submit" className="h-11 w-full rounded-xl font-semibold shadow-md" disabled={submitting}>
+          <Button
+            type="submit"
+            className="h-11 w-full rounded-xl font-semibold shadow-md"
+            disabled={submitting}
+          >
             {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Entrar"}
           </Button>
 

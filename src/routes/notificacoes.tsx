@@ -1,22 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import {
-  ClipboardCheck,
-  Megaphone,
-  MessageSquare,
-  Sparkles,
-  UserPlus,
-} from "lucide-react";
+import { ClipboardCheck, Megaphone, MessageSquare, Sparkles, UserPlus } from "lucide-react";
 
 import { AppLayout } from "@/layouts/AppLayout";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import {
-  fetchNotifications,
-  type NotificationType,
-} from "@/services/notifications";
+import { fetchNotifications, type NotificationType } from "@/services/notifications";
 
 const ICONS: Record<NotificationType, React.ComponentType<{ className?: string }>> = {
   application: UserPlus,
@@ -82,11 +73,7 @@ function NotificacoesPage() {
                     </CardContent>
                   </Card>
                 );
-                return (
-                  <li key={n.id}>
-                    {n.link ? <Link to={n.link}>{content}</Link> : content}
-                  </li>
-                );
+                return <li key={n.id}>{n.link ? <Link to={n.link}>{content}</Link> : content}</li>;
               })}
             </ul>
           )}

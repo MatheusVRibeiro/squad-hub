@@ -18,9 +18,7 @@ function MeusProjetosPage() {
     staleTime: 60_000,
   });
 
-  const mine = (data ?? []).filter(
-    (p) => p.createdBy === user?.name || p.createdBy === "Você",
-  );
+  const mine = (data ?? []).filter((p) => p.createdBy === user?.name || p.createdBy === "Você");
 
   return (
     <ProtectedRoute>

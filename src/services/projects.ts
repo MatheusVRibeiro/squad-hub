@@ -112,10 +112,41 @@ export function saveLocalProjects(projects: Project[]) {
  */
 export async function fetchProjects(): Promise<Project[]> {
   try {
-    const { data } = await api.get<Project[]>("/projetos");
-    if (Array.isArray(data) && data.length > 0) {
-      saveLocalProjects(data);
-      return data;
+    const { data } = await api.get<{
+      sucesso: boolean;
+      dados: {
+        id: number;
+        criador_id: number;
+        criador_nome: string | null;
+        titulo: string;
+        descricao: string | null;
+        status: "aberto" | "em_andamento" | "finalizado";
+        limite_membros: number;
+        criado_em: string;
+        total_membros: number;
+      }[];
+    }>("/projetos");
+
+    if (data.sucesso && Array.isArray(data.dados)) {
+      const mapped = data.dados.map((p) => {
+        let status: ProjectStatus = "Aberto";
+        if (p.status === "em_andamento") status = "Em andamento";
+        if (p.status === "finalizado") status = "Finalizado";
+
+        return {
+          id: String(p.id),
+          name: p.titulo,
+          description: p.descricao || "",
+          status,
+          technologies: [],
+          membersCount: p.total_membros,
+          membersLimit: p.limite_membros,
+          createdBy: p.criador_nome || "Desconhecido",
+          createdAt: p.criado_em,
+        };
+      });
+      saveLocalProjects(mapped);
+      return mapped;
     }
     return getLocalProjects();
   } catch {
@@ -125,7 +156,9 @@ export async function fetchProjects(): Promise<Project[]> {
 
 export async function requestProjectJoin(projectId: string): Promise<void> {
   try {
-    await api.post(`/projetos/${projectId}/solicitacoes`);
+    await api.post(`/projetos/${projectId}/candidaturas`, {
+      mensagem: "Gostaria de participar do projeto!",
+    });
   } catch {
     // Fallback silencioso para preview sem backend: cria candidatura local
     await new Promise((r) => setTimeout(r, 600));

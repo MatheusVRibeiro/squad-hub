@@ -26,16 +26,16 @@ function fromNow(iso: string) {
   return `${Math.floor(d / 86400)} d atrás`;
 }
 
-export function Mural({ 
-  initial, 
-  projectId, 
-  projectName, 
-  readOnly 
-}: { 
-  initial: MuralMessage[]; 
-  projectId: string; 
-  projectName: string; 
-  readOnly?: boolean; 
+export function Mural({
+  initial,
+  projectId,
+  projectName,
+  readOnly,
+}: {
+  initial: MuralMessage[];
+  projectId: string;
+  projectName: string;
+  readOnly?: boolean;
 }) {
   const { user } = useAuth();
   const [messages, setMessages] = useState<MuralMessage[]>(initial);
@@ -45,10 +45,10 @@ export function Mural({
     if (!draft.trim()) return;
     const authorName = user?.name || "Você";
     const content = draft.trim();
-    
+
     // 1. Salva localmente via serviço offline
     const newMessage = await addLocalMuralMessage(projectId, authorName, content);
-    
+
     setMessages((m) => [...m, newMessage]);
     setDraft("");
 
@@ -74,7 +74,9 @@ export function Mural({
             <div className="min-w-0 flex-1 space-y-1">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-sm font-semibold text-foreground/90">{m.author}</p>
-                <span className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">{fromNow(m.createdAt)}</span>
+                <span className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+                  {fromNow(m.createdAt)}
+                </span>
               </div>
               <p className="whitespace-pre-wrap text-sm text-muted-foreground leading-relaxed">
                 {m.content}
@@ -99,8 +101,15 @@ export function Mural({
             }}
           />
           <div className="flex items-center justify-between pt-2 border-t border-border/30">
-            <span className="text-[10px] font-medium tracking-wider text-muted-foreground uppercase">Ctrl + Enter para enviar</span>
-            <Button size="sm" onClick={send} disabled={!draft.trim()} className="rounded-xl px-4 text-xs font-medium">
+            <span className="text-[10px] font-medium tracking-wider text-muted-foreground uppercase">
+              Ctrl + Enter para enviar
+            </span>
+            <Button
+              size="sm"
+              onClick={send}
+              disabled={!draft.trim()}
+              className="rounded-xl px-4 text-xs font-medium"
+            >
               <Send className="mr-1.5 h-3.5 w-3.5" />
               Publicar
             </Button>

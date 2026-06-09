@@ -62,7 +62,8 @@ export function ProjectsError({ onRetry }: { onRetry: () => void }) {
         </span>
         <h3 className="text-base font-semibold">Não foi possível carregar os projetos</h3>
         <p className="max-w-sm text-sm text-muted-foreground">
-          Verifique sua conexão com o backend em <code>http://localhost:3333</code> e tente novamente.
+          Verifique sua conexão com o backend em <code>http://localhost:3333</code> e tente
+          novamente.
         </p>
         <Button variant="outline" size="sm" onClick={onRetry} className="rounded-xl">
           <RefreshCcw className="mr-1.5 h-3.5 w-3.5" />

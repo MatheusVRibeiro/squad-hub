@@ -68,45 +68,80 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     async ({ email, password }: SignInData) => {
       // In development you can bypass the API by using the TEMP_LOGIN query param
       // e.g. /login?tempLogin=1 — this will create a temporary user locally.
-      if (typeof window !== 'undefined' && window.location.search.includes('tempLogin')) {
+      if (typeof window !== "undefined" && window.location.search.includes("tempLogin")) {
         const tempUser: User = {
-          id: 'temp',
-          name: email.split('@')[0] ?? 'Usuário temporário',
+          id: "temp",
+          name: email.split("@")[0] ?? "Usuário temporário",
           email,
         };
-        persist('temp-token', tempUser);
+        persist("temp-token", tempUser);
         return;
       }
 
-      const { data } = await api.post<{ token: string; user: User }>('/sessions', {
+      const { data } = await api.post<{
+        sucesso: boolean;
+        message: string;
+        token: string;
+        dados: {
+          id: number;
+          nome: string;
+          email: string;
+          tipo: string;
+          bio?: string;
+          localizacao?: string;
+        };
+      }>("/login", {
         email,
-        password,
+        senha: password,
       });
-      persist(data.token, data.user);
+
+      const mappedUser: User = {
+        id: String(data.dados.id),
+        name: data.dados.nome,
+        email: data.dados.email,
+        bio: data.dados.bio,
+        location: data.dados.localizacao,
+        role: data.dados.tipo === "adm" ? "admin" : "user",
+      };
+
+      persist(data.token, mappedUser);
     },
     [persist],
   );
 
   const signInTemp = useCallback(
     async (payload?: SignInData & { role?: "admin" | "user" }) => {
-      const email = payload?.email ?? 'temp@example.com';
+      const email = payload?.email ?? "temp@example.com";
       const tempUser: User = {
-        id: 'temp',
-        name: email.split('@')[0] ?? 'Usuário temporário',
+        id: "temp",
+        name: email.split("@")[0] ?? "Usuário temporário",
         email,
-        role: payload?.role ?? 'user',
+        role: payload?.role ?? "user",
       };
-      persist('temp-token', tempUser);
+      persist("temp-token", tempUser);
     },
     [persist],
   );
 
   const signUp = useCallback(
     async (payload: SignUpData) => {
-      const { data } = await api.post<{ token: string; user: User }>("/users", payload);
-      if (data?.token && data?.user) {
-        persist(data.token, data.user);
-      }
+      await api.post<{
+        sucesso: boolean;
+        message: string;
+        dados: {
+          id: number;
+          nome: string;
+          email: string;
+          bio?: string;
+          localizacao?: string;
+        };
+      }>("/usuarios", {
+        nome: payload.name,
+        email: payload.email,
+        senha: payload.password,
+        bio: payload.bio,
+        localizacao: payload.location,
+      });
     },
     [persist],
   );

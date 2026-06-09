@@ -11,9 +11,25 @@ import { ProjectsEmpty, ProjectsError, ProjectsSkeleton } from "@/components/pro
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { fetchProjects, type Project, type ProjectStatus } from "@/services/projects";
 
+function fuzzyMatch(text: string, query: string): boolean {
+  if (!query) return true;
+  const t = text.toLowerCase();
+  const q = query.toLowerCase();
+  if (t.includes(q)) return true;
+
+  let qIdx = 0;
+  for (let tIdx = 0; tIdx < t.length; tIdx++) {
+    if (t[tIdx] === q[qIdx]) {
+      qIdx++;
+      if (qIdx === q.length) return true;
+    }
+  }
+  return false;
+}
+
 function ExplorarProjetosPage() {
   const [search, setSearch] = useState("");
-  const [technology, setTechnology] = useState<string>("all");
+  const [selectedTechs, setSelectedTechs] = useState<string[]>([]);
   const [status, setStatus] = useState<ProjectStatus | "all">("all");
   const [sort, setSort] = useState<SortKey>("recent");
 
@@ -32,11 +48,11 @@ function ExplorarProjetosPage() {
   }, [data]);
 
   const filtered = useMemo(() => {
-    const term = debouncedSearch.trim().toLowerCase();
+    const term = debouncedSearch.trim();
     let list: Project[] = (data ?? []).filter((p) => {
-      const matchesTerm =
-        !term || p.name.toLowerCase().includes(term) || p.description.toLowerCase().includes(term);
-      const matchesTech = technology === "all" || p.technologies.includes(technology);
+      const matchesTerm = !term || fuzzyMatch(p.name, term) || fuzzyMatch(p.description, term);
+      const matchesTech =
+        selectedTechs.length === 0 || selectedTechs.every((tech) => p.technologies.includes(tech));
       const matchesStatus = status === "all" || p.status === status;
       return matchesTerm && matchesTech && matchesStatus;
     });
@@ -56,11 +72,11 @@ function ExplorarProjetosPage() {
     });
 
     return list;
-  }, [data, debouncedSearch, technology, status, sort]);
+  }, [data, debouncedSearch, selectedTechs, status, sort]);
 
   function resetFilters() {
     setSearch("");
-    setTechnology("all");
+    setSelectedTechs([]);
     setStatus("all");
     setSort("recent");
   }
@@ -87,8 +103,8 @@ function ExplorarProjetosPage() {
           <ProjectsToolbar
             search={search}
             onSearchChange={setSearch}
-            technology={technology}
-            onTechnologyChange={setTechnology}
+            selectedTechs={selectedTechs}
+            onSelectedTechsChange={setSelectedTechs}
             status={status}
             onStatusChange={setStatus}
             sort={sort}

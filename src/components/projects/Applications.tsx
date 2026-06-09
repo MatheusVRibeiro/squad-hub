@@ -19,19 +19,19 @@ function initials(name: string) {
     .toUpperCase();
 }
 
-export function Applications({ 
-  initial, 
-  projectId, 
-  projectName 
-}: { 
-  initial: Application[]; 
-  projectId: string; 
-  projectName: string; 
+export function Applications({
+  initial,
+  projectId,
+  projectName,
+}: {
+  initial: Application[];
+  projectId: string;
+  projectName: string;
 }) {
   const [items, setItems] = useState<Application[]>(initial);
 
   async function decide(id: string, status: "approved" | "rejected") {
-    const app = items.find(a => a.id === id);
+    const app = items.find((a) => a.id === id);
     if (!app) return;
 
     // 1. Persiste localmente via serviço offline
@@ -60,7 +60,12 @@ export function Applications({
         ) : (
           <div className="grid gap-3">
             {pending.map((a) => (
-              <motion.div key={a.id} layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
+              <motion.div
+                key={a.id}
+                layout
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
                 <Card className="flex flex-col gap-4 rounded-2xl border border-border/50 bg-card/65 p-5 shadow-sm backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between transition-all duration-300 hover:border-primary/20 hover:shadow-md">
                   <div className="flex flex-1 items-start gap-4">
                     <Avatar className="h-11 w-11 border shadow-inner">
@@ -73,7 +78,11 @@ export function Applications({
                       <p className="text-sm text-muted-foreground leading-relaxed">{a.message}</p>
                       <div className="flex flex-wrap gap-1.5 pt-1">
                         {a.skills.map((s) => (
-                          <Badge key={s} variant="secondary" className="rounded-full text-[10px] font-medium tracking-wide">
+                          <Badge
+                            key={s}
+                            variant="secondary"
+                            className="rounded-full text-[10px] font-medium tracking-wide"
+                          >
                             {s}
                           </Badge>
                         ))}
@@ -106,7 +115,9 @@ export function Applications({
 
       {handled.length > 0 && (
         <section className="space-y-3">
-          <h3 className="text-xs font-bold tracking-wider text-muted-foreground uppercase">Histórico</h3>
+          <h3 className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
+            Histórico
+          </h3>
           <div className="grid gap-2.5">
             {handled.map((a) => (
               <Card

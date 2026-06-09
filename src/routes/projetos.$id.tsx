@@ -16,7 +16,11 @@ import { KanbanBoard } from "@/components/projects/KanbanBoard";
 import { Mural } from "@/components/projects/Mural";
 import { MembersList } from "@/components/projects/MembersList";
 import { Applications } from "@/components/projects/Applications";
-import { fetchProjectDetail, applyToProjectLocal, closeProjectLocal } from "@/services/projectDetail";
+import {
+  fetchProjectDetail,
+  applyToProjectLocal,
+  closeProjectLocal,
+} from "@/services/projectDetail";
 import { useAuth } from "@/contexts/AuthContext";
 import { notificationsIntegration } from "@/services/notificationsIntegration";
 import { useQueryClient } from "@tanstack/react-query";
@@ -55,7 +59,10 @@ function ApplicationForm({
     }
     setSubmitting(true);
     try {
-      const skillsArray = skills.split(",").map((s) => s.trim()).filter(Boolean);
+      const skillsArray = skills
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
       await applyToProjectLocal(projectId, {
         name: user?.name || "Usuário",
         message: message.trim(),
@@ -113,21 +120,22 @@ function ProjectDetailPage() {
     queryFn: () => fetchProjectDetail(id),
   });
 
-  const isOwner = data
-    ? data.createdBy === user?.name || data.createdBy === "Você"
-    : false;
-    
-  const isMember = data
-    ? isOwner || data.members.some((m) => m.name === user?.name)
-    : false;
+  const isOwner = data ? data.createdBy === user?.name || data.createdBy === "Você" : false;
+
+  const isMember = data ? isOwner || data.members.some((m) => m.name === user?.name) : false;
 
   const application = data?.applications.find((a) => a.name === user?.name);
   const hasApplied = !!application && application.status === "pending";
 
   async function handleCloseProject() {
     if (!data) return;
-    if (!window.confirm(`Tem certeza que deseja encerrar o projeto "${data.name}"? Ele continuará listado, mas com o status "Finalizado".`)) return;
-    
+    if (
+      !window.confirm(
+        `Tem certeza que deseja encerrar o projeto "${data.name}"? Ele continuará listado, mas com o status "Finalizado".`,
+      )
+    )
+      return;
+
     setClosing(true);
     try {
       await closeProjectLocal(data.id);
@@ -178,10 +186,18 @@ function ProjectDetailPage() {
                         </h1>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge variant="outline" className={cn("rounded-full", data.status === "Finalizado" ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/20" : "")}>
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "rounded-full",
+                            data.status === "Finalizado"
+                              ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/20"
+                              : "",
+                          )}
+                        >
                           {data.status}
                         </Badge>
-                        
+
                         {isOwner && data.status !== "Finalizado" && (
                           <Button
                             size="sm"
@@ -193,21 +209,33 @@ function ProjectDetailPage() {
                             {closing ? "Encerrando..." : "Encerrar Projeto"}
                           </Button>
                         )}
-                        
+
                         {!isMember && (
                           <div className="flex items-center gap-2">
                             {hasApplied ? (
-                              <Button disabled size="sm" className="rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-400">
+                              <Button
+                                disabled
+                                size="sm"
+                                className="rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                              >
                                 Candidatura Pendente
                               </Button>
                             ) : application?.status === "rejected" ? (
-                              <Button disabled variant="destructive" size="sm" className="rounded-xl">
+                              <Button
+                                disabled
+                                variant="destructive"
+                                size="sm"
+                                className="rounded-xl"
+                              >
                                 Recusado
                               </Button>
                             ) : (
                               <Dialog>
                                 <DialogTrigger asChild>
-                                  <Button size="sm" className="rounded-xl bg-gradient-to-r from-primary to-primary/80">
+                                  <Button
+                                    size="sm"
+                                    className="rounded-xl bg-gradient-to-r from-primary to-primary/80"
+                                  >
                                     Candidatar-se ao Squad
                                   </Button>
                                 </DialogTrigger>
@@ -215,10 +243,15 @@ function ProjectDetailPage() {
                                   <DialogHeader>
                                     <DialogTitle>Candidatura para o Squad</DialogTitle>
                                     <DialogDescription>
-                                      Conte ao criador do projeto por que você gostaria de participar e quais habilidades pode agregar.
+                                      Conte ao criador do projeto por que você gostaria de
+                                      participar e quais habilidades pode agregar.
                                     </DialogDescription>
                                   </DialogHeader>
-                                  <ApplicationForm projectId={data.id} projectName={data.name} onSubmitted={refetch} />
+                                  <ApplicationForm
+                                    projectId={data.id}
+                                    projectName={data.name}
+                                    onSubmitted={refetch}
+                                  />
                                 </DialogContent>
                               </Dialog>
                             )}
@@ -254,7 +287,10 @@ function ProjectDetailPage() {
                   <span className="grid h-8 w-8 place-items-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
                     <Lock className="h-4 w-4 shrink-0" />
                   </span>
-                  <span>Você está visualizando este projeto como visitante. Para participar do mural ou do quadro Kanban, candidate-se ao squad.</span>
+                  <span>
+                    Você está visualizando este projeto como visitante. Para participar do mural ou
+                    do quadro Kanban, candidate-se ao squad.
+                  </span>
                 </div>
               )}
 
@@ -267,7 +303,10 @@ function ProjectDetailPage() {
                     <TabsTrigger value="candidaturas">
                       Candidaturas
                       {data.applications.filter((a) => a.status === "pending").length > 0 && (
-                        <Badge variant="secondary" className="ml-2 h-5 rounded-full px-1.5 text-[10px]">
+                        <Badge
+                          variant="secondary"
+                          className="ml-2 h-5 rounded-full px-1.5 text-[10px]"
+                        >
                           {data.applications.filter((a) => a.status === "pending").length}
                         </Badge>
                       )}
@@ -275,19 +314,20 @@ function ProjectDetailPage() {
                   )}
                 </TabsList>
                 <TabsContent value="kanban">
-                  <KanbanBoard 
-                    initial={data.tasks} 
-                    projectId={data.id} 
-                    projectName={data.name} 
-                    readOnly={!isMember} 
+                  <KanbanBoard
+                    initial={data.tasks}
+                    projectId={data.id}
+                    projectName={data.name}
+                    readOnly={!isMember}
+                    members={data.members}
                   />
                 </TabsContent>
                 <TabsContent value="mural">
-                  <Mural 
-                    initial={data.messages} 
-                    projectId={data.id} 
-                    projectName={data.name} 
-                    readOnly={!isMember} 
+                  <Mural
+                    initial={data.messages}
+                    projectId={data.id}
+                    projectName={data.name}
+                    readOnly={!isMember}
                   />
                 </TabsContent>
                 <TabsContent value="membros">
@@ -295,10 +335,10 @@ function ProjectDetailPage() {
                 </TabsContent>
                 {isOwner && (
                   <TabsContent value="candidaturas">
-                    <Applications 
-                      initial={data.applications} 
-                      projectId={data.id} 
-                      projectName={data.name} 
+                    <Applications
+                      initial={data.applications}
+                      projectId={data.id}
+                      projectName={data.name}
                     />
                   </TabsContent>
                 )}

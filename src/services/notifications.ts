@@ -80,7 +80,9 @@ export function saveLocalNotifications(notifications: AppNotification[]) {
   }
 }
 
-export function addLocalNotification(n: Omit<AppNotification, "id" | "createdAt" | "read">): AppNotification {
+export function addLocalNotification(
+  n: Omit<AppNotification, "id" | "createdAt" | "read">,
+): AppNotification {
   const notifications = getLocalNotifications();
   const newNotif: AppNotification = {
     ...n,

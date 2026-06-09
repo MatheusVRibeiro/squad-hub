@@ -72,11 +72,11 @@
   --primary: oklch(0.55 0.22 263);
   --primary-foreground: oklch(0.99 0.005 247);
   --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.30 0.08 263);
+  --secondary-foreground: oklch(0.3 0.08 263);
   --muted: oklch(0.968 0.007 247.896);
   --muted-foreground: oklch(0.554 0.046 257.417);
   --accent: oklch(0.95 0.04 263);
-  --accent-foreground: oklch(0.30 0.10 263);
+  --accent-foreground: oklch(0.3 0.1 263);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.984 0.003 247.858);
   --border: oklch(0.929 0.013 255.508);
@@ -137,8 +137,8 @@
 }
 
 @theme inline {
-  --font-sans: 'Inter', sans-serif;
-  --font-heading: 'Outfit', sans-serif;
+  --font-sans: "Inter", sans-serif;
+  --font-heading: "Outfit", sans-serif;
 }
 
 @layer base {
@@ -152,7 +152,12 @@
     font-family: var(--font-sans);
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: var(--font-heading);
     letter-spacing: -0.02em;
   }

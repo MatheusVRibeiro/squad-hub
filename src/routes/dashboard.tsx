@@ -75,7 +75,7 @@ function DashboardPage() {
       { name: "Aberto", value: counts["Aberto"], color: "#6366f1" },
       { name: "Em progresso", value: counts["Em andamento"], color: "#f59e0b" },
       { name: "Finalizado", value: counts["Finalizado"], color: "#10b981" },
-    ].filter(item => item.value > 0);
+    ].filter((item) => item.value > 0);
   }, [projects]);
 
   // 2. Agregação dinâmica das tarefas de todos os projetos para o gráfico de Barras
@@ -90,7 +90,7 @@ function DashboardPage() {
         if (detailStr) {
           try {
             const detail = JSON.parse(detailStr);
-            detail.tasks.forEach((t: any) => {
+            detail.tasks.forEach((t: { status: string }) => {
               if (t.status === "todo") todo++;
               else if (t.status === "doing") doing++;
               else if (t.status === "done") done++;
@@ -185,7 +185,8 @@ function DashboardPage() {
                 <div className="space-y-1">
                   <Progress value={xpProgressPercent} className="h-2" />
                   <p className="text-[10px] text-right text-muted-foreground">
-                    Faltam {reputation ? reputation.xpToNext - reputation.xp : 380} XP para o próximo nível
+                    Faltam {reputation ? reputation.xpToNext - reputation.xp : 380} XP para o
+                    próximo nível
                   </p>
                 </div>
               </CardContent>
@@ -213,7 +214,12 @@ function DashboardPage() {
                 </span>
                 <div>
                   <p className="text-xs font-medium text-muted-foreground">Tarefas Entregues</p>
-                  <p className="text-2xl font-bold">{completedTasksCount} <span className="text-xs font-normal text-muted-foreground">/ {totalTasksCount}</span></p>
+                  <p className="text-2xl font-bold">
+                    {completedTasksCount}{" "}
+                    <span className="text-xs font-normal text-muted-foreground">
+                      / {totalTasksCount}
+                    </span>
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -249,24 +255,42 @@ function DashboardPage() {
             <Card className="rounded-2xl border-border/60 md:col-span-2">
               <CardHeader>
                 <CardTitle className="text-lg">Progresso Semanal (XP)</CardTitle>
-                <CardDescription>Fluxo acumulado de pontuações obtidas completando tarefas e revisões.</CardDescription>
+                <CardDescription>
+                  Fluxo acumulado de pontuações obtidas completando tarefas e revisões.
+                </CardDescription>
               </CardHeader>
               <CardContent className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={xpProgressionData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <AreaChart
+                    data={xpProgressionData}
+                    margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                  >
                     <defs>
                       <linearGradient id="colorXp" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <XAxis dataKey="dia" stroke="#94a3b8" fontSize={11} tickLine={false} />
                     <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} />
-                    <ReChartsTooltip 
-                      contentStyle={{ background: "var(--card)", borderColor: "var(--border)", borderRadius: "12px", fontSize: "12px" }}
+                    <ReChartsTooltip
+                      contentStyle={{
+                        background: "var(--card)",
+                        borderColor: "var(--border)",
+                        borderRadius: "12px",
+                        fontSize: "12px",
+                      }}
                       labelStyle={{ fontWeight: "bold" }}
                     />
-                    <Area type="monotone" dataKey="xp" name="XP Acumulado" stroke="#6366f1" strokeWidth={2.5} fillOpacity={1} fill="url(#colorXp)" />
+                    <Area
+                      type="monotone"
+                      dataKey="xp"
+                      name="XP Acumulado"
+                      stroke="#6366f1"
+                      strokeWidth={2.5}
+                      fillOpacity={1}
+                      fill="url(#colorXp)"
+                    />
                   </AreaChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -280,7 +304,9 @@ function DashboardPage() {
               </CardHeader>
               <CardContent className="flex h-72 flex-col justify-center">
                 {projectStatusData.length === 0 ? (
-                  <p className="text-center text-xs text-muted-foreground">Nenhum projeto registrado.</p>
+                  <p className="text-center text-xs text-muted-foreground">
+                    Nenhum projeto registrado.
+                  </p>
                 ) : (
                   <>
                     <div className="h-44">
@@ -300,7 +326,12 @@ function DashboardPage() {
                             ))}
                           </Pie>
                           <ReChartsTooltip
-                            contentStyle={{ background: "var(--card)", borderColor: "var(--border)", borderRadius: "12px", fontSize: "12px" }}
+                            contentStyle={{
+                              background: "var(--card)",
+                              borderColor: "var(--border)",
+                              borderRadius: "12px",
+                              fontSize: "12px",
+                            }}
                           />
                         </PieChart>
                       </ResponsiveContainer>
@@ -309,8 +340,13 @@ function DashboardPage() {
                     <div className="mt-4 flex justify-center gap-4 text-xs">
                       {projectStatusData.map((entry) => (
                         <div key={entry.name} className="flex items-center gap-1.5">
-                          <span className="h-3 w-3 rounded-full" style={{ backgroundColor: entry.color }} />
-                          <span className="font-medium text-muted-foreground">{entry.name} ({entry.value})</span>
+                          <span
+                            className="h-3 w-3 rounded-full"
+                            style={{ backgroundColor: entry.color }}
+                          />
+                          <span className="font-medium text-muted-foreground">
+                            {entry.name} ({entry.value})
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -323,15 +359,30 @@ function DashboardPage() {
             <Card className="rounded-2xl border-border/60 md:col-span-3">
               <CardHeader>
                 <CardTitle className="text-lg">Métricas das Tarefas</CardTitle>
-                <CardDescription>Relação de status de todos os cartões nos Kanbans dos seus squads.</CardDescription>
+                <CardDescription>
+                  Relação de status de todos os cartões nos Kanbans dos seus squads.
+                </CardDescription>
               </CardHeader>
               <CardContent className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={taskStatusData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <XAxis dataKey="name" stroke="oklch(0.554 0.046 257.417)" fontSize={11} tickLine={false} />
+                  <BarChart
+                    data={taskStatusData}
+                    margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                  >
+                    <XAxis
+                      dataKey="name"
+                      stroke="oklch(0.554 0.046 257.417)"
+                      fontSize={11}
+                      tickLine={false}
+                    />
                     <YAxis stroke="oklch(0.554 0.046 257.417)" fontSize={11} tickLine={false} />
                     <ReChartsTooltip
-                      contentStyle={{ background: "var(--card)", borderColor: "var(--border)", borderRadius: "12px", fontSize: "12px" }}
+                      contentStyle={{
+                        background: "var(--card)",
+                        borderColor: "var(--border)",
+                        borderRadius: "12px",
+                        fontSize: "12px",
+                      }}
                     />
                     <Legend wrapperStyle={{ fontSize: "11px" }} />
                     <Bar dataKey="quantidade" name="Quantidade de tarefas" radius={[6, 6, 0, 0]}>
@@ -347,7 +398,9 @@ function DashboardPage() {
 
           {/* Atalhos Rápidos */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">Atalhos da Plataforma</h3>
+            <h3 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+              Atalhos da Plataforma
+            </h3>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {tiles.map((tile, i) => (
                 <motion.div

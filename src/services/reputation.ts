@@ -45,11 +45,31 @@ const MOCK: Reputation = {
   reviewsCount: 12,
   projectsCompleted: 5,
   achievements: [
-    { id: "a1", label: "Primeiro squad", description: "Participou do primeiro projeto.", icon: "rocket" },
-    { id: "a2", label: "Top contributor", description: "Top 3 em entregas no squad.", icon: "trophy" },
+    {
+      id: "a1",
+      label: "Primeiro squad",
+      description: "Participou do primeiro projeto.",
+      icon: "rocket",
+    },
+    {
+      id: "a2",
+      label: "Top contributor",
+      description: "Top 3 em entregas no squad.",
+      icon: "trophy",
+    },
     { id: "a3", label: "Code reviewer", description: "Revisou 20+ tarefas.", icon: "code" },
-    { id: "a4", label: "5 estrelas", description: "Recebeu nota máxima de outro membro.", icon: "star" },
-    { id: "a5", label: "Squad builder", description: "Criou um projeto que completou squad.", icon: "users" },
+    {
+      id: "a4",
+      label: "5 estrelas",
+      description: "Recebeu nota máxima de outro membro.",
+      icon: "star",
+    },
+    {
+      id: "a5",
+      label: "Squad builder",
+      description: "Criou um projeto que completou squad.",
+      icon: "users",
+    },
     { id: "a6", label: "Streak 7 dias", description: "Ativo por 7 dias seguidos.", icon: "flame" },
   ],
   reviews: [
@@ -106,12 +126,65 @@ const MOCK: Reputation = {
   ],
 };
 
+export function getLocalReputation(): Reputation {
+  if (typeof window === "undefined") return MOCK;
+  const stored = window.localStorage.getItem("@montesquad:reputation");
+  if (!stored) {
+    window.localStorage.setItem("@montesquad:reputation", JSON.stringify(MOCK));
+    return MOCK;
+  }
+  try {
+    return JSON.parse(stored);
+  } catch {
+    return MOCK;
+  }
+}
+
+export function saveLocalReputation(rep: Reputation) {
+  if (typeof window !== "undefined") {
+    window.localStorage.setItem("@montesquad:reputation", JSON.stringify(rep));
+  }
+}
+
 export async function fetchReputation(userId?: string): Promise<Reputation> {
   try {
     const { data } = await api.get<Reputation>(`/usuarios/${userId ?? "me"}/reputacao`);
-    if (data && typeof data.level === "number") return data;
+    if (data && typeof data.level === "number") {
+      saveLocalReputation(data);
+      return data;
+    }
   } catch {
     // fallback
   }
-  return MOCK;
+  return getLocalReputation();
+}
+
+export async function awardLocalXP(
+  amount: number,
+): Promise<{ levelUp: boolean; nextLevel: number }> {
+  const rep = getLocalReputation();
+  let xp = rep.xp + amount;
+  let level = rep.level;
+  let xpToNext = rep.xpToNext;
+  let levelUp = false;
+
+  while (xp >= xpToNext) {
+    xp -= xpToNext;
+    level += 1;
+    xpToNext = level * 250; // progressiva simples
+    levelUp = true;
+  }
+
+  const updatedRep: Reputation = { ...rep, level, xp, xpToNext };
+  saveLocalReputation(updatedRep);
+
+  if (levelUp && typeof window !== "undefined") {
+    window.dispatchEvent(
+      new CustomEvent("squadhub:levelup", {
+        detail: { level, xpToNext },
+      }),
+    );
+  }
+
+  return { levelUp, nextLevel: level };
 }

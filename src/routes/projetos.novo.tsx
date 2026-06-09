@@ -76,9 +76,12 @@ function NovoProjetoPage() {
         <div className="mx-auto w-full max-w-2xl space-y-8 py-4">
           <div className="space-y-2 text-center sm:text-left">
             <p className="text-xs font-bold tracking-widest text-primary uppercase">Workspace</p>
-            <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Criar novo projeto</h1>
+            <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
+              Criar novo projeto
+            </h1>
             <p className="text-sm text-muted-foreground max-w-md">
-              Defina escopo, stack de tecnologias e o tamanho ideal do squad. Como criador, você será o proprietário.
+              Defina escopo, stack de tecnologias e o tamanho ideal do squad. Como criador, você
+              será o proprietário.
             </p>
           </div>
 
@@ -91,9 +94,15 @@ function NovoProjetoPage() {
                     name="name"
                     render={({ field }) => (
                       <FormItem className="space-y-1.5">
-                        <FormLabel className="text-xs font-semibold text-foreground/80 tracking-wide uppercase">Nome do projeto</FormLabel>
+                        <FormLabel className="text-xs font-semibold text-foreground/80 tracking-wide uppercase">
+                          Nome do projeto
+                        </FormLabel>
                         <FormControl>
-                          <Input placeholder="Ex: API de Pagamentos" className="h-11 rounded-xl border-border/60 bg-background/40 px-4 focus-visible:ring-primary/20 text-sm" {...field} />
+                          <Input
+                            placeholder="Ex: API de Pagamentos"
+                            className="h-11 rounded-xl border-border/60 bg-background/40 px-4 focus-visible:ring-primary/20 text-sm"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -105,7 +114,9 @@ function NovoProjetoPage() {
                     name="description"
                     render={({ field }) => (
                       <FormItem className="space-y-1.5">
-                        <FormLabel className="text-xs font-semibold text-foreground/80 tracking-wide uppercase">Descrição curta</FormLabel>
+                        <FormLabel className="text-xs font-semibold text-foreground/80 tracking-wide uppercase">
+                          Descrição curta
+                        </FormLabel>
                         <FormControl>
                           <Textarea
                             rows={3}
@@ -120,7 +131,9 @@ function NovoProjetoPage() {
                   />
 
                   <FormItem className="space-y-2">
-                    <Label className="text-xs font-semibold text-foreground/80 tracking-wide uppercase">Tecnologias necessárias</Label>
+                    <Label className="text-xs font-semibold text-foreground/80 tracking-wide uppercase">
+                      Tecnologias necessárias
+                    </Label>
                     <div className="flex gap-2">
                       <Input
                         value={draft}
@@ -166,7 +179,9 @@ function NovoProjetoPage() {
                     name="membersLimit"
                     render={({ field }) => (
                       <FormItem className="space-y-1.5">
-                        <FormLabel className="text-xs font-semibold text-foreground/80 tracking-wide uppercase">Tamanho limite do squad</FormLabel>
+                        <FormLabel className="text-xs font-semibold text-foreground/80 tracking-wide uppercase">
+                          Tamanho limite do squad
+                        </FormLabel>
                         <FormControl>
                           <Input
                             type="number"

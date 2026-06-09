@@ -90,12 +90,7 @@ export function NotificationsMenu() {
             </p>
           </div>
           {unread > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={readAll}
-              className="h-8 rounded-lg text-xs"
-            >
+            <Button variant="ghost" size="sm" onClick={readAll} className="h-8 rounded-lg text-xs">
               <CheckCheck className="mr-1.5 h-3.5 w-3.5" /> Marcar como lidas
             </Button>
           )}
@@ -123,10 +118,7 @@ export function NotificationsMenu() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2">
                         <p
-                          className={cn(
-                            "truncate text-sm",
-                            n.read ? "font-normal" : "font-medium",
-                          )}
+                          className={cn("truncate text-sm", n.read ? "font-normal" : "font-medium")}
                         >
                           {n.title}
                         </p>
@@ -138,9 +130,7 @@ export function NotificationsMenu() {
                         {n.description}
                       </p>
                     </div>
-                    {!n.read && (
-                      <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary" />
-                    )}
+                    {!n.read && <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary" />}
                   </div>
                 );
                 return (
@@ -148,9 +138,7 @@ export function NotificationsMenu() {
                     {n.link ? (
                       <Link
                         to={n.link}
-                        onClick={() =>
-                          setReadOverrides((prev) => ({ ...prev, [n.id]: true }))
-                        }
+                        onClick={() => setReadOverrides((prev) => ({ ...prev, [n.id]: true }))}
                         className="block"
                       >
                         {body}

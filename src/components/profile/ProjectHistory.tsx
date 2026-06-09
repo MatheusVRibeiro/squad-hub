@@ -18,15 +18,15 @@ export function ProjectHistory({ items }: { items: HistoryEntry[] }) {
   }
 
   return (
-    <div className="relative space-y-3 border-l border-border/70 pl-5">
+    <div className="relative space-y-3 border-l border-border pl-5">
       {items.map((h) => (
         <div key={h.id} className="relative">
-          <span className="absolute -left-[27px] top-4 h-2.5 w-2.5 rounded-full bg-primary ring-4 ring-background" />
-          <Card className="rounded-2xl border-border/60">
+          <span className="absolute -left-[25.5px] top-4 h-2.5 w-2.5 rounded-full bg-primary ring-4 ring-background" />
+          <Card className="rounded-2xl border-border/60 bg-card">
             <CardContent className="space-y-2 p-4">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{h.projectName}</p>
+                  <p className="truncate text-sm font-semibold text-foreground">{h.projectName}</p>
                   <p className="text-xs text-muted-foreground">
                     {h.role} · {h.period}
                   </p>

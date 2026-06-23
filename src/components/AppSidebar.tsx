@@ -32,8 +32,8 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="border-b">
-        <Link to="/dashboard" className="flex items-center gap-2 px-2 py-1.5">
+      <SidebarHeader className="h-14 border-b justify-center">
+        <Link to="/dashboard" className="flex items-center gap-2 px-2">
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground">
             <Sparkles className="h-4 w-4" />
           </span>

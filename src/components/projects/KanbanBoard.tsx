@@ -160,23 +160,6 @@ export function KanbanBoard({
     );
   }
 
-  async function add(status: KanbanStatus) {
-    if (readOnly) return;
-    const taskTitle = draft.trim();
-    if (!taskTitle) return;
-
-    // 1. Persiste localmente
-    const createdTask = await addLocalTask(projectId, taskTitle);
-
-    setTasks((t) => [...t, createdTask]);
-    toast.success("Tarefa criada");
-    setDraft("");
-    setDraftCol(null);
-
-    // 2. Dispara notificação
-    notificationsIntegration.notifyTaskActivity(projectName, taskTitle, "created", "", projectId);
-  }
-
   async function handleAssign(taskId: string, assigneeName: string | undefined) {
     if (readOnly) return;
 

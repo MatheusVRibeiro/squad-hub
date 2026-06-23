@@ -23,11 +23,30 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { createProject } from "@/services/projectDetail";
+import { cn } from "@/lib/utils";
+
+const POPULAR_TECHS = [
+  "React",
+  "Node.js",
+  "TypeScript",
+  "Python",
+  "Docker",
+  "Figma",
+  "UI/UX",
+  "DevOps",
+  "Java",
+  "C#",
+  "SQL",
+];
 
 const schema = z.object({
   name: z.string().min(3, "Mínimo 3 caracteres").max(80),
   description: z.string().min(10, "Descreva com pelo menos 10 caracteres").max(500),
   membersLimit: z.number().int().min(2, "Mínimo 2").max(20, "Máximo 20"),
+  repositorioUrl: z.string().url("URL inválida").or(z.literal("")).optional(),
+  figmaUrl: z.string().url("URL inválida").or(z.literal("")).optional(),
+  discordUrl: z.string().url("URL inválida").or(z.literal("")).optional(),
+  documentacaoUrl: z.string().url("URL inválida").or(z.literal("")).optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -44,7 +63,15 @@ function NovoProjetoPage() {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { name: "", description: "", membersLimit: 5 },
+    defaultValues: {
+      name: "",
+      description: "",
+      membersLimit: 5,
+      repositorioUrl: "",
+      figmaUrl: "",
+      discordUrl: "",
+      documentacaoUrl: "",
+    },
   });
 
   function addTech(value: string) {
@@ -156,6 +183,34 @@ function NovoProjetoPage() {
                         <Plus className="h-4 w-4" />
                       </Button>
                     </div>
+
+                    {/* Sugestões Rápidas */}
+                    <div className="flex flex-wrap gap-1.5 pt-0.5">
+                      {POPULAR_TECHS.map((t) => {
+                        const isAdded = techs.includes(t);
+                        return (
+                          <button
+                            key={t}
+                            type="button"
+                            disabled={isAdded}
+                            onClick={() => addTech(t)}
+                            className="outline-none disabled:opacity-50"
+                          >
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                "cursor-pointer rounded-full px-2.5 py-0.5 text-[10px] transition-all font-medium border",
+                                isAdded
+                                  ? "bg-muted text-muted-foreground border-border cursor-not-allowed"
+                                  : "bg-background/20 border-border/80 text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5"
+                              )}
+                            >
+                              + {t}
+                            </Badge>
+                          </button>
+                        );
+                      })}
+                    </div>
                     {techs.length > 0 && (
                       <div className="mt-2.5 flex flex-wrap gap-1.5">
                         {techs.map((t) => (
@@ -196,6 +251,94 @@ function NovoProjetoPage() {
                       </FormItem>
                     )}
                   />
+
+                  <div className="space-y-4 border-t border-border/20 pt-4">
+                    <h3 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+                      Links de Trabalho (Opcional)
+                    </h3>
+                    
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <FormField
+                        control={form.control}
+                        name="repositorioUrl"
+                        render={({ field }) => (
+                          <FormItem className="space-y-1.5">
+                            <FormLabel className="text-xs font-semibold text-foreground/80 tracking-wide uppercase">
+                              Código Fonte (GitHub)
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="https://github.com/usuario/projeto"
+                                className="h-11 rounded-xl border-border/60 bg-background/40 px-4 focus-visible:ring-primary/20 text-sm"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="figmaUrl"
+                        render={({ field }) => (
+                          <FormItem className="space-y-1.5">
+                            <FormLabel className="text-xs font-semibold text-foreground/80 tracking-wide uppercase">
+                              Protótipo (Figma)
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="https://figma.com/file/..."
+                                className="h-11 rounded-xl border-border/60 bg-background/40 px-4 focus-visible:ring-primary/20 text-sm"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="discordUrl"
+                        render={({ field }) => (
+                          <FormItem className="space-y-1.5">
+                            <FormLabel className="text-xs font-semibold text-foreground/80 tracking-wide uppercase">
+                              Comunicação (Discord/Slack)
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="https://discord.gg/..."
+                                className="h-11 rounded-xl border-border/60 bg-background/40 px-4 focus-visible:ring-primary/20 text-sm"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="documentacaoUrl"
+                        render={({ field }) => (
+                          <FormItem className="space-y-1.5">
+                            <FormLabel className="text-xs font-semibold text-foreground/80 tracking-wide uppercase">
+                              Documentação (Notion/Wiki)
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="https://notion.so/..."
+                                className="h-11 rounded-xl border-border/60 bg-background/40 px-4 focus-visible:ring-primary/20 text-sm"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
 
                   <div className="flex justify-end gap-3 pt-4 border-t border-border/30">
                     <Button

@@ -4,7 +4,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Check, ChevronsUpDown } from "lucide-react";
 import axios from "axios";
 
 import { AuthLayout } from "@/layouts/AuthLayout";
@@ -15,8 +15,50 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { Popover, PopoverTrigger, PopoverContent, PopoverAnchor } from "@/components/ui/popover";
+import {
+  Command,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+} from "@/components/ui/command";
 
 const SKILLS = ["React", "Node.js", "Python", "Docker", "UI/UX", "DevOps"] as const;
+
+const BRAZILIAN_STATES = [
+  { value: "AC", label: "Acre - AC" },
+  { value: "AL", label: "Alagoas - AL" },
+  { value: "AP", label: "Amapá - AP" },
+  { value: "AM", label: "Amazonas - AM" },
+  { value: "BA", label: "Bahia - BA" },
+  { value: "CE", label: "Ceará - CE" },
+  { value: "DF", label: "Distrito Federal - DF" },
+  { value: "ES", label: "Espírito Santo - ES" },
+  { value: "GO", label: "Goiás - GO" },
+  { value: "MA", label: "Maranhão - MA" },
+  { value: "MT", label: "Mato Grosso - MT" },
+  { value: "MS", label: "Mato Grosso do Sul - MS" },
+  { value: "MG", label: "Minas Gerais - MG" },
+  { value: "PA", label: "Pará - PA" },
+  { value: "PB", label: "Paraíba - PB" },
+  { value: "PR", label: "Paraná - PR" },
+  { value: "PE", label: "Pernambuco - PE" },
+  { value: "PI", label: "Piauí - PI" },
+  { value: "RJ", label: "Rio de Janeiro - RJ" },
+  { value: "RN", label: "Rio Grande do Norte - RN" },
+  { value: "RS", label: "Rio Grande do Sul - RS" },
+  { value: "RO", label: "Rondônia - RO" },
+  { value: "RR", label: "Roraima - RR" },
+  { value: "SC", label: "Santa Catarina - SC" },
+  { value: "SP", label: "São Paulo - SP" },
+  { value: "SE", label: "Sergipe - SE" },
+  { value: "TO", label: "Tocantins - TO" },
+];
+
+const normalizeText = (text: string) =>
+  text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
 const schema = z.object({
   name: z.string().trim().min(2, "Informe seu nome").max(80),
@@ -32,6 +74,8 @@ function RegisterPage() {
   const { signUp, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
+  const [locationOpen, setLocationOpen] = useState(false);
+  const [locationSearch, setLocationSearch] = useState("");
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) navigate({ to: "/dashboard" });
@@ -41,11 +85,20 @@ function RegisterPage() {
     register,
     handleSubmit,
     control,
+    watch,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { skills: [] },
   });
+
+  const locationValue = watch("location");
+
+  useEffect(() => {
+    if (!locationOpen) {
+      setLocationSearch(locationValue || "");
+    }
+  }, [locationValue, locationOpen]);
 
   const onSubmit = async (values: FormValues) => {
     setSubmitting(true);
@@ -134,13 +187,94 @@ function RegisterPage() {
               htmlFor="location"
               className="text-xs font-semibold text-foreground/80 tracking-wide uppercase"
             >
-              Localização
+              Localização (Estado)
             </Label>
-            <Input
-              id="location"
-              placeholder="Cidade, País"
-              className="h-11 rounded-xl border border-border/60 bg-background/40 px-4 focus-visible:ring-primary/20 text-sm"
-              {...register("location")}
+            <Controller
+              control={control}
+              name="location"
+              render={({ field }) => (
+                <Popover
+                  open={locationOpen}
+                  onOpenChange={(open) => {
+                    setLocationOpen(open);
+                    if (!open) {
+                      setLocationSearch(field.value || "");
+                    }
+                  }}
+                >
+                  <PopoverAnchor asChild>
+                    <div className="relative w-full">
+                      <Input
+                        id="location"
+                        value={locationSearch}
+                        onChange={(e) => {
+                          setLocationSearch(e.target.value);
+                          setLocationOpen(true);
+                          if (!e.target.value) {
+                            field.onChange("");
+                          }
+                        }}
+                        onFocus={() => setLocationOpen(true)}
+                        onClick={() => setLocationOpen(true)}
+                        placeholder="Selecione seu estado..."
+                        className="h-11 w-full rounded-xl border border-border/60 bg-background/40 px-4 pr-10 focus-visible:ring-primary/20 text-sm"
+                      />
+                      <ChevronsUpDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 shrink-0 opacity-50 pointer-events-none" />
+                    </div>
+                  </PopoverAnchor>
+                  <PopoverContent
+                    className="w-[var(--radix-popover-trigger-width)] p-0 rounded-2xl border border-border/60 shadow-lg bg-card"
+                    align="start"
+                    onOpenAutoFocus={(e) => e.preventDefault()}
+                    onInteractOutside={(e) => {
+                      if (e.target === document.getElementById("location")) {
+                        e.preventDefault();
+                      }
+                    }}
+                  >
+                    <Command>
+                      <CommandList>
+                        {(() => {
+                          const filtered = BRAZILIAN_STATES.filter((st) =>
+                            normalizeText(st.label).includes(normalizeText(locationSearch))
+                          );
+                          if (filtered.length === 0) {
+                            return (
+                              <CommandEmpty className="py-3 text-center text-sm text-muted-foreground">
+                                Nenhum estado encontrado.
+                              </CommandEmpty>
+                            );
+                          }
+                          return (
+                            <CommandGroup className="max-h-60 overflow-y-auto">
+                              {filtered.map((st) => (
+                                <CommandItem
+                                  key={st.value}
+                                  value={st.label}
+                                  onSelect={() => {
+                                    field.onChange(st.label);
+                                    setLocationSearch(st.label);
+                                    setLocationOpen(false);
+                                  }}
+                                  className="cursor-pointer"
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      field.value === st.label ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  {st.label}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          );
+                        })()}
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              )}
             />
           </div>
           <div className="space-y-1.5">

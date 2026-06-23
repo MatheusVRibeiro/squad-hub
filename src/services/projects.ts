@@ -12,6 +12,10 @@ export type Project = {
   membersLimit: number;
   createdBy: string;
   createdAt: string; // ISO
+  repositorioUrl?: string;
+  figmaUrl?: string;
+  discordUrl?: string;
+  documentacaoUrl?: string;
 };
 
 export const MOCK_PROJECTS: Project[] = [
@@ -124,6 +128,10 @@ export async function fetchProjects(): Promise<Project[]> {
         limite_membros: number;
         criado_em: string;
         total_membros: number;
+        repositorio_url?: string | null;
+        figma_url?: string | null;
+        discord_url?: string | null;
+        documentacao_url?: string | null;
       }[];
     }>("/projetos");
 
@@ -143,6 +151,10 @@ export async function fetchProjects(): Promise<Project[]> {
           membersLimit: p.limite_membros,
           createdBy: p.criador_nome || "Desconhecido",
           createdAt: p.criado_em,
+          repositorioUrl: p.repositorio_url || undefined,
+          figmaUrl: p.figma_url || undefined,
+          discordUrl: p.discord_url || undefined,
+          documentacaoUrl: p.documentacao_url || undefined,
         };
       });
       saveLocalProjects(mapped);

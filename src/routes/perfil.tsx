@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Loader2, Plus, X, Github } from "lucide-react";
+import { Loader2, Plus, X, Github, Check, ChevronsUpDown } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppLayout } from "@/layouts/AppLayout";
@@ -21,6 +21,63 @@ import { Achievements } from "@/components/profile/Achievements";
 import { ProjectHistory } from "@/components/profile/ProjectHistory";
 import { Reviews } from "@/components/profile/Reviews";
 import { fetchReputation } from "@/services/reputation";
+import { cn } from "@/lib/utils";
+import { Popover, PopoverTrigger, PopoverContent, PopoverAnchor } from "@/components/ui/popover";
+import {
+  Command,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+} from "@/components/ui/command";
+
+const POPULAR_TECHS = [
+  "React",
+  "Node.js",
+  "TypeScript",
+  "Python",
+  "Docker",
+  "Figma",
+  "UI/UX",
+  "DevOps",
+  "Java",
+  "C#",
+  "SQL",
+];
+
+const BRAZILIAN_STATES = [
+  { value: "AC", label: "Acre - AC" },
+  { value: "AL", label: "Alagoas - AL" },
+  { value: "AP", label: "Amapá - AP" },
+  { value: "AM", label: "Amazonas - AM" },
+  { value: "BA", label: "Bahia - BA" },
+  { value: "CE", label: "Ceará - CE" },
+  { value: "DF", label: "Distrito Federal - DF" },
+  { value: "ES", label: "Espírito Santo - ES" },
+  { value: "GO", label: "Goiás - GO" },
+  { value: "MA", label: "Maranhão - MA" },
+  { value: "MT", label: "Mato Grosso - MT" },
+  { value: "MS", label: "Mato Grosso do Sul - MS" },
+  { value: "MG", label: "Minas Gerais - MG" },
+  { value: "PA", label: "Pará - PA" },
+  { value: "PB", label: "Paraíba - PB" },
+  { value: "PR", label: "Paraná - PR" },
+  { value: "PE", label: "Pernambuco - PE" },
+  { value: "PI", label: "Piauí - PI" },
+  { value: "RJ", label: "Rio de Janeiro - RJ" },
+  { value: "RN", label: "Rio Grande do Norte - RN" },
+  { value: "RS", label: "Rio Grande do Sul - RS" },
+  { value: "RO", label: "Rondônia - RO" },
+  { value: "RR", label: "Roraima - RR" },
+  { value: "SC", label: "Santa Catarina - SC" },
+  { value: "SP", label: "São Paulo - SP" },
+  { value: "SE", label: "Sergipe - SE" },
+  { value: "TO", label: "Tocantins - TO" },
+];
+
+const normalizeText = (text: string) =>
+  text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
 function PerfilPage() {
   const { user, updateUser } = useAuth();
@@ -30,6 +87,14 @@ function PerfilPage() {
   const [skills, setSkills] = useState<string[]>(user?.skills ?? []);
   const [draft, setDraft] = useState("");
   const [saving, setSaving] = useState(false);
+  const [locationOpen, setLocationOpen] = useState(false);
+  const [locationSearch, setLocationSearch] = useState(user?.location ?? "");
+
+  useEffect(() => {
+    if (!locationOpen) {
+      setLocationSearch(location);
+    }
+  }, [location, locationOpen]);
 
   const { data: reputation, isLoading: loadingRep } = useQuery({
     queryKey: ["reputation", user?.id ?? user?.email],
@@ -186,20 +251,94 @@ function PerfilPage() {
                         className="h-11 rounded-xl border border-border/60 bg-background px-4 focus-visible:ring-primary/20 text-sm"
                       />
                     </div>
-                    <div className="space-y-1.5">
+                    <div className="space-y-1.5 flex flex-col">
                       <Label
                         htmlFor="location"
-                        className="text-xs font-semibold text-foreground/80 tracking-wide uppercase"
+                        className="text-xs font-semibold text-foreground/80 tracking-wide uppercase mb-1"
                       >
-                        Localização
+                        Localização (Estado)
                       </Label>
-                      <Input
-                        id="location"
-                        placeholder="São Paulo, BR"
-                        value={location}
-                        onChange={(e) => setLocation(e.target.value)}
-                        className="h-11 rounded-xl border border-border/60 bg-background px-4 focus-visible:ring-primary/20 text-sm"
-                      />
+                      <Popover
+                        open={locationOpen}
+                        onOpenChange={(open) => {
+                          setLocationOpen(open);
+                          if (!open) {
+                            setLocationSearch(location);
+                          }
+                        }}
+                      >
+                        <PopoverAnchor asChild>
+                          <div className="relative w-full">
+                            <Input
+                              id="location"
+                              value={locationSearch}
+                              onChange={(e) => {
+                                setLocationSearch(e.target.value);
+                                setLocationOpen(true);
+                                if (!e.target.value) {
+                                  setLocation("");
+                                }
+                              }}
+                              onFocus={() => setLocationOpen(true)}
+                              onClick={() => setLocationOpen(true)}
+                              placeholder="Selecione seu estado..."
+                              className="h-11 w-full rounded-xl border border-border/60 bg-background px-4 pr-10 focus-visible:ring-primary/20 text-sm"
+                            />
+                            <ChevronsUpDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 shrink-0 opacity-50 pointer-events-none" />
+                          </div>
+                        </PopoverAnchor>
+                        <PopoverContent
+                          className="w-[var(--radix-popover-trigger-width)] p-0 rounded-2xl border border-border/60 shadow-lg bg-card"
+                          align="start"
+                          onOpenAutoFocus={(e) => e.preventDefault()}
+                          onInteractOutside={(e) => {
+                            if (e.target === document.getElementById("location")) {
+                              e.preventDefault();
+                            }
+                          }}
+                        >
+                          <Command>
+                            <CommandList>
+                              {(() => {
+                                const filtered = BRAZILIAN_STATES.filter((st) =>
+                                  normalizeText(st.label).includes(normalizeText(locationSearch))
+                                );
+                                if (filtered.length === 0) {
+                                  return (
+                                    <CommandEmpty className="py-3 text-center text-sm text-muted-foreground">
+                                      Nenhum estado encontrado.
+                                    </CommandEmpty>
+                                  );
+                                }
+                                return (
+                                  <CommandGroup className="max-h-60 overflow-y-auto">
+                                    {filtered.map((st) => (
+                                      <CommandItem
+                                        key={st.value}
+                                        value={st.label}
+                                        onSelect={() => {
+                                          setLocation(st.label);
+                                          setLocationSearch(st.label);
+                                          setLocationOpen(false);
+                                        }}
+                                        className="cursor-pointer"
+                                      >
+                                        <Check
+                                          className={cn(
+                                            "mr-2 h-4 w-4",
+                                            location === st.label ? "opacity-100" : "opacity-0"
+                                          )}
+                                        />
+                                        {st.label}
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                );
+                              })()}
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                     </div>
                   </div>
 
@@ -246,6 +385,35 @@ function PerfilPage() {
                         <Plus className="h-4 w-4" />
                       </Button>
                     </div>
+
+                    {/* Sugestões Rápidas */}
+                    <div className="flex flex-wrap gap-1.5 pt-0.5">
+                      {POPULAR_TECHS.map((t) => {
+                        const isAdded = skills.includes(t);
+                        return (
+                          <button
+                            key={t}
+                            type="button"
+                            disabled={isAdded}
+                            onClick={() => addSkill(t)}
+                            className="outline-none disabled:opacity-50"
+                          >
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                "cursor-pointer rounded-full px-2.5 py-0.5 text-[10px] transition-all font-medium border",
+                                isAdded
+                                  ? "bg-muted text-muted-foreground border-border cursor-not-allowed"
+                                  : "bg-background/20 border-border/80 text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5"
+                              )}
+                            >
+                              + {t}
+                            </Badge>
+                          </button>
+                        );
+                      })}
+                    </div>
+
                     {skills.length > 0 && (
                       <div className="mt-2.5 flex flex-wrap gap-1.5">
                         {skills.map((s) => (

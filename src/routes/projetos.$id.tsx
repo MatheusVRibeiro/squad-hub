@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Calendar, Users, Lock } from "lucide-react";
+import { ArrowLeft, Calendar, Users, Lock, Github, MessageSquare, BookOpen } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
@@ -281,6 +281,177 @@ function ProjectDetailPage() {
                   </CardContent>
                 </Card>
               </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.1 }}
+              >
+                <Card className="rounded-3xl border border-border/60 bg-card shadow-sm">
+                  <CardContent className="p-6 space-y-4">
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-base font-bold text-foreground">
+                        Área de Trabalho do Squad
+                      </h2>
+                      {!isMember && (
+                        <Badge variant="outline" className="rounded-full gap-1 h-5 text-[10px] bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20">
+                          <Lock className="h-3 w-3" /> Privado
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Links úteis para o desenvolvimento e comunicação da equipe.
+                    </p>
+
+                    <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
+                      {/* Repositório */}
+                      <div className={cn(
+                        "flex items-center gap-3 p-3.5 rounded-2xl border transition-all",
+                        isMember && data.repositorioUrl 
+                          ? "bg-primary/5 border-primary/20 hover:bg-primary/10 cursor-pointer" 
+                          : "bg-muted/30 border-border/40 opacity-70"
+                      )}>
+                        <div className={cn(
+                          "grid h-9 w-9 place-items-center rounded-xl",
+                          isMember && data.repositorioUrl ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                        )}>
+                          <Github className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">GitHub</p>
+                          {isMember ? (
+                            data.repositorioUrl ? (
+                              <a 
+                                href={data.repositorioUrl} 
+                                target="_blank" 
+                                rel="noreferrer" 
+                                className="text-xs font-semibold text-primary hover:underline truncate block"
+                              >
+                                Acessar código
+                              </a>
+                            ) : (
+                              <span className="text-xs font-semibold text-muted-foreground">Não definido</span>
+                            )
+                          ) : (
+                            <span className="text-xs font-semibold text-muted-foreground inline-flex items-center gap-1">
+                              🔒 Bloqueado
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Figma */}
+                      <div className={cn(
+                        "flex items-center gap-3 p-3.5 rounded-2xl border transition-all",
+                        isMember && data.figmaUrl 
+                          ? "bg-rose-500/5 border-rose-500/20 hover:bg-rose-500/10 cursor-pointer" 
+                          : "bg-muted/30 border-border/40 opacity-70"
+                      )}>
+                        <div className={cn(
+                          "grid h-9 w-9 place-items-center rounded-xl",
+                          isMember && data.figmaUrl ? "bg-rose-500/10 text-rose-500" : "bg-muted text-muted-foreground"
+                        )}>
+                          <BookOpen className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Protótipo (Figma)</p>
+                          {isMember ? (
+                            data.figmaUrl ? (
+                              <a 
+                                href={data.figmaUrl} 
+                                target="_blank" 
+                                rel="noreferrer" 
+                                className="text-xs font-semibold text-rose-600 hover:underline truncate block"
+                              >
+                                Abrir figma
+                              </a>
+                            ) : (
+                              <span className="text-xs font-semibold text-muted-foreground">Não definido</span>
+                            )
+                          ) : (
+                            <span className="text-xs font-semibold text-muted-foreground inline-flex items-center gap-1">
+                              🔒 Bloqueado
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Discord */}
+                      <div className={cn(
+                        "flex items-center gap-3 p-3.5 rounded-2xl border transition-all",
+                        isMember && data.discordUrl 
+                          ? "bg-indigo-500/5 border-indigo-500/20 hover:bg-indigo-500/10 cursor-pointer" 
+                          : "bg-muted/30 border-border/40 opacity-70"
+                      )}>
+                        <div className={cn(
+                          "grid h-9 w-9 place-items-center rounded-xl",
+                          isMember && data.discordUrl ? "bg-indigo-500/10 text-indigo-500" : "bg-muted text-muted-foreground"
+                        )}>
+                          <MessageSquare className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Comunicação</p>
+                          {isMember ? (
+                            data.discordUrl ? (
+                              <a 
+                                href={data.discordUrl} 
+                                target="_blank" 
+                                rel="noreferrer" 
+                                className="text-xs font-semibold text-indigo-600 hover:underline truncate block"
+                              >
+                                Entrar no chat
+                              </a>
+                            ) : (
+                              <span className="text-xs font-semibold text-muted-foreground">Não definido</span>
+                            )
+                          ) : (
+                            <span className="text-xs font-semibold text-muted-foreground inline-flex items-center gap-1">
+                              🔒 Bloqueado
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Documentação */}
+                      <div className={cn(
+                        "flex items-center gap-3 p-3.5 rounded-2xl border transition-all",
+                        isMember && data.documentacaoUrl 
+                          ? "bg-amber-500/5 border-amber-500/20 hover:bg-amber-500/10 cursor-pointer" 
+                          : "bg-muted/30 border-border/40 opacity-70"
+                      )}>
+                        <div className={cn(
+                          "grid h-9 w-9 place-items-center rounded-xl",
+                          isMember && data.documentacaoUrl ? "bg-amber-500/10 text-amber-500" : "bg-muted text-muted-foreground"
+                        )}>
+                          <BookOpen className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Documentos</p>
+                          {isMember ? (
+                            data.documentacaoUrl ? (
+                              <a 
+                                href={data.documentacaoUrl} 
+                                target="_blank" 
+                                rel="noreferrer" 
+                                className="text-xs font-semibold text-amber-600 hover:underline truncate block"
+                              >
+                                Notion/Wiki
+                              </a>
+                            ) : (
+                              <span className="text-xs font-semibold text-muted-foreground">Não definido</span>
+                            )
+                          ) : (
+                            <span className="text-xs font-semibold text-muted-foreground inline-flex items-center gap-1">
+                              🔒 Bloqueado
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
 
               {!isMember && (
                 <div className="rounded-2xl bg-amber-500/5 backdrop-blur-sm border border-amber-500/20 px-4 py-3 text-sm text-amber-800 dark:text-amber-400/90 flex items-center gap-3 shadow-sm">

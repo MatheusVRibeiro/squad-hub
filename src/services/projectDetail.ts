@@ -168,9 +168,21 @@ export async function createProject(payload: {
   description: string;
   technologies: string[];
   membersLimit: number;
+  repositorioUrl?: string;
+  figmaUrl?: string;
+  discordUrl?: string;
+  documentacaoUrl?: string;
 }): Promise<Project> {
   try {
-    const { data } = await api.post<Project>("/projetos", payload);
+    const { data } = await api.post<Project>("/projetos", {
+      name: payload.name,
+      description: payload.description,
+      membersLimit: payload.membersLimit,
+      repositorioUrl: payload.repositorioUrl,
+      figmaUrl: payload.figmaUrl,
+      discordUrl: payload.discordUrl,
+      documentacaoUrl: payload.documentacaoUrl,
+    });
     if (data?.id) return data;
   } catch {
     // fallback
@@ -186,6 +198,10 @@ export async function createProject(payload: {
     membersLimit: payload.membersLimit,
     createdBy: "Você",
     createdAt: new Date().toISOString(),
+    repositorioUrl: payload.repositorioUrl,
+    figmaUrl: payload.figmaUrl,
+    discordUrl: payload.discordUrl,
+    documentacaoUrl: payload.documentacaoUrl,
   };
 
   // Salva na lista de projetos local

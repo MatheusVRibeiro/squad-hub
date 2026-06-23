@@ -170,9 +170,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </div>
 
-      {/* Modal Comemorativo de Level Up */}
       <Dialog open={levelUpData !== null} onOpenChange={(open) => !open && setLevelUpData(null)}>
-        <DialogContent className="rounded-3xl max-w-sm border border-border/50 bg-card/95 backdrop-blur-md shadow-2xl p-6 overflow-hidden relative">
+        <DialogContent className="rounded-3xl max-w-sm border border-border/50 bg-card/95 backdrop-blur-md shadow-2xl p-6 overflow-hidden">
           <ConfettiEffect />
           <div className="flex flex-col items-center justify-center py-6 text-center space-y-5 relative z-10">
             <motion.div

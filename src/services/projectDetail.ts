@@ -1,5 +1,5 @@
 import { api } from "./api";
-import { getLocalProjects, saveLocalProjects, MOCK_PROJECTS, type Project } from "./projects";
+import { getLocalProjects, saveLocalProjects, MOCK_PROJECTS, type Project, type ProjectStatus } from "./projects";
 
 export type KanbanStatus = "todo" | "doing" | "done";
 

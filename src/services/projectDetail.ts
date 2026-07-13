@@ -152,10 +152,10 @@ export function saveLocalProjectDetail(id: string, detail: ProjectDetail) {
 
 export async function fetchProjectDetail(id: string): Promise<ProjectDetail> {
   try {
-    const { data } = await api.get<ProjectDetail>(`/projetos/${id}`);
-    if (data && data.id) {
-      saveLocalProjectDetail(id, data);
-      return data;
+    const { data } = await api.get<any>(`/projetos/${id}`);
+    if (data && data.sucesso && data.dados && data.dados.id) {
+      saveLocalProjectDetail(id, data.dados);
+      return data.dados;
     }
     return getLocalProjectDetail(id);
   } catch {
@@ -174,7 +174,7 @@ export async function createProject(payload: {
   documentacaoUrl?: string;
 }): Promise<Project> {
   try {
-    const { data } = await api.post<Project>("/projetos", {
+    const { data } = await api.post<{ sucesso: boolean; message: string; dados: any }>("/projetos", {
       name: payload.name,
       description: payload.description,
       membersLimit: payload.membersLimit,
@@ -183,7 +183,28 @@ export async function createProject(payload: {
       discordUrl: payload.discordUrl,
       documentacaoUrl: payload.documentacaoUrl,
     });
-    if (data?.id) return data;
+    if (data?.sucesso && data?.dados) {
+      const p = data.dados;
+      let status: ProjectStatus = "Aberto";
+      if (p.status === "em_andamento") status = "Em andamento";
+      if (p.status === "finalizado") status = "Finalizado";
+
+      return {
+        id: String(p.id),
+        name: p.titulo || "",
+        description: p.descricao || "",
+        status,
+        technologies: payload.technologies,
+        membersCount: 1,
+        membersLimit: p.limite_membros || 5,
+        createdBy: "Você",
+        createdAt: p.criado_em || new Date().toISOString(),
+        repositorioUrl: p.repositorio_url || undefined,
+        figmaUrl: p.figma_url || undefined,
+        discordUrl: p.discord_url || undefined,
+        documentacaoUrl: p.documentacao_url || undefined,
+      };
+    }
   } catch {
     // fallback
   }
@@ -380,8 +401,15 @@ export async function addLocalMuralMessage(
   content: string,
 ): Promise<MuralMessage> {
   try {
-    const { data } = await api.post<MuralMessage>(`/projetos/${projectId}/mensagens`, { content });
-    return data;
+    const { data } = await api.post<{ sucesso: boolean; message: string; dados: any }>(`/projetos/${projectId}/mensagens`, { content });
+    if (data?.sucesso && data?.dados) {
+      return {
+        id: String(data.dados.id),
+        author,
+        content: data.dados.conteudo,
+        createdAt: data.dados.criado_em || new Date().toISOString(),
+      };
+    }
   } catch {
     // ignore
   }

@@ -1,4 +1,5 @@
 import { api } from "./api";
+import { normalizarVaga, type Vaga } from "./vagas";
 import {
   getLocalProjects,
   saveLocalProjects,
@@ -71,6 +72,8 @@ export type ProjectDetail = Project & {
   messages: MuralMessage[];
   members: Member[];
   applications: Application[];
+  /** Vagas do projeto (ETAPA 4) — array camelCase/snake_case vindo do GET /projetos/:id. */
+  vagas: Vaga[];
 };
 
 /** Wrapper padrão das respostas da API (sucesso/message/dados). */
@@ -81,10 +84,12 @@ type ApiResponse<T> = {
 };
 
 /** Contrato do GET /projetos/:id — o backend já devolve o shape camelCase
- *  consumido pela UI (FASE-04) acrescido de `criador_id`/`criador_nome`. */
+ *  consumido pela UI (FASE-04) acrescido de `criador_id`/`criador_nome` e
+ *  `vagas` (array da ETAPA 4, camelCase com funcaoNome). */
 type ProjectDetailData = ProjectDetail & {
   criador_id?: number | null;
   criador_nome?: string;
+  vagas?: Record<string, unknown>[];
 };
 
 /** Contrato do POST /projetos — campos snake_case do backend. */
@@ -172,6 +177,7 @@ function mockDetail(p: Project): ProjectDetail {
         status: "pending",
       },
     ],
+    vagas: [],
   };
 }
 
@@ -228,6 +234,8 @@ export async function fetchProjectDetail(id: string): Promise<ProjectDetail> {
       const detail: ProjectDetail = {
         ...data.dados,
         creatorId: data.dados.criador_id != null ? String(data.dados.criador_id) : undefined,
+        // ETAPA 4: vagas vêm no detalhe (camelCase) — normaliza para o contrato da UI.
+        vagas: Array.isArray(data.dados.vagas) ? data.dados.vagas.map(normalizarVaga) : [],
       };
       if (import.meta.env.DEV) {
         saveLocalProjectDetail(id, detail);
@@ -549,10 +557,14 @@ export async function updateLocalApplicationStatus(
 
 export async function applyToProjectLocal(
   projectId: string,
-  applicant: { name: string; message: string; skills: string[] },
+  applicant: { name: string; message: string; skills: string[]; vagaId?: number },
 ): Promise<void> {
   try {
+    // ETAPA 4/5: candidatura pode ser vinculada a uma vaga (opcional) — o
+    // backend ETAPA 5 valida a pertinência da vaga e atualiza `preenchidas`
+    // ao aceitar. Quando vagaId é undefined, o JSON serializado omite a chave.
     await api.post(`/projetos/${projectId}/candidaturas`, {
+      vaga_id: applicant.vagaId,
       mensagem: applicant.message,
     });
   } catch {

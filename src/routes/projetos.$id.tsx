@@ -19,6 +19,7 @@ import { TopContributors } from "@/components/projects/TopContributors";
 import { Mural } from "@/components/projects/Mural";
 import { MembersList } from "@/components/projects/MembersList";
 import { Applications } from "@/components/projects/Applications";
+import { Vagas } from "@/components/projects/Vagas";
 import {
   fetchProjectDetail,
   applyToProjectLocal,
@@ -39,20 +40,37 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { Vaga } from "@/services/vagas";
 
 function ApplicationForm({
   projectId,
   projectName,
+  vagas,
   onSubmitted,
 }: {
   projectId: string;
   projectName: string;
+  /** Vagas abertas do projeto (ETAPA 4) — select opcional de vaga na candidatura. */
+  vagas: Vaga[];
   onSubmitted: () => void;
 }) {
   const { user } = useAuth();
   const [message, setMessage] = useState("");
   const [skills, setSkills] = useState(user?.skills?.join(", ") || "");
+  const [vagaId, setVagaId] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  // Somente vagas abertas com posição disponível aparecem no select
+  const vagasDisponiveis = vagas.filter(
+    (v) => v.status === "aberta" && v.preenchidas < v.quantidade,
+  );
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -70,6 +88,7 @@ function ApplicationForm({
         name: user?.name || "Usuário",
         message: message.trim(),
         skills: skillsArray,
+        vagaId: vagaId ? Number(vagaId) : undefined,
       });
       // Notifica
       notificationsIntegration.notifyApplied(projectName, user?.name || "Usuário", projectId);
@@ -94,6 +113,23 @@ function ApplicationForm({
           rows={3}
         />
       </div>
+      {vagasDisponiveis.length > 0 && (
+        <div className="space-y-2">
+          <Label htmlFor="app-vaga">Vaga de interesse (opcional)</Label>
+          <Select value={vagaId} onValueChange={setVagaId}>
+            <SelectTrigger id="app-vaga" className="w-full cursor-pointer">
+              <SelectValue placeholder="Selecione uma vaga do projeto" />
+            </SelectTrigger>
+            <SelectContent>
+              {vagasDisponiveis.map((v) => (
+                <SelectItem key={v.id} value={String(v.id)}>
+                  {v.funcao_nome} ({v.preenchidas}/{v.quantidade})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
       <div className="space-y-2">
         <Label htmlFor="app-skills">Suas Habilidades (separadas por vírgula)</Label>
         <Input
@@ -257,6 +293,7 @@ function ProjectDetailPage() {
                                   <ApplicationForm
                                     projectId={data.id}
                                     projectName={data.name}
+                                    vagas={data.vagas}
                                     onSubmitted={refetch}
                                   />
                                 </DialogContent>
@@ -546,6 +583,7 @@ function ProjectDetailPage() {
                   <TabsTrigger value="kanban">Kanban</TabsTrigger>
                   <TabsTrigger value="mural">Mural</TabsTrigger>
                   <TabsTrigger value="membros">Membros</TabsTrigger>
+                  <TabsTrigger value="vagas">Vagas</TabsTrigger>
                   {isOwner && (
                     <TabsTrigger value="candidaturas">
                       Candidaturas
@@ -579,6 +617,9 @@ function ProjectDetailPage() {
                 </TabsContent>
                 <TabsContent value="membros">
                   <MembersList members={data.members} />
+                </TabsContent>
+                <TabsContent value="vagas">
+                  <Vagas initial={data.vagas} projectId={data.id} isOwner={isOwner} />
                 </TabsContent>
                 {isOwner && (
                   <TabsContent value="candidaturas">

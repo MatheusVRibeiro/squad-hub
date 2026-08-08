@@ -58,8 +58,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { awardLocalXP } from "@/services/reputation";
-
 const COLUMNS: { key: KanbanStatus; label: string; tone: string; borderTone: string }[] = [
   {
     key: "todo",
@@ -153,13 +151,9 @@ export function KanbanBoard({
 
     setTasks((t) => t.map((x) => (x.id === id ? { ...x, status } : x)));
 
-    // Se a tarefa for movida para "Concluído" (done), concede XP
-    if (status === "done" && oldStatus !== "done") {
-      const { levelUp, nextLevel } = await awardLocalXP(150);
-      if (!levelUp) {
-        toast.success("Parabéns! +150 XP acumulados com a tarefa concluída! 🎉");
-      }
-    }
+    // ETAPA 10: XP agora é concedido SOMENTE pelo backend (idempotente).
+    // O navegador não controla mais XP — apenas reflete o resultado da API.
+    // Nota: o feedback visual de XP virá da estatística retornada pelo backend.
 
     // 2. Dispara notificação
     const colName = COLUMNS.find((c) => c.key === status)?.label || status;
@@ -287,13 +281,7 @@ export function KanbanBoard({
     // 2. Dispara notificação
     notificationsIntegration.notifyTaskActivity(projectName, taskTitle, "created", "", projectId);
 
-    // Concede XP se a tarefa for concluída
-    if (modalCol === "done") {
-      const { levelUp } = await awardLocalXP(150);
-      if (!levelUp) {
-        toast.success("Parabéns! +150 XP acumulados com a tarefa concluída! 🎉");
-      }
-    }
+    // ETAPA 10: XP é concedido pelo backend (idempotente), nunca aqui.
   }
 
   return (

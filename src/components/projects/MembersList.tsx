@@ -32,6 +32,21 @@ export function MembersList({ members }: { members: Member[] }) {
               )}
             </div>
             <div className="mt-1 flex flex-wrap gap-1">
+              {/* ETAPA 6: função do membro no squad (JOIN com funcoes do backend). */}
+              {m.funcao_nome && (
+                <Badge
+                  variant="outline"
+                  className="rounded-full border-primary/30 bg-primary/5 text-[10px] text-primary"
+                >
+                  {m.funcao_nome}
+                </Badge>
+              )}
+              {/* ETAPA 6: membro que entrou por uma vaga do projeto. */}
+              {m.vaga_id != null && (
+                <Badge variant="outline" className="rounded-full text-[10px] text-muted-foreground">
+                  {m.vaga_nome ? `Vaga: ${m.vaga_nome}` : "Via vaga"}
+                </Badge>
+              )}
               {m.skills.map((s) => (
                 <Badge key={s} variant="secondary" className="rounded-full text-[10px]">
                   {s}

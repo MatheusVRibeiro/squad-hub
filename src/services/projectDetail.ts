@@ -52,6 +52,16 @@ export type Member = {
   name: string;
   role: "Owner" | "Membro";
   skills: string[];
+  /** ETAPA 6: função do membro no squad — vem do JOIN com funcoes (funcao_nome). */
+  funcao_id?: number | null;
+  funcao_nome?: string | null;
+  /** ETAPA 6: vaga de origem (membros_equipe.vaga_id) — presente quando o membro entrou por vaga. */
+  vaga_id?: number | null;
+  vaga_nome?: string | null;
+  /** ETAPA 6: nível esperado herdado da vaga (iniciante/intermediario/avancado). */
+  nivel_desejado?: string | null;
+  /** ETAPA 6: soft-state do vínculo — 'saiu'/'removido' não aparecem na lista ativa. */
+  status?: "ativo" | "saiu" | "removido" | string | null;
 };
 
 export type Application = {
@@ -153,6 +163,34 @@ function normalizarApplication(raw: Record<string, unknown>): Application {
     status,
     vaga_id: vagaId != null ? Number(vagaId) : null,
     vaga_nome: vagaNome != null ? String(vagaNome) : null,
+  };
+}
+
+/**
+ * Normaliza um membro vindo do backend para o tipo `Member` da UI (ETAPA 6).
+ * Aceita o shape camelCase da FASE-04 (id/name/role/skills) e os campos novos
+ * de função/vaga em snake_case (funcao_nome, vaga_id) OU camelCase
+ * (funcaoNome, vagaId). Ausência de função/vaga → null; status ausente é
+ * tratado como 'ativo' (retrocompatível com o backend pré-ETAPA 6).
+ */
+function normalizarMember(raw: Record<string, unknown>): Member {
+  const roleRaw = String(raw.role ?? "Membro");
+  const funcaoId = raw.funcao_id ?? raw.funcaoId;
+  const funcaoNome = raw.funcao_nome ?? raw.funcaoNome;
+  const vagaId = raw.vaga_id ?? raw.vagaId;
+  const vagaNome = raw.vaga_nome ?? raw.vagaNome;
+  const nivel = raw.nivel_desejado ?? raw.nivelDesejado;
+  return {
+    id: String(raw.id),
+    name: String(raw.name ?? raw.usuario_nome ?? "Membro"),
+    role: roleRaw === "Owner" ? "Owner" : "Membro",
+    skills: Array.isArray(raw.skills) ? raw.skills.map((s) => String(s)) : [],
+    funcao_id: funcaoId != null ? Number(funcaoId) : null,
+    funcao_nome: funcaoNome != null ? String(funcaoNome) : null,
+    vaga_id: vagaId != null ? Number(vagaId) : null,
+    vaga_nome: vagaNome != null ? String(vagaNome) : null,
+    nivel_desejado: nivel != null ? String(nivel) : null,
+    status: raw.status != null ? String(raw.status) : "ativo",
   };
 }
 
@@ -275,6 +313,13 @@ export async function fetchProjectDetail(id: string): Promise<ProjectDetail> {
           ? data.dados.applications.map((a) =>
               normalizarApplication(a as unknown as Record<string, unknown>),
             )
+          : [],
+        // ETAPA 6: membros ganham função/vaga/status — normaliza (snake ou camel) e
+        // mantém apenas vínculos ativos ('saiu'/'removido' ficam fora da lista).
+        members: Array.isArray(data.dados.members)
+          ? data.dados.members
+              .map((m) => normalizarMember(m as unknown as Record<string, unknown>))
+              .filter((m) => !m.status || m.status === "ativo")
           : [],
       };
       if (import.meta.env.DEV) {

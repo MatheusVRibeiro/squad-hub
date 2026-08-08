@@ -20,8 +20,13 @@ import { Mural } from "@/components/projects/Mural";
 import { MembersList } from "@/components/projects/MembersList";
 import { Applications } from "@/components/projects/Applications";
 import { Vagas } from "@/components/projects/Vagas";
-import { fetchProjectDetail, closeProjectLocal } from "@/services/projectDetail";
+import {
+  fetchProjectDetail,
+  closeProjectLocal,
+  type ProjectDetail,
+} from "@/services/projectDetail";
 import { candidatarComVaga } from "@/services/candidaturas";
+import { sairDoProjeto } from "@/services/membros";
 import { useAuth } from "@/contexts/AuthContext";
 import { notificationsIntegration } from "@/services/notificationsIntegration";
 import { useQueryClient } from "@tanstack/react-query";
@@ -145,6 +150,7 @@ function ProjectDetailPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [closing, setClosing] = useState(false);
+  const [saindo, setSaindo] = useState(false);
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["project", id],
@@ -182,6 +188,37 @@ function ProjectDetailPage() {
       toast.error("Erro ao encerrar projeto.");
     } finally {
       setClosing(false);
+    }
+  }
+
+  // ETAPA 6: membro sai do squad — soft-delete no backend (status 'saiu'),
+  // histórico preservado. Owner não vê o botão (não pode sair).
+  async function handleLeaveProject() {
+    if (!data) return;
+    if (
+      !window.confirm(
+        `Tem certeza que deseja sair do projeto "${data.name}"? Você deixará de ter acesso à área de trabalho do squad.`,
+      )
+    )
+      return;
+
+    setSaindo(true);
+    try {
+      await sairDoProjeto(data.id);
+      toast.success("Você saiu do projeto com sucesso.");
+      // Remove o membro da lista ativa localmente (sem depender de refetch).
+      queryClient.setQueryData<ProjectDetail>(["project", data.id], (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          members: old.members.filter((m) => Number(m.id) !== Number(user?.id)),
+        };
+      });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao sair do projeto.");
+    } finally {
+      setSaindo(false);
     }
   }
 
@@ -242,6 +279,18 @@ function ProjectDetailPage() {
                             disabled={closing}
                           >
                             {closing ? "Encerrando..." : "Encerrar Projeto"}
+                          </Button>
+                        )}
+
+                        {isMember && !isOwner && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="rounded-xl border-destructive/20 text-destructive hover:bg-destructive/10 h-7 text-xs"
+                            onClick={handleLeaveProject}
+                            disabled={saindo}
+                          >
+                            {saindo ? "Saindo..." : "Sair do projeto"}
                           </Button>
                         )}
 

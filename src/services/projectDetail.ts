@@ -176,12 +176,25 @@ export async function fetchProjectDetail(id: string): Promise<ProjectDetail> {
         ...data.dados,
         creatorId: data.dados.criador_id != null ? String(data.dados.criador_id) : undefined,
       };
-      saveLocalProjectDetail(id, detail);
+      if (import.meta.env.DEV) {
+        saveLocalProjectDetail(id, detail);
+      }
       return detail;
     }
-    return getLocalProjectDetail(id);
-  } catch {
-    return getLocalProjectDetail(id);
+
+    // Resposta inesperada do backend
+    if (import.meta.env.DEV) {
+      return getLocalProjectDetail(id);
+    }
+    const error = new Error(`Projeto ${id} não encontrado ou resposta inesperada.`);
+    console.error("[projectDetail] fetchProjectDetail:", error);
+    throw error;
+  } catch (err) {
+    if (import.meta.env.DEV) {
+      return getLocalProjectDetail(id);
+    }
+    console.error("[projectDetail] fetchProjectDetail:", err);
+    throw err instanceof Error ? err : new Error("Falha ao carregar o projeto.");
   }
 }
 

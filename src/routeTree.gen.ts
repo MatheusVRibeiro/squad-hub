@@ -9,7 +9,9 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ResetarSenhaRouteImport } from './routes/resetar-senha'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as RecuperarSenhaRouteImport } from './routes/recuperar-senha'
 import { Route as ProjetosRouteImport } from './routes/projetos'
 import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as NotificacoesRouteImport } from './routes/notificacoes'
@@ -22,9 +24,19 @@ import { Route as ProjetosIndexRouteImport } from './routes/projetos.index'
 import { Route as ProjetosNovoRouteImport } from './routes/projetos.novo'
 import { Route as ProjetosIdRouteImport } from './routes/projetos.$id'
 
+const ResetarSenhaRoute = ResetarSenhaRouteImport.update({
+  id: '/resetar-senha',
+  path: '/resetar-senha',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecuperarSenhaRoute = RecuperarSenhaRouteImport.update({
+  id: '/recuperar-senha',
+  path: '/recuperar-senha',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProjetosRoute = ProjetosRouteImport.update({
@@ -92,7 +104,9 @@ export interface FileRoutesByFullPath {
   '/notificacoes': typeof NotificacoesRoute
   '/perfil': typeof PerfilRoute
   '/projetos': typeof ProjetosRouteWithChildren
+  '/recuperar-senha': typeof RecuperarSenhaRoute
   '/register': typeof RegisterRoute
+  '/resetar-senha': typeof ResetarSenhaRoute
   '/projetos/$id': typeof ProjetosIdRoute
   '/projetos/novo': typeof ProjetosNovoRoute
   '/projetos/': typeof ProjetosIndexRoute
@@ -105,7 +119,9 @@ export interface FileRoutesByTo {
   '/meus-projetos': typeof MeusProjetosRoute
   '/notificacoes': typeof NotificacoesRoute
   '/perfil': typeof PerfilRoute
+  '/recuperar-senha': typeof RecuperarSenhaRoute
   '/register': typeof RegisterRoute
+  '/resetar-senha': typeof ResetarSenhaRoute
   '/projetos/$id': typeof ProjetosIdRoute
   '/projetos/novo': typeof ProjetosNovoRoute
   '/projetos': typeof ProjetosIndexRoute
@@ -120,7 +136,9 @@ export interface FileRoutesById {
   '/notificacoes': typeof NotificacoesRoute
   '/perfil': typeof PerfilRoute
   '/projetos': typeof ProjetosRouteWithChildren
+  '/recuperar-senha': typeof RecuperarSenhaRoute
   '/register': typeof RegisterRoute
+  '/resetar-senha': typeof ResetarSenhaRoute
   '/projetos/$id': typeof ProjetosIdRoute
   '/projetos/novo': typeof ProjetosNovoRoute
   '/projetos/': typeof ProjetosIndexRoute
@@ -136,7 +154,9 @@ export interface FileRouteTypes {
     | '/notificacoes'
     | '/perfil'
     | '/projetos'
+    | '/recuperar-senha'
     | '/register'
+    | '/resetar-senha'
     | '/projetos/$id'
     | '/projetos/novo'
     | '/projetos/'
@@ -149,7 +169,9 @@ export interface FileRouteTypes {
     | '/meus-projetos'
     | '/notificacoes'
     | '/perfil'
+    | '/recuperar-senha'
     | '/register'
+    | '/resetar-senha'
     | '/projetos/$id'
     | '/projetos/novo'
     | '/projetos'
@@ -163,7 +185,9 @@ export interface FileRouteTypes {
     | '/notificacoes'
     | '/perfil'
     | '/projetos'
+    | '/recuperar-senha'
     | '/register'
+    | '/resetar-senha'
     | '/projetos/$id'
     | '/projetos/novo'
     | '/projetos/'
@@ -178,16 +202,32 @@ export interface RootRouteChildren {
   NotificacoesRoute: typeof NotificacoesRoute
   PerfilRoute: typeof PerfilRoute
   ProjetosRoute: typeof ProjetosRouteWithChildren
+  RecuperarSenhaRoute: typeof RecuperarSenhaRoute
   RegisterRoute: typeof RegisterRoute
+  ResetarSenhaRoute: typeof ResetarSenhaRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/resetar-senha': {
+      id: '/resetar-senha'
+      path: '/resetar-senha'
+      fullPath: '/resetar-senha'
+      preLoaderRoute: typeof ResetarSenhaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/register': {
       id: '/register'
       path: '/register'
       fullPath: '/register'
       preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recuperar-senha': {
+      id: '/recuperar-senha'
+      path: '/recuperar-senha'
+      fullPath: '/recuperar-senha'
+      preLoaderRoute: typeof RecuperarSenhaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/projetos': {
@@ -295,7 +335,9 @@ const rootRouteChildren: RootRouteChildren = {
   NotificacoesRoute: NotificacoesRoute,
   PerfilRoute: PerfilRoute,
   ProjetosRoute: ProjetosRouteWithChildren,
+  RecuperarSenhaRoute: RecuperarSenhaRoute,
   RegisterRoute: RegisterRoute,
+  ResetarSenhaRoute: ResetarSenhaRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

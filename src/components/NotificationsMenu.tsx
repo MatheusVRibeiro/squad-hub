@@ -1,6 +1,5 @@
-import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Bell,
   CheckCheck,
@@ -10,6 +9,7 @@ import {
   UserPlus,
   ClipboardCheck,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -43,26 +43,34 @@ function fromNow(iso: string) {
 }
 
 export function NotificationsMenu() {
-  const { data } = useQuery({
+  const queryClient = useQueryClient();
+
+  // Contador de não lidas REAL: derivado dos dados retornados por GET /notificacoes.
+  // Em caso de erro a query fica sem dados e o badge não é exibido (nada de mock).
+  const { data, isError } = useQuery({
     queryKey: ["notifications"],
     queryFn: fetchNotifications,
     staleTime: 30_000,
   });
-  const [readOverrides, setReadOverrides] = useState<Record<string, boolean>>({});
 
-  const items: AppNotification[] = useMemo(
-    () => (data ?? []).map((n) => ({ ...n, read: readOverrides[n.id] ?? n.read })),
-    [data, readOverrides],
-  );
-
+  const items: AppNotification[] = data ?? [];
   const unread = items.filter((n) => !n.read).length;
 
-  function readAll() {
-    const next: Record<string, boolean> = {};
-    items.forEach((n) => (next[n.id] = true));
-    setReadOverrides(next);
-    void markAllRead();
-  }
+  const markAllMutation = useMutation({
+    mutationFn: markAllRead,
+    onMutate: () => {
+      queryClient.setQueryData<AppNotification[]>(["notifications"], (old) =>
+        (old ?? []).map((n) => ({ ...n, read: true })),
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      toast.error("Não foi possível marcar as notificações como lidas.");
+    },
+  });
 
   return (
     <DropdownMenu>
@@ -90,7 +98,13 @@ export function NotificationsMenu() {
             </p>
           </div>
           {unread > 0 && (
-            <Button variant="ghost" size="sm" onClick={readAll} className="h-8 rounded-lg text-xs">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => markAllMutation.mutate()}
+              disabled={markAllMutation.isPending}
+              className="h-8 rounded-lg text-xs"
+            >
               <CheckCheck className="mr-1.5 h-3.5 w-3.5" /> Marcar como lidas
             </Button>
           )}
@@ -99,7 +113,9 @@ export function NotificationsMenu() {
         <ScrollArea className="max-h-[380px]">
           {items.length === 0 ? (
             <div className="px-4 py-10 text-center text-sm text-muted-foreground">
-              Nenhuma notificação por aqui.
+              {isError
+                ? "Não foi possível carregar as notificações."
+                : "Nenhuma notificação por aqui."}
             </div>
           ) : (
             <ul className="divide-y">
@@ -136,11 +152,7 @@ export function NotificationsMenu() {
                 return (
                   <li key={n.id}>
                     {n.link ? (
-                      <Link
-                        to={n.link}
-                        onClick={() => setReadOverrides((prev) => ({ ...prev, [n.id]: true }))}
-                        className="block"
-                      >
+                      <Link to={n.link} className="block">
                         {body}
                       </Link>
                     ) : (

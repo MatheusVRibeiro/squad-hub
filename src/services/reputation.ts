@@ -37,6 +37,13 @@ export type Reputation = {
   history: HistoryEntry[];
 };
 
+/**
+ * Dados MOCK de reputação — uso EXCLUSIVO em desenvolvimento (import.meta.env.DEV).
+ *
+ * Em produção o backend é a única fonte de verdade: fetchReputation NÃO cai neste
+ * fallback quando import.meta.env.PROD (lança erro e a UI trata). Mantidos também
+ * para getLocalReputation/saveLocalReputation/awardLocalXP (XP local do Kanban).
+ */
 const MOCK: Reputation = {
   level: 4,
   xp: 620,
@@ -146,19 +153,6 @@ export function saveLocalReputation(rep: Reputation) {
   }
 }
 
-export async function fetchReputation(userId?: string): Promise<Reputation> {
-  try {
-    const { data } = await api.get<Reputation>(`/usuarios/${userId ?? "me"}/reputacao`);
-    if (data && typeof data.level === "number") {
-      saveLocalReputation(data);
-      return data;
-    }
-  } catch {
-    // fallback
-  }
-  return getLocalReputation();
-}
-
 export async function awardLocalXP(
   amount: number,
 ): Promise<{ levelUp: boolean; nextLevel: number }> {
@@ -187,4 +181,109 @@ export async function awardLocalXP(
   }
 
   return { levelUp, nextLevel: level };
+}
+
+// ---------------------------------------------------------------------------
+// Integração real com GET /usuarios/:id/reputacao (alias "me" = autenticado)
+// ---------------------------------------------------------------------------
+
+const ACHIEVEMENT_ICONS = ["trophy", "star", "flame", "rocket", "users", "code"] as const;
+type AchievementIcon = (typeof ACHIEVEMENT_ICONS)[number];
+
+const HISTORY_STATUS: readonly HistoryEntry["status"][] = ["Concluído", "Em andamento", "Saiu"];
+
+type ReputationResponse = {
+  sucesso: boolean;
+  message: string;
+  dados: {
+    level: number;
+    xp: number;
+    xpToNext: number;
+    rating: number;
+    reviewsCount: number;
+    projectsCompleted: number;
+    achievements: {
+      id: string | number;
+      label: string;
+      description: string | null;
+      icon: string;
+    }[];
+    reviews: {
+      id: string | number;
+      author: string;
+      projectName: string | null;
+      rating: number;
+      comment: string | null;
+      createdAt: string;
+    }[];
+    history: {
+      id: string | number;
+      projectName: string;
+      role: string;
+      status: string;
+      period: string;
+      technologies: string[];
+    }[];
+  };
+};
+
+function mapReputation(dados: ReputationResponse["dados"]): Reputation {
+  return {
+    level: typeof dados.level === "number" ? dados.level : 0,
+    xp: typeof dados.xp === "number" ? dados.xp : 0,
+    // Guard contra divisão por zero no ReputationOverview (Progress)
+    xpToNext:
+      typeof dados.xpToNext === "number" && dados.xpToNext > 0 ? dados.xpToNext : 100,
+    rating: typeof dados.rating === "number" ? dados.rating : 0,
+    reviewsCount: typeof dados.reviewsCount === "number" ? dados.reviewsCount : 0,
+    projectsCompleted:
+      typeof dados.projectsCompleted === "number" ? dados.projectsCompleted : 0,
+    achievements: (Array.isArray(dados.achievements) ? dados.achievements : []).map((a) => ({
+      id: String(a.id),
+      label: a.label ?? "",
+      description: a.description ?? "",
+      // Ícone do backend pode vir com qualquer string — normaliza para o union
+      icon: (ACHIEVEMENT_ICONS as readonly string[]).includes(a.icon)
+        ? (a.icon as AchievementIcon)
+        : "trophy",
+    })),
+    reviews: (Array.isArray(dados.reviews) ? dados.reviews : []).map((r) => ({
+      id: String(r.id),
+      author: r.author ?? "",
+      projectName: r.projectName ?? "Projeto",
+      rating: typeof r.rating === "number" ? r.rating : 0,
+      comment: r.comment ?? "",
+      createdAt: r.createdAt ?? "",
+    })),
+    history: (Array.isArray(dados.history) ? dados.history : []).map((h) => ({
+      id: String(h.id),
+      projectName: h.projectName ?? "",
+      role: h.role === "Owner" ? "Owner" : "Membro",
+      status: (HISTORY_STATUS as readonly string[]).includes(h.status)
+        ? (h.status as HistoryEntry["status"])
+        : "Em andamento",
+      period: h.period ?? "",
+      technologies: Array.isArray(h.technologies) ? h.technologies.map(String) : [],
+    })),
+  };
+}
+
+export async function fetchReputation(userId?: string): Promise<Reputation> {
+  try {
+    const { data } = await api.get<ReputationResponse>(
+      `/usuarios/${userId ?? "me"}/reputacao`,
+    );
+    if (data?.sucesso && data.dados && typeof data.dados.level === "number") {
+      return mapReputation(data.dados);
+    }
+    throw new Error("Resposta de reputação inválida do servidor.");
+  } catch (err) {
+    // Fallback SOMENTE em desenvolvimento (backend offline). Em produção,
+    // lança o erro para a UI tratar — nunca mostrar dados fictícios.
+    if (import.meta.env.DEV) {
+      console.warn("[reputation] API indisponível em DEV; usando mock:", err);
+      return MOCK;
+    }
+    throw err instanceof Error ? err : new Error("Falha ao carregar reputação.");
+  }
 }

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -10,6 +10,17 @@ import { ProjectsToolbar, type SortKey } from "@/components/projects/ProjectsToo
 import { ProjectsEmpty, ProjectsError, ProjectsSkeleton } from "@/components/projects/states";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { fetchProjects, type Project, type ProjectStatus } from "@/services/projects";
+
+type ProjetosSearch = {
+  /** Termo da busca global (AppLayout) — filtra por nome/descrição. */
+  q?: string;
+};
+
+function validateProjetosSearch(search: Record<string, unknown>): ProjetosSearch {
+  return {
+    q: typeof search.q === "string" && search.q.trim().length > 0 ? search.q.trim() : undefined,
+  };
+}
 
 function fuzzyMatch(text: string, query: string): boolean {
   if (!query) return true;
@@ -28,12 +39,19 @@ function fuzzyMatch(text: string, query: string): boolean {
 }
 
 function ExplorarProjetosPage() {
-  const [search, setSearch] = useState("");
+  const { q } = Route.useSearch();
+  const [search, setSearch] = useState(q ?? "");
   const [selectedTechs, setSelectedTechs] = useState<string[]>([]);
   const [status, setStatus] = useState<ProjectStatus | "all">("all");
   const [sort, setSort] = useState<SortKey>("recent");
 
   const debouncedSearch = useDebouncedValue(search, 250);
+
+  // Sincroniza o termo da busca global (?q=) com o campo de busca da toolbar,
+  // que já filtra por nome/descrição (fuzzyMatch) no useMemo abaixo.
+  useEffect(() => {
+    setSearch(q ?? "");
+  }, [q]);
 
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ["projects"],
@@ -140,5 +158,6 @@ function ExplorarProjetosPage() {
 }
 
 export const Route = createFileRoute("/projetos/")({
+  validateSearch: validateProjetosSearch,
   component: ExplorarProjetosPage,
 });

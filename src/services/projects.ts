@@ -1,4 +1,7 @@
 import { api } from "./api";
+// Fallbacks mock — uso exclusivo em DEV (ver fetchProjects). Import local para
+// uso direto + re-export abaixo para compatibilidade com services/projectDetail.ts.
+import { getLocalProjects, saveLocalProjects } from "./mocks";
 
 export type ProjectStatus = "Aberto" | "Em andamento" | "Finalizado";
 
@@ -18,101 +21,17 @@ export type Project = {
   documentacaoUrl?: string;
 };
 
-export const MOCK_PROJECTS: Project[] = [
-  {
-    id: "1",
-    name: "MonteSquad Web",
-    description: "Plataforma para formação de squads e projetos colaborativos.",
-    status: "Aberto",
-    technologies: ["React", "Node.js", "Docker"],
-    membersCount: 3,
-    membersLimit: 6,
-    createdBy: "Ana Souza",
-    createdAt: "2026-05-10T12:00:00.000Z",
-  },
-  {
-    id: "2",
-    name: "API de Pagamentos",
-    description: "Microsserviço de cobrança recorrente com Stripe e webhooks.",
-    status: "Em andamento",
-    technologies: ["Node.js", "Docker", "DevOps"],
-    membersCount: 4,
-    membersLimit: 5,
-    createdBy: "Bruno Lima",
-    createdAt: "2026-04-22T08:30:00.000Z",
-  },
-  {
-    id: "3",
-    name: "Design System Aurora",
-    description: "Biblioteca de componentes acessíveis e tokens semânticos.",
-    status: "Aberto",
-    technologies: ["React", "UI/UX"],
-    membersCount: 2,
-    membersLimit: 4,
-    createdBy: "Carla Mendes",
-    createdAt: "2026-05-18T16:45:00.000Z",
-  },
-  {
-    id: "4",
-    name: "Bot de Suporte IA",
-    description: "Assistente conversacional com RAG sobre base de conhecimento.",
-    status: "Em andamento",
-    technologies: ["Python", "DevOps"],
-    membersCount: 3,
-    membersLimit: 4,
-    createdBy: "Diego Rocha",
-    createdAt: "2026-03-30T09:10:00.000Z",
-  },
-  {
-    id: "5",
-    name: "Onboarding Mobile",
-    description: "Fluxo de onboarding gamificado para novos usuários.",
-    status: "Finalizado",
-    technologies: ["React", "UI/UX"],
-    membersCount: 5,
-    membersLimit: 5,
-    createdBy: "Erica Tavares",
-    createdAt: "2026-01-12T14:00:00.000Z",
-  },
-  {
-    id: "6",
-    name: "Infra como Código",
-    description: "Pipeline de provisionamento multi-cloud com Terraform.",
-    status: "Aberto",
-    technologies: ["Docker", "DevOps"],
-    membersCount: 1,
-    membersLimit: 4,
-    createdBy: "Felipe Andrade",
-    createdAt: "2026-05-20T11:25:00.000Z",
-  },
-];
+// MOCK_PROJECTS / getLocalProjects / saveLocalProjects foram movidos para
+// src/services/mocks.ts (uso exclusivo em DEV). Re-exportados daqui para não
+// quebrar importações existentes (ex: services/projectDetail.ts).
+export { MOCK_PROJECTS, getLocalProjects, saveLocalProjects } from "./mocks";
 
 /**
- * Auxiliares de persistência local para desenvolvimento sem backend
- */
-export function getLocalProjects(): Project[] {
-  if (typeof window === "undefined") return MOCK_PROJECTS;
-  const stored = window.localStorage.getItem("@montesquad:projects");
-  if (!stored) {
-    window.localStorage.setItem("@montesquad:projects", JSON.stringify(MOCK_PROJECTS));
-    return MOCK_PROJECTS;
-  }
-  try {
-    return JSON.parse(stored);
-  } catch {
-    return MOCK_PROJECTS;
-  }
-}
-
-export function saveLocalProjects(projects: Project[]) {
-  if (typeof window !== "undefined") {
-    window.localStorage.setItem("@montesquad:projects", JSON.stringify(projects));
-  }
-}
-
-/**
- * Busca projetos do backend. Em caso de erro (ex: backend offline durante o
- * preview), retorna mock data persistido no localStorage para não quebrar a experiência.
+ * Busca projetos do backend.
+ * - DEV: em caso de erro (ex: backend offline durante o preview), cai no mock
+ *   persistido no localStorage para não quebrar a experiência.
+ * - PROD: NÃO há fallback silencioso — loga o erro e lança para a UI exibir o
+ *   estado de erro (ProjectsError).
  */
 export async function fetchProjects(): Promise<Project[]> {
   try {
@@ -166,12 +85,25 @@ export async function fetchProjects(): Promise<Project[]> {
           documentacaoUrl: p.documentacao_url || undefined,
         };
       });
-      saveLocalProjects(mapped);
+      if (import.meta.env.DEV) {
+        saveLocalProjects(mapped);
+      }
       return mapped;
     }
-    return getLocalProjects();
-  } catch {
-    return getLocalProjects();
+
+    // Resposta inesperada do backend (sucesso: false ou dados ausentes)
+    if (import.meta.env.DEV) {
+      return getLocalProjects();
+    }
+    const error = new Error("Resposta inesperada do servidor ao listar projetos.");
+    console.error("[projects] fetchProjects:", error);
+    throw error;
+  } catch (err) {
+    if (import.meta.env.DEV) {
+      return getLocalProjects();
+    }
+    console.error("[projects] fetchProjects:", err);
+    throw err instanceof Error ? err : new Error("Falha ao buscar projetos.");
   }
 }
 

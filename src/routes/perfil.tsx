@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2, Plus, X, Github, Check, ChevronsUpDown } from "lucide-react";
@@ -20,7 +20,7 @@ import { ReputationOverview } from "@/components/profile/ReputationOverview";
 import { Achievements } from "@/components/profile/Achievements";
 import { ProjectHistory } from "@/components/profile/ProjectHistory";
 import { Reviews } from "@/components/profile/Reviews";
-import { fetchReputation } from "@/services/reputation";
+import { fetchReputation, type Reputation } from "@/services/reputation";
 import { updateUserProfile, syncUserSkills } from "@/services/perfil";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverTrigger, PopoverContent, PopoverAnchor } from "@/components/ui/popover";
@@ -80,6 +80,65 @@ const BRAZILIAN_STATES = [
 const normalizeText = (text: string) =>
   text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
+/**
+ * Estado de carregamento/erro/vazio da seção de reputação.
+ * Com a integração real (GET /usuarios/me/reputacao), falhas não mostram
+ * dados fictícios: exibem mensagem + ação de tentar novamente.
+ */
+function ReputationState({
+  data,
+  isLoading,
+  isError,
+  errorMessage,
+  onRetry,
+  skeletonClass,
+  render,
+}: {
+  data: Reputation | undefined;
+  isLoading: boolean;
+  isError: boolean;
+  errorMessage: string;
+  onRetry: () => void;
+  skeletonClass: string;
+  render: (rep: Reputation) => ReactNode;
+}) {
+  if (isLoading) return <Skeleton className={skeletonClass} />;
+
+  if (isError) {
+    return (
+      <div className="rounded-2xl border border-dashed p-8 text-center">
+        <p className="text-sm font-semibold text-foreground">
+          Não foi possível carregar sua reputação
+        </p>
+        <p className="mx-auto mt-1 max-w-md text-xs text-muted-foreground">{errorMessage}</p>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={onRetry}
+          className="mt-4 cursor-pointer"
+        >
+          Tentar novamente
+        </Button>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="rounded-2xl border border-dashed p-8 text-center">
+        <p className="text-sm font-semibold text-foreground">Sem dados de reputação</p>
+        <p className="mx-auto mt-1 max-w-md text-xs text-muted-foreground">
+          Sua reputação ainda não foi calculada. Continue participando de squads para acumular
+          XP e avaliações!
+        </p>
+      </div>
+    );
+  }
+
+  return <>{render(data)}</>;
+}
+
 function PerfilPage() {
   const { user, updateUser } = useAuth();
   const [name, setName] = useState(user?.name ?? "");
@@ -97,10 +156,21 @@ function PerfilPage() {
     }
   }, [location, locationOpen]);
 
-  const { data: reputation, isLoading: loadingRep } = useQuery({
+  const {
+    data: reputation,
+    isLoading: loadingRep,
+    isError: reputationError,
+    error: reputationErrorObj,
+    refetch: refetchReputation,
+  } = useQuery({
     queryKey: ["reputation", user?.id ?? user?.email],
     queryFn: () => fetchReputation(user?.id),
   });
+
+  const reputationErrorMessage =
+    reputationErrorObj instanceof Error
+      ? reputationErrorObj.message
+      : "Tente novamente em instantes.";
 
   const initials =
     name
@@ -235,11 +305,15 @@ function PerfilPage() {
             </CardContent>
           </Card>
 
-          {loadingRep || !reputation ? (
-            <Skeleton className="h-24 w-full rounded-2xl" />
-          ) : (
-            <ReputationOverview reputation={reputation} />
-          )}
+          <ReputationState
+            data={reputation}
+            isLoading={loadingRep}
+            isError={reputationError}
+            errorMessage={reputationErrorMessage}
+            onRetry={() => refetchReputation()}
+            skeletonClass="h-24 w-full rounded-2xl"
+            render={(rep) => <ReputationOverview reputation={rep} />}
+          />
 
           <Tabs defaultValue="sobre" className="space-y-6">
             <TabsList className="flex w-full justify-start overflow-x-auto rounded-2xl bg-card/45 border border-border/40 p-1 backdrop-blur-sm">
@@ -471,27 +545,39 @@ function PerfilPage() {
             </TabsContent>
 
             <TabsContent value="historico">
-              {loadingRep || !reputation ? (
-                <Skeleton className="h-48 w-full rounded-2xl" />
-              ) : (
-                <ProjectHistory items={reputation.history} />
-              )}
+              <ReputationState
+                data={reputation}
+                isLoading={loadingRep}
+                isError={reputationError}
+                errorMessage={reputationErrorMessage}
+                onRetry={() => refetchReputation()}
+                skeletonClass="h-48 w-full rounded-2xl"
+                render={(rep) => <ProjectHistory items={rep.history} />}
+              />
             </TabsContent>
 
             <TabsContent value="avaliacoes">
-              {loadingRep || !reputation ? (
-                <Skeleton className="h-48 w-full rounded-2xl" />
-              ) : (
-                <Reviews items={reputation.reviews} />
-              )}
+              <ReputationState
+                data={reputation}
+                isLoading={loadingRep}
+                isError={reputationError}
+                errorMessage={reputationErrorMessage}
+                onRetry={() => refetchReputation()}
+                skeletonClass="h-48 w-full rounded-2xl"
+                render={(rep) => <Reviews items={rep.reviews} />}
+              />
             </TabsContent>
 
             <TabsContent value="conquistas">
-              {loadingRep || !reputation ? (
-                <Skeleton className="h-48 w-full rounded-2xl" />
-              ) : (
-                <Achievements items={reputation.achievements} />
-              )}
+              <ReputationState
+                data={reputation}
+                isLoading={loadingRep}
+                isError={reputationError}
+                errorMessage={reputationErrorMessage}
+                onRetry={() => refetchReputation()}
+                skeletonClass="h-48 w-full rounded-2xl"
+                render={(rep) => <Achievements items={rep.achievements} />}
+              />
             </TabsContent>
           </Tabs>
         </div>

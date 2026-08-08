@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueries } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
   Compass,
@@ -23,19 +23,17 @@ import {
   YAxis,
   Tooltip as ReChartsTooltip,
   Legend,
-  AreaChart,
-  Area,
 } from "recharts";
 
 import { AppLayout } from "@/layouts/AppLayout";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchProjects } from "@/services/projects";
 import { fetchReputation } from "@/services/reputation";
 import { fetchNotifications } from "@/services/notifications";
+import { fetchProjectTasks } from "@/services/tasks";
 
 const tiles = [
   { icon: Compass, label: "Explorar Projetos", hint: "Descubra squads", to: "/projetos" },
@@ -63,7 +61,7 @@ function DashboardPage() {
     queryFn: fetchNotifications,
   });
 
-  // 1. Dados para o gráfico de Pizza: Status dos Projetos
+  // 1. Dados para o gráfico de Pizza: Status dos Projetos (GET /projetos real)
   const projectStatusData = useMemo(() => {
     const counts = { Aberto: 0, "Em andamento": 0, Finalizado: 0 };
     projects.forEach((p) => {
@@ -78,52 +76,44 @@ function DashboardPage() {
     ].filter((item) => item.value > 0);
   }, [projects]);
 
-  // 2. Agregação dinâmica das tarefas de todos os projetos para o gráfico de Barras
+  // 2. Projetos em que o usuário é membro/dono — vindos do histórico real de
+  // reputação (GET /usuarios/me/reputacao → history, baseado em membros_equipe).
+  const myProjectIds = useMemo(() => {
+    if (!reputation) return [];
+    return Array.from(
+      new Set((reputation.history ?? []).map((h) => String(h.id)).filter(Boolean)),
+    );
+  }, [reputation]);
+
+  // 3. Tarefas reais de cada squad do usuário (GET /projetos/:id/tarefas)
+  const taskQueries = useQueries({
+    queries: myProjectIds.map((id) => ({
+      queryKey: ["project-tasks", id],
+      queryFn: () => fetchProjectTasks(id),
+      staleTime: 60_000,
+      retry: 1,
+    })),
+  });
+
   const taskStatusData = useMemo(() => {
     let todo = 0;
     let doing = 0;
     let done = 0;
 
-    projects.forEach((p) => {
-      if (typeof window !== "undefined") {
-        const detailStr = window.localStorage.getItem(`@montesquad:project-detail:${p.id}`);
-        if (detailStr) {
-          try {
-            const detail = JSON.parse(detailStr);
-            detail.tasks.forEach((t: { status: string }) => {
-              if (t.status === "todo") todo++;
-              else if (t.status === "doing") doing++;
-              else if (t.status === "done") done++;
-            });
-          } catch {
-            // ignore
-          }
-        } else {
-          // Defaults simulados por projeto se o detalhe não foi carregado ainda
-          todo += 1;
-          doing += 1;
-          done += 2;
-        }
+    for (const query of taskQueries) {
+      for (const task of query.data ?? []) {
+        if (task.status === "todo") todo++;
+        else if (task.status === "doing") doing++;
+        else if (task.status === "done") done++;
       }
-    });
+    }
 
     return [
       { name: "A fazer", quantidade: todo, fill: "#94a3b8" },
       { name: "Em progresso", quantidade: doing, fill: "#f59e0b" },
       { name: "Concluído", quantidade: done, fill: "#10b981" },
     ];
-  }, [projects]);
-
-  // 3. Progresso semanal de XP (Evolução simulada)
-  const xpProgressionData = [
-    { dia: "Seg", xp: 120 },
-    { dia: "Ter", xp: 240 },
-    { dia: "Qua", xp: 350 },
-    { dia: "Qui", xp: 480 },
-    { dia: "Sex", xp: 520 },
-    { dia: "Sáb", xp: 590 },
-    { dia: "Dom", xp: reputation?.xp || 620 },
-  ];
+  }, [taskQueries]);
 
   const totalTasksCount = useMemo(() => {
     return taskStatusData.reduce((acc, curr) => acc + curr.quantidade, 0);
@@ -133,12 +123,15 @@ function DashboardPage() {
     return taskStatusData.find((t) => t.name === "Concluído")?.quantidade || 0;
   }, [taskStatusData]);
 
+  const tasksLoading = taskQueries.some((q) => q.isPending);
+
   const unreadNotifCount = useMemo(() => {
     return notifications.filter((n) => !n.read).length;
   }, [notifications]);
 
   const xpProgressPercent = useMemo(() => {
     if (!reputation) return 0;
+    if (reputation.xpToNext <= 0) return 0;
     return (reputation.xp / reputation.xpToNext) * 100;
   }, [reputation]);
 
@@ -185,8 +178,8 @@ function DashboardPage() {
                 <div className="space-y-1">
                   <Progress value={xpProgressPercent} className="h-2" />
                   <p className="text-[10px] text-right text-muted-foreground">
-                    Faltam {reputation ? reputation.xpToNext - reputation.xp : 380} XP para o
-                    próximo nível
+                    Faltam {reputation ? Math.max(0, reputation.xpToNext - reputation.xp) : 0} XP
+                    para o próximo nível
                   </p>
                 </div>
               </CardContent>
@@ -251,48 +244,31 @@ function DashboardPage() {
 
           {/* Seção de Gráficos Recharts */}
           <div className="grid gap-6 md:grid-cols-3">
-            {/* Gráfico 1: Evolução Semanal de Atividade / XP */}
+            {/* Gráfico 1: Evolução Semanal de Atividade / XP — estado vazio (sem fonte real) */}
             <Card className="rounded-2xl border-border/60 md:col-span-2">
               <CardHeader>
                 <CardTitle className="text-lg">Progresso Semanal (XP)</CardTitle>
                 <CardDescription>
-                  Fluxo acumulado de pontuações obtidas completando tarefas e revisões.
+                  Evolução do XP acumulado ao longo da semana.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart
-                    data={xpProgressionData}
-                    margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
-                  >
-                    <defs>
-                      <linearGradient id="colorXp" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <XAxis dataKey="dia" stroke="#94a3b8" fontSize={11} tickLine={false} />
-                    <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} />
-                    <ReChartsTooltip
-                      contentStyle={{
-                        background: "var(--card)",
-                        borderColor: "var(--border)",
-                        borderRadius: "12px",
-                        fontSize: "12px",
-                      }}
-                      labelStyle={{ fontWeight: "bold" }}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="xp"
-                      name="XP Acumulado"
-                      stroke="#6366f1"
-                      strokeWidth={2.5}
-                      fillOpacity={1}
-                      fill="url(#colorXp)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
+              <CardContent className="flex h-72 flex-col items-center justify-center gap-3 text-center">
+                <span className="grid h-12 w-12 place-items-center rounded-xl bg-primary/10 text-primary">
+                  <Trophy className="h-6 w-6" />
+                </span>
+                <p className="text-sm font-medium">Sem dados semanais disponíveis</p>
+                <p className="max-w-xs text-xs text-muted-foreground">
+                  Ainda não há histórico diário de XP. Complete tarefas e participe de squads para
+                  acumular XP.
+                </p>
+                {reputation && (
+                  <p className="text-xs text-muted-foreground">
+                    XP atual:{" "}
+                    <span className="font-semibold text-foreground">
+                      {reputation.xp} / {reputation.xpToNext}
+                    </span>
+                  </p>
+                )}
               </CardContent>
             </Card>
 
@@ -355,7 +331,7 @@ function DashboardPage() {
               </CardContent>
             </Card>
 
-            {/* Gráfico 3: Tarefas por Status */}
+            {/* Gráfico 3: Tarefas por Status (dados reais dos kanbans do usuário) */}
             <Card className="rounded-2xl border-border/60 md:col-span-3">
               <CardHeader>
                 <CardTitle className="text-lg">Métricas das Tarefas</CardTitle>
@@ -364,34 +340,50 @@ function DashboardPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={taskStatusData}
-                    margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
-                  >
-                    <XAxis
-                      dataKey="name"
-                      stroke="oklch(0.554 0.046 257.417)"
-                      fontSize={11}
-                      tickLine={false}
-                    />
-                    <YAxis stroke="oklch(0.554 0.046 257.417)" fontSize={11} tickLine={false} />
-                    <ReChartsTooltip
-                      contentStyle={{
-                        background: "var(--card)",
-                        borderColor: "var(--border)",
-                        borderRadius: "12px",
-                        fontSize: "12px",
-                      }}
-                    />
-                    <Legend wrapperStyle={{ fontSize: "11px" }} />
-                    <Bar dataKey="quantidade" name="Quantidade de tarefas" radius={[6, 6, 0, 0]}>
-                      {taskStatusData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                {tasksLoading ? (
+                  <div className="flex h-full items-center justify-center">
+                    <p className="text-xs text-muted-foreground">Carregando tarefas...</p>
+                  </div>
+                ) : totalTasksCount === 0 ? (
+                  <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
+                    <span className="grid h-12 w-12 place-items-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                      <CheckSquare className="h-6 w-6" />
+                    </span>
+                    <p className="text-sm font-medium">Nenhuma tarefa nos seus squads</p>
+                    <p className="max-w-xs text-xs text-muted-foreground">
+                      Crie tarefas no Kanban dos seus projetos para acompanhar as métricas aqui.
+                    </p>
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={taskStatusData}
+                      margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                    >
+                      <XAxis
+                        dataKey="name"
+                        stroke="oklch(0.554 0.046 257.417)"
+                        fontSize={11}
+                        tickLine={false}
+                      />
+                      <YAxis stroke="oklch(0.554 0.046 257.417)" fontSize={11} tickLine={false} />
+                      <ReChartsTooltip
+                        contentStyle={{
+                          background: "var(--card)",
+                          borderColor: "var(--border)",
+                          borderRadius: "12px",
+                          fontSize: "12px",
+                        }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: "11px" }} />
+                      <Bar dataKey="quantidade" name="Quantidade de tarefas" radius={[6, 6, 0, 0]}>
+                        {taskStatusData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
               </CardContent>
             </Card>
           </div>

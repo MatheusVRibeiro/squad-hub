@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { LogOut, Search, User, Trophy, Sparkles } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -73,7 +74,9 @@ function ConfettiEffect() {
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, signOut } = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [levelUpData, setLevelUpData] = useState<{ level: number } | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -116,14 +119,24 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               </p>
             </div>
 
-            <div className="relative ml-auto hidden md:block">
+            <form
+              role="search"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const term = searchTerm.trim();
+                navigate({ to: "/projetos", search: term ? { q: term } : {} });
+              }}
+              className="relative ml-auto hidden md:block"
+            >
               <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 aria-label="Busca global"
                 placeholder="Buscar projetos, pessoas..."
                 className="h-9 w-64 rounded-xl pl-8"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
-            </div>
+            </form>
 
             <div className="ml-auto md:ml-0">
               <NotificationsMenu />

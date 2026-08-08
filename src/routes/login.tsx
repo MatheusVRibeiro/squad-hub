@@ -91,13 +91,12 @@ function LoginPage() {
             >
               Senha
             </Label>
-            <button
-              type="button"
-              onClick={() => toast.info("Em breve: recuperação de senha")}
+            <Link
+              to="/recuperar-senha"
               className="text-[10px] font-bold text-primary tracking-wide hover:underline uppercase"
             >
               Esqueci minha senha
-            </button>
+            </Link>
           </div>
           <Input
             id="password"

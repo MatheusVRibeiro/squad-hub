@@ -13,6 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { KanbanBoard } from "@/components/projects/KanbanBoard";
+import { GithubProjectPanel } from "@/components/projects/GithubProjectPanel";
 import { Mural } from "@/components/projects/Mural";
 import { MembersList } from "@/components/projects/MembersList";
 import { Applications } from "@/components/projects/Applications";
@@ -497,6 +498,15 @@ function ProjectDetailPage() {
                     </div>
                   </CardContent>
                 </Card>
+              </motion.div>
+
+              {/* Conexão GitHub do projeto (ETAPA 5) */}
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.12 }}
+              >
+                <GithubProjectPanel projectId={data.id} isOwner={isOwner} />
               </motion.div>
 
               {!isMember && (

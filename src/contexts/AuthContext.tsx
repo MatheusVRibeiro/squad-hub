@@ -34,6 +34,7 @@ type LoginResponse = {
     tipo: string;
     bio?: string;
     localizacao?: string;
+    avatar_url?: string;
   };
 };
 
@@ -53,6 +54,7 @@ async function loginAndMap(
     email: data.dados.email,
     bio: data.dados.bio,
     location: data.dados.localizacao,
+    avatarUrl: data.dados.avatar_url ?? undefined,
     role: data.dados.tipo === "adm" ? "admin" : "user",
   };
 

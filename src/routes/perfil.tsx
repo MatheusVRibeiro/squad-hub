@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 import { AppLayout } from "@/layouts/AppLayout";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -21,7 +21,7 @@ import { Achievements } from "@/components/profile/Achievements";
 import { ProjectHistory } from "@/components/profile/ProjectHistory";
 import { Reviews } from "@/components/profile/Reviews";
 import { fetchReputation, type Reputation } from "@/services/reputation";
-import { updateUserProfile, syncUserSkills } from "@/services/perfil";
+import { updateUserProfile, syncUserSkills, fetchMe } from "@/services/perfil";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverTrigger, PopoverContent, PopoverAnchor } from "@/components/ui/popover";
 import {
@@ -147,11 +147,34 @@ function PerfilPage() {
   const [name, setName] = useState(user?.name ?? "");
   const [bio, setBio] = useState(user?.bio ?? "");
   const [location, setLocation] = useState(user?.location ?? "");
+  const [avatar, setAvatar] = useState(user?.avatarUrl ?? "");
   const [skills, setSkills] = useState<string[]>(user?.skills ?? []);
   const [draft, setDraft] = useState("");
   const [saving, setSaving] = useState(false);
   const [locationOpen, setLocationOpen] = useState(false);
   const [locationSearch, setLocationSearch] = useState(user?.location ?? "");
+
+  // Opção B (fix B12): busca os dados frescos do usuário no BACKEND ao montar
+  // a página — o formulário nunca depende apenas do localStorage, então um
+  // user corrompido (ex: nome "") não sobrescreve campos reais no salvar.
+  useEffect(() => {
+    let ativo = true;
+    fetchMe()
+      .then((dados) => {
+        if (!ativo) return;
+        setName((prev) => prev || dados.nome || "");
+        setBio((prev) => prev || dados.bio || "");
+        setLocation((prev) => prev || dados.localizacao || "");
+        setAvatar((prev) => prev || dados.avatar_url || "");
+      })
+      .catch((err) => {
+        if (!ativo) return;
+        console.warn("[perfil] Não foi possível carregar dados do backend:", err);
+      });
+    return () => {
+      ativo = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!locationOpen) {
@@ -195,10 +218,10 @@ function PerfilPage() {
     setSaving(true);
     try {
       // 1) Persiste o perfil no backend (PATCH /usuarios/:id)
-      await updateUserProfile({ nome: name, bio, localizacao: location });
+      await updateUserProfile({ nome: name, bio, localizacao: location, avatarUrl: avatar });
 
       // 2) Só atualiza o estado local depois da resposta 200 da API
-      const next = { ...user, name, bio, location, skills };
+      const next = { ...user, name, bio, location, avatarUrl: avatar, skills };
       updateUser(next);
 
       // 3) Persiste as habilidades (best-effort: perfil já foi salvo)
@@ -241,6 +264,7 @@ function PerfilPage() {
       setName(userData.name || userData.login || name);
       if (userData.bio) setBio(userData.bio);
       if (userData.location) setLocation(userData.location);
+      if (userData.avatar_url) setAvatar(userData.avatar_url);
 
       const reposRes = await fetch(
         `https://api.github.com/users/${username.trim()}/repos?per_page=50&sort=updated`,
@@ -283,6 +307,9 @@ function PerfilPage() {
               <div className="flex flex-col sm:flex-row sm:items-end gap-4 text-center sm:text-left justify-between">
                 <div className="flex flex-col sm:flex-row sm:items-end gap-4">
                   <Avatar className="mx-auto sm:mx-0 h-24 w-24 border-4 border-background shadow-md">
+                    {avatar ? (
+                      <AvatarImage src={avatar} alt={name || "Avatar"} className="object-cover" />
+                    ) : null}
                     <AvatarFallback className="bg-gradient-to-tr from-primary/10 to-primary/20 text-xl font-semibold text-primary">
                       {initials}
                     </AvatarFallback>

@@ -5,6 +5,17 @@ export type UpdateUserProfilePayload = {
   nome: string;
   bio?: string;
   localizacao?: string;
+  avatarUrl?: string;
+};
+
+export type MeusDados = {
+  id: number;
+  nome: string;
+  email: string;
+  bio?: string | null;
+  localizacao?: string | null;
+  avatar_url?: string | null;
+  tipo?: string;
 };
 
 export type Habilidade = {
@@ -48,11 +59,35 @@ export async function updateUserProfile(payload: UpdateUserProfilePayload): Prom
   if (!id) throw new Error("Usuário não autenticado.");
 
   try {
-    const { data } = await api.patch<ApiEnvelope>(`/usuarios/${id}`, payload);
+    const { data } = await api.patch<ApiEnvelope>(`/usuarios/${id}`, {
+      nome: payload.nome,
+      bio: payload.bio,
+      localizacao: payload.localizacao,
+      avatar_url: payload.avatarUrl,
+    });
     if (!data.sucesso) throw new Error(data.message || "Não foi possível atualizar o perfil.");
     return data;
   } catch (err) {
     throw toFriendlyError(err, "Erro ao salvar perfil. Tente novamente.");
+  }
+}
+
+/**
+ * GET /usuarios/me — dados frescos do usuário autenticado direto do backend.
+ * Usado ao montar o perfil (Opção B): o formulário nunca depende só do
+ * localStorage, evitando sobrescrever campos com valores vazios corrompidos.
+ */
+export async function fetchMe(): Promise<MeusDados> {
+  try {
+    const { data } = await api.get<{ sucesso: boolean; message?: string; dados: MeusDados }>(
+      "/usuarios/me",
+    );
+    if (!data.sucesso || !data.dados) {
+      throw new Error(data.message || "Não foi possível carregar seus dados.");
+    }
+    return data.dados;
+  } catch (err) {
+    throw toFriendlyError(err, "Erro ao carregar perfil. Tente novamente.");
   }
 }
 

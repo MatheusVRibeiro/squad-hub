@@ -69,6 +69,12 @@ const COLUMNS: { key: KanbanStatus; label: string; tone: string; borderTone: str
     borderTone: "border-l-amber-500",
   },
   {
+    key: "review",
+    label: "Em revisão",
+    tone: "bg-sky-500/10 text-sky-700 dark:text-sky-400 border border-sky-500/20",
+    borderTone: "border-l-sky-500",
+  },
+  {
     key: "done",
     label: "Concluído",
     tone: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20",
@@ -364,6 +370,13 @@ export function KanbanBoard({
                                 className="cursor-pointer text-xs py-1.5 px-2"
                               >
                                 Em progresso
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => move(t.id, "review")}
+                                disabled={t.status === "review"}
+                                className="cursor-pointer text-xs py-1.5 px-2"
+                              >
+                                Em revisão
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => move(t.id, "done")}

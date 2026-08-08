@@ -7,7 +7,7 @@ import {
   type ProjectStatus,
 } from "./projects";
 
-export type KanbanStatus = "todo" | "doing" | "done";
+export type KanbanStatus = "todo" | "doing" | "review" | "done";
 
 export type TaskPriority = "low" | "medium" | "high" | "critical";
 
@@ -26,6 +26,15 @@ export type KanbanTask = {
   priority?: "low" | "medium" | "high";
   dueDate?: string;
   subtasks?: SubTask[];
+  // Campos GitHub (ETAPA 2) — opcionais; projetos sem GitHub não os possuem
+  githubBranch?: string | null;
+  githubPrNumber?: number | null;
+  githubPrUrl?: string | null;
+  githubPrStatus?: "none" | "open" | "closed" | "merged" | null;
+  githubLastActivityAt?: string | null;
+  completionSource?: "manual" | "github_merge" | null;
+  completedAt?: string | null;
+  assigneeId?: number | null;
 };
 
 export type MuralMessage = {

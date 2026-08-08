@@ -53,3 +53,52 @@ export async function getGlobalCommitters(
     throw toFriendlyError(err, "Erro ao buscar top committers global.");
   }
 }
+
+// ── Top Contributors (ETAPAS 13-14) ───────────────────────────────────────
+
+export type Contributor = {
+  userId: string | null;
+  name: string;
+  githubLogin: string | null;
+  avatarUrl: string | null;
+  score: number;
+  commitCount: number;
+  prsAbertos: number;
+  prsMergeados: number;
+  tasksVerificadas: number;
+};
+
+/** GET /projetos/:id/rankings/contributors — top contributors do projeto (ETAPA 13). */
+export async function getProjectContributors(
+  projectId: string | number,
+  limit = 10,
+): Promise<Contributor[]> {
+  try {
+    const { data } = await api.get<ApiEnvelope<Contributor[]>>(
+      `/projetos/${projectId}/rankings/contributors`,
+      {
+        params: { limit },
+      },
+    );
+    if (!data.sucesso) throw new Error(data.message || "Falha ao buscar ranking");
+    return data.dados ?? [];
+  } catch (err) {
+    throw toFriendlyError(err, "Erro ao buscar top contributors do projeto.");
+  }
+}
+
+/** GET /rankings/contributors — top contributors global (ETAPA 14). */
+export async function getGlobalContributors(
+  limit = 10,
+  period: "all" | "month" = "all",
+): Promise<Contributor[]> {
+  try {
+    const { data } = await api.get<ApiEnvelope<Contributor[]>>("/rankings/contributors", {
+      params: { limit, period },
+    });
+    if (!data.sucesso) throw new Error(data.message || "Falha ao buscar ranking global");
+    return data.dados ?? [];
+  } catch (err) {
+    throw toFriendlyError(err, "Erro ao buscar top contributors global.");
+  }
+}

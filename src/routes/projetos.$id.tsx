@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { KanbanBoard } from "@/components/projects/KanbanBoard";
 import { GithubProjectPanel } from "@/components/projects/GithubProjectPanel";
 import { TopCommitters } from "@/components/projects/TopCommitters";
+import { TopContributors } from "@/components/projects/TopContributors";
 import { Mural } from "@/components/projects/Mural";
 import { MembersList } from "@/components/projects/MembersList";
 import { Applications } from "@/components/projects/Applications";
@@ -510,11 +511,20 @@ function ProjectDetailPage() {
                 <GithubProjectPanel projectId={data.id} isOwner={isOwner} />
               </motion.div>
 
-              {/* Top Committers do projeto (ETAPA 11) */}
+              {/* Top Contributors do projeto (ETAPA 13) — ranking principal */}
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: 0.14 }}
+              >
+                <TopContributors projectId={data.id} scope="project" limit={5} />
+              </motion.div>
+
+              {/* Top Committers do projeto (ETAPA 11) — métrica secundária */}
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.16 }}
               >
                 <TopCommitters projectId={data.id} scope="project" limit={5} />
               </motion.div>

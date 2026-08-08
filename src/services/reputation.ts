@@ -232,12 +232,10 @@ function mapReputation(dados: ReputationResponse["dados"]): Reputation {
     level: typeof dados.level === "number" ? dados.level : 0,
     xp: typeof dados.xp === "number" ? dados.xp : 0,
     // Guard contra divisão por zero no ReputationOverview (Progress)
-    xpToNext:
-      typeof dados.xpToNext === "number" && dados.xpToNext > 0 ? dados.xpToNext : 100,
+    xpToNext: typeof dados.xpToNext === "number" && dados.xpToNext > 0 ? dados.xpToNext : 100,
     rating: typeof dados.rating === "number" ? dados.rating : 0,
     reviewsCount: typeof dados.reviewsCount === "number" ? dados.reviewsCount : 0,
-    projectsCompleted:
-      typeof dados.projectsCompleted === "number" ? dados.projectsCompleted : 0,
+    projectsCompleted: typeof dados.projectsCompleted === "number" ? dados.projectsCompleted : 0,
     achievements: (Array.isArray(dados.achievements) ? dados.achievements : []).map((a) => ({
       id: String(a.id),
       label: a.label ?? "",
@@ -270,9 +268,7 @@ function mapReputation(dados: ReputationResponse["dados"]): Reputation {
 
 export async function fetchReputation(userId?: string): Promise<Reputation> {
   try {
-    const { data } = await api.get<ReputationResponse>(
-      `/usuarios/${userId ?? "me"}/reputacao`,
-    );
+    const { data } = await api.get<ReputationResponse>(`/usuarios/${userId ?? "me"}/reputacao`);
     if (data?.sucesso && data.dados && typeof data.dados.level === "number") {
       return mapReputation(data.dados);
     }

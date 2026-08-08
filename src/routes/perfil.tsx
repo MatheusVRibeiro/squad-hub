@@ -78,7 +78,10 @@ const BRAZILIAN_STATES = [
 ];
 
 const normalizeText = (text: string) =>
-  text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
 
 /**
  * Estado de carregamento/erro/vazio da seção de reputação.
@@ -129,8 +132,8 @@ function ReputationState({
       <div className="rounded-2xl border border-dashed p-8 text-center">
         <p className="text-sm font-semibold text-foreground">Sem dados de reputação</p>
         <p className="mx-auto mt-1 max-w-md text-xs text-muted-foreground">
-          Sua reputação ainda não foi calculada. Continue participando de squads para acumular
-          XP e avaliações!
+          Sua reputação ainda não foi calculada. Continue participando de squads para acumular XP e
+          avaliações!
         </p>
       </div>
     );
@@ -215,8 +218,7 @@ function PerfilPage() {
       }
     } catch (err) {
       // Não finge sucesso: não atualiza o estado local
-      const msg =
-        err instanceof Error ? err.message : "Erro ao salvar perfil. Tente novamente.";
+      const msg = err instanceof Error ? err.message : "Erro ao salvar perfil. Tente novamente.";
       toast.error(msg);
     } finally {
       setSaving(false);
@@ -317,16 +319,28 @@ function PerfilPage() {
 
           <Tabs defaultValue="sobre" className="space-y-6">
             <TabsList className="flex w-full justify-start overflow-x-auto rounded-2xl bg-card/45 border border-border/40 p-1 backdrop-blur-sm">
-              <TabsTrigger value="sobre" className="rounded-xl px-4 py-2 text-xs font-semibold cursor-pointer">
+              <TabsTrigger
+                value="sobre"
+                className="rounded-xl px-4 py-2 text-xs font-semibold cursor-pointer"
+              >
                 Sobre
               </TabsTrigger>
-              <TabsTrigger value="historico" className="rounded-xl px-4 py-2 text-xs font-semibold cursor-pointer">
+              <TabsTrigger
+                value="historico"
+                className="rounded-xl px-4 py-2 text-xs font-semibold cursor-pointer"
+              >
                 Histórico
               </TabsTrigger>
-              <TabsTrigger value="avaliacoes" className="rounded-xl px-4 py-2 text-xs font-semibold cursor-pointer">
+              <TabsTrigger
+                value="avaliacoes"
+                className="rounded-xl px-4 py-2 text-xs font-semibold cursor-pointer"
+              >
                 Avaliações
               </TabsTrigger>
-              <TabsTrigger value="conquistas" className="rounded-xl px-4 py-2 text-xs font-semibold cursor-pointer">
+              <TabsTrigger
+                value="conquistas"
+                className="rounded-xl px-4 py-2 text-xs font-semibold cursor-pointer"
+              >
                 Conquistas
               </TabsTrigger>
             </TabsList>
@@ -399,7 +413,7 @@ function PerfilPage() {
                             <CommandList>
                               {(() => {
                                 const filtered = BRAZILIAN_STATES.filter((st) =>
-                                  normalizeText(st.label).includes(normalizeText(locationSearch))
+                                  normalizeText(st.label).includes(normalizeText(locationSearch)),
                                 );
                                 if (filtered.length === 0) {
                                   return (
@@ -424,7 +438,7 @@ function PerfilPage() {
                                         <Check
                                           className={cn(
                                             "mr-2 h-4 w-4",
-                                            location === st.label ? "opacity-100" : "opacity-0"
+                                            location === st.label ? "opacity-100" : "opacity-0",
                                           )}
                                         />
                                         {st.label}
@@ -502,7 +516,7 @@ function PerfilPage() {
                                 "cursor-pointer rounded-full px-2.5 py-0.5 text-[10px] transition-all font-medium border",
                                 isAdded
                                   ? "bg-muted text-muted-foreground border-border cursor-not-allowed"
-                                  : "bg-background/20 border-border/80 text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5"
+                                  : "bg-background/20 border-border/80 text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5",
                               )}
                             >
                               + {t}

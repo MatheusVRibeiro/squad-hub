@@ -298,7 +298,10 @@ function ProjectDetailPage() {
                         Área de Trabalho do Squad
                       </h2>
                       {!isMember && (
-                        <Badge variant="outline" className="rounded-full gap-1 h-5 text-[10px] bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20">
+                        <Badge
+                          variant="outline"
+                          className="rounded-full gap-1 h-5 text-[10px] bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20"
+                        >
                           <Lock className="h-3 w-3" /> Privado
                         </Badge>
                       )}
@@ -309,32 +312,42 @@ function ProjectDetailPage() {
 
                     <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
                       {/* Repositório */}
-                      <div className={cn(
-                        "flex items-center gap-3 p-3.5 rounded-2xl border transition-all",
-                        isMember && data.repositorioUrl 
-                          ? "bg-primary/5 border-primary/20 hover:bg-primary/10 cursor-pointer" 
-                          : "bg-muted/30 border-border/40 opacity-70"
-                      )}>
-                        <div className={cn(
-                          "grid h-9 w-9 place-items-center rounded-xl",
-                          isMember && data.repositorioUrl ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
-                        )}>
+                      <div
+                        className={cn(
+                          "flex items-center gap-3 p-3.5 rounded-2xl border transition-all",
+                          isMember && data.repositorioUrl
+                            ? "bg-primary/5 border-primary/20 hover:bg-primary/10 cursor-pointer"
+                            : "bg-muted/30 border-border/40 opacity-70",
+                        )}
+                      >
+                        <div
+                          className={cn(
+                            "grid h-9 w-9 place-items-center rounded-xl",
+                            isMember && data.repositorioUrl
+                              ? "bg-primary/10 text-primary"
+                              : "bg-muted text-muted-foreground",
+                          )}
+                        >
                           <Github className="h-5 w-5" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">GitHub</p>
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                            GitHub
+                          </p>
                           {isMember ? (
                             data.repositorioUrl ? (
-                              <a 
-                                href={data.repositorioUrl} 
-                                target="_blank" 
-                                rel="noreferrer" 
+                              <a
+                                href={data.repositorioUrl}
+                                target="_blank"
+                                rel="noreferrer"
                                 className="text-xs font-semibold text-primary hover:underline truncate block"
                               >
                                 Acessar código
                               </a>
                             ) : (
-                              <span className="text-xs font-semibold text-muted-foreground">Não definido</span>
+                              <span className="text-xs font-semibold text-muted-foreground">
+                                Não definido
+                              </span>
                             )
                           ) : (
                             <span className="text-xs font-semibold text-muted-foreground inline-flex items-center gap-1">
@@ -345,32 +358,42 @@ function ProjectDetailPage() {
                       </div>
 
                       {/* Figma */}
-                      <div className={cn(
-                        "flex items-center gap-3 p-3.5 rounded-2xl border transition-all",
-                        isMember && data.figmaUrl 
-                          ? "bg-rose-500/5 border-rose-500/20 hover:bg-rose-500/10 cursor-pointer" 
-                          : "bg-muted/30 border-border/40 opacity-70"
-                      )}>
-                        <div className={cn(
-                          "grid h-9 w-9 place-items-center rounded-xl",
-                          isMember && data.figmaUrl ? "bg-rose-500/10 text-rose-500" : "bg-muted text-muted-foreground"
-                        )}>
+                      <div
+                        className={cn(
+                          "flex items-center gap-3 p-3.5 rounded-2xl border transition-all",
+                          isMember && data.figmaUrl
+                            ? "bg-rose-500/5 border-rose-500/20 hover:bg-rose-500/10 cursor-pointer"
+                            : "bg-muted/30 border-border/40 opacity-70",
+                        )}
+                      >
+                        <div
+                          className={cn(
+                            "grid h-9 w-9 place-items-center rounded-xl",
+                            isMember && data.figmaUrl
+                              ? "bg-rose-500/10 text-rose-500"
+                              : "bg-muted text-muted-foreground",
+                          )}
+                        >
                           <BookOpen className="h-5 w-5" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Protótipo (Figma)</p>
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                            Protótipo (Figma)
+                          </p>
                           {isMember ? (
                             data.figmaUrl ? (
-                              <a 
-                                href={data.figmaUrl} 
-                                target="_blank" 
-                                rel="noreferrer" 
+                              <a
+                                href={data.figmaUrl}
+                                target="_blank"
+                                rel="noreferrer"
                                 className="text-xs font-semibold text-rose-600 hover:underline truncate block"
                               >
                                 Abrir figma
                               </a>
                             ) : (
-                              <span className="text-xs font-semibold text-muted-foreground">Não definido</span>
+                              <span className="text-xs font-semibold text-muted-foreground">
+                                Não definido
+                              </span>
                             )
                           ) : (
                             <span className="text-xs font-semibold text-muted-foreground inline-flex items-center gap-1">
@@ -381,32 +404,42 @@ function ProjectDetailPage() {
                       </div>
 
                       {/* Discord */}
-                      <div className={cn(
-                        "flex items-center gap-3 p-3.5 rounded-2xl border transition-all",
-                        isMember && data.discordUrl 
-                          ? "bg-indigo-500/5 border-indigo-500/20 hover:bg-indigo-500/10 cursor-pointer" 
-                          : "bg-muted/30 border-border/40 opacity-70"
-                      )}>
-                        <div className={cn(
-                          "grid h-9 w-9 place-items-center rounded-xl",
-                          isMember && data.discordUrl ? "bg-indigo-500/10 text-indigo-500" : "bg-muted text-muted-foreground"
-                        )}>
+                      <div
+                        className={cn(
+                          "flex items-center gap-3 p-3.5 rounded-2xl border transition-all",
+                          isMember && data.discordUrl
+                            ? "bg-indigo-500/5 border-indigo-500/20 hover:bg-indigo-500/10 cursor-pointer"
+                            : "bg-muted/30 border-border/40 opacity-70",
+                        )}
+                      >
+                        <div
+                          className={cn(
+                            "grid h-9 w-9 place-items-center rounded-xl",
+                            isMember && data.discordUrl
+                              ? "bg-indigo-500/10 text-indigo-500"
+                              : "bg-muted text-muted-foreground",
+                          )}
+                        >
                           <MessageSquare className="h-5 w-5" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Comunicação</p>
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                            Comunicação
+                          </p>
                           {isMember ? (
                             data.discordUrl ? (
-                              <a 
-                                href={data.discordUrl} 
-                                target="_blank" 
-                                rel="noreferrer" 
+                              <a
+                                href={data.discordUrl}
+                                target="_blank"
+                                rel="noreferrer"
                                 className="text-xs font-semibold text-indigo-600 hover:underline truncate block"
                               >
                                 Entrar no chat
                               </a>
                             ) : (
-                              <span className="text-xs font-semibold text-muted-foreground">Não definido</span>
+                              <span className="text-xs font-semibold text-muted-foreground">
+                                Não definido
+                              </span>
                             )
                           ) : (
                             <span className="text-xs font-semibold text-muted-foreground inline-flex items-center gap-1">
@@ -417,32 +450,42 @@ function ProjectDetailPage() {
                       </div>
 
                       {/* Documentação */}
-                      <div className={cn(
-                        "flex items-center gap-3 p-3.5 rounded-2xl border transition-all",
-                        isMember && data.documentacaoUrl 
-                          ? "bg-amber-500/5 border-amber-500/20 hover:bg-amber-500/10 cursor-pointer" 
-                          : "bg-muted/30 border-border/40 opacity-70"
-                      )}>
-                        <div className={cn(
-                          "grid h-9 w-9 place-items-center rounded-xl",
-                          isMember && data.documentacaoUrl ? "bg-amber-500/10 text-amber-500" : "bg-muted text-muted-foreground"
-                        )}>
+                      <div
+                        className={cn(
+                          "flex items-center gap-3 p-3.5 rounded-2xl border transition-all",
+                          isMember && data.documentacaoUrl
+                            ? "bg-amber-500/5 border-amber-500/20 hover:bg-amber-500/10 cursor-pointer"
+                            : "bg-muted/30 border-border/40 opacity-70",
+                        )}
+                      >
+                        <div
+                          className={cn(
+                            "grid h-9 w-9 place-items-center rounded-xl",
+                            isMember && data.documentacaoUrl
+                              ? "bg-amber-500/10 text-amber-500"
+                              : "bg-muted text-muted-foreground",
+                          )}
+                        >
                           <BookOpen className="h-5 w-5" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Documentos</p>
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                            Documentos
+                          </p>
                           {isMember ? (
                             data.documentacaoUrl ? (
-                              <a 
-                                href={data.documentacaoUrl} 
-                                target="_blank" 
-                                rel="noreferrer" 
+                              <a
+                                href={data.documentacaoUrl}
+                                target="_blank"
+                                rel="noreferrer"
                                 className="text-xs font-semibold text-amber-600 hover:underline truncate block"
                               >
                                 Notion/Wiki
                               </a>
                             ) : (
-                              <span className="text-xs font-semibold text-muted-foreground">Não definido</span>
+                              <span className="text-xs font-semibold text-muted-foreground">
+                                Não definido
+                              </span>
                             )
                           ) : (
                             <span className="text-xs font-semibold text-muted-foreground inline-flex items-center gap-1">
@@ -455,7 +498,6 @@ function ProjectDetailPage() {
                   </CardContent>
                 </Card>
               </motion.div>
-
 
               {!isMember && (
                 <div className="rounded-2xl bg-amber-500/5 backdrop-blur-sm border border-amber-500/20 px-4 py-3 text-sm text-amber-800 dark:text-amber-400/90 flex items-center gap-3 shadow-sm">

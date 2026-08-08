@@ -202,7 +202,7 @@ function NovoProjetoPage() {
                                 "cursor-pointer rounded-full px-2.5 py-0.5 text-[10px] transition-all font-medium border",
                                 isAdded
                                   ? "bg-muted text-muted-foreground border-border cursor-not-allowed"
-                                  : "bg-background/20 border-border/80 text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5"
+                                  : "bg-background/20 border-border/80 text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5",
                               )}
                             >
                               + {t}
@@ -256,7 +256,7 @@ function NovoProjetoPage() {
                     <h3 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
                       Links de Trabalho (Opcional)
                     </h3>
-                    
+
                     <div className="grid gap-4 sm:grid-cols-2">
                       <FormField
                         control={form.control}

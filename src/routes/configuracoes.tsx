@@ -97,8 +97,6 @@ function ConfiguracoesPage() {
     toast.success("Preferência de notificação salva");
   }
 
-
-
   return (
     <ProtectedRoute>
       <AppLayout>
@@ -202,7 +200,8 @@ function ConfiguracoesPage() {
                       Mensagens do Mural
                     </Label>
                     <p className="text-xs text-muted-foreground leading-relaxed">
-                      Seja avisado na plataforma sempre que alguém postar no mural de mensagens do seu squad.
+                      Seja avisado na plataforma sempre que alguém postar no mural de mensagens do
+                      seu squad.
                     </p>
                   </div>
                   <Switch
@@ -224,7 +223,8 @@ function ConfiguracoesPage() {
                       Resumo Semanal
                     </Label>
                     <p className="text-xs text-muted-foreground leading-relaxed">
-                      Receba por e-mail um relatório semanal consolidando o progresso das tarefas e XP acumulado.
+                      Receba por e-mail um relatório semanal consolidando o progresso das tarefas e
+                      XP acumulado.
                     </p>
                   </div>
                   <Switch
@@ -307,8 +307,6 @@ function ConfiguracoesPage() {
                 </form>
               </CardContent>
             </Card>
-
-
           </div>
         </div>
       </AppLayout>

@@ -58,7 +58,10 @@ const BRAZILIAN_STATES = [
 ];
 
 const normalizeText = (text: string) =>
-  text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
 
 const schema = z.object({
   name: z.string().trim().min(2, "Informe seu nome").max(80),
@@ -236,7 +239,7 @@ function RegisterPage() {
                       <CommandList>
                         {(() => {
                           const filtered = BRAZILIAN_STATES.filter((st) =>
-                            normalizeText(st.label).includes(normalizeText(locationSearch))
+                            normalizeText(st.label).includes(normalizeText(locationSearch)),
                           );
                           if (filtered.length === 0) {
                             return (
@@ -261,7 +264,7 @@ function RegisterPage() {
                                   <Check
                                     className={cn(
                                       "mr-2 h-4 w-4",
-                                      field.value === st.label ? "opacity-100" : "opacity-0"
+                                      field.value === st.label ? "opacity-100" : "opacity-0",
                                     )}
                                   />
                                   {st.label}

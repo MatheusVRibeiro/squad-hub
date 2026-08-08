@@ -1,5 +1,11 @@
 import { api } from "./api";
-import { getLocalProjects, saveLocalProjects, MOCK_PROJECTS, type Project, type ProjectStatus } from "./projects";
+import {
+  getLocalProjects,
+  saveLocalProjects,
+  MOCK_PROJECTS,
+  type Project,
+  type ProjectStatus,
+} from "./projects";
 
 export type KanbanStatus = "todo" | "doing" | "done";
 
@@ -54,6 +60,42 @@ export type ProjectDetail = Project & {
   messages: MuralMessage[];
   members: Member[];
   applications: Application[];
+};
+
+/** Wrapper padrão das respostas da API (sucesso/message/dados). */
+type ApiResponse<T> = {
+  sucesso: boolean;
+  message?: string;
+  dados: T;
+};
+
+/** Contrato do GET /projetos/:id — o backend já devolve o shape camelCase
+ *  consumido pela UI (FASE-04) acrescido de `criador_id`/`criador_nome`. */
+type ProjectDetailData = ProjectDetail & {
+  criador_id?: number | null;
+  criador_nome?: string;
+};
+
+/** Contrato do POST /projetos — campos snake_case do backend. */
+type CreateProjectData = {
+  id: number;
+  criador_id?: number;
+  titulo?: string;
+  descricao?: string | null;
+  status?: string;
+  limite_membros?: number | null;
+  criado_em?: string | null;
+  repositorio_url?: string | null;
+  figma_url?: string | null;
+  discord_url?: string | null;
+  documentacao_url?: string | null;
+};
+
+/** Contrato do POST /projetos/:id/mensagens. */
+type MuralMessageData = {
+  id: number;
+  conteudo: string;
+  criado_em?: string | null;
 };
 
 /**
@@ -167,7 +209,7 @@ export function saveLocalProjectDetail(id: string, detail: ProjectDetail) {
 
 export async function fetchProjectDetail(id: string): Promise<ProjectDetail> {
   try {
-    const { data } = await api.get<any>(`/projetos/${id}`);
+    const { data } = await api.get<ApiResponse<ProjectDetailData | null>>(`/projetos/${id}`);
     if (data && data.sucesso && data.dados && data.dados.id) {
       // FASE-03.H: o backend retorna criador_id em snake_case no detalhe; expõe
       // no contrato camelCase (creatorId) para comparações por id na UI. O spread
@@ -209,7 +251,7 @@ export async function createProject(payload: {
   documentacaoUrl?: string;
 }): Promise<Project> {
   try {
-    const { data } = await api.post<{ sucesso: boolean; message: string; dados: any }>("/projetos", {
+    const { data } = await api.post<ApiResponse<CreateProjectData | null>>("/projetos", {
       name: payload.name,
       description: payload.description,
       membersLimit: payload.membersLimit,
@@ -403,7 +445,14 @@ export async function updateLocalTaskDetails(
     const member = detail?.members?.find((m) => m.name === updates.assignee);
     const responsavel_id = member ? Number(member.id) : null;
 
-    const payload: any = {};
+    const payload: {
+      titulo?: string;
+      descricao?: string | null;
+      prioridade?: "low" | "medium" | "high";
+      data_vencimento?: string | null;
+      responsavel_id?: number | null;
+      subtasks?: { title: string; done: boolean }[];
+    } = {};
     if (updates.title !== undefined) payload.titulo = updates.title;
     if (updates.description !== undefined) payload.descricao = updates.description;
     if (updates.priority !== undefined) payload.prioridade = updates.priority;
@@ -432,7 +481,10 @@ export async function addLocalMuralMessage(
   content: string,
 ): Promise<MuralMessage> {
   try {
-    const { data } = await api.post<{ sucesso: boolean; message: string; dados: any }>(`/projetos/${projectId}/mensagens`, { content });
+    const { data } = await api.post<ApiResponse<MuralMessageData | null>>(
+      `/projetos/${projectId}/mensagens`,
+      { content },
+    );
     if (data?.sucesso && data?.dados) {
       return {
         id: String(data.dados.id),
@@ -455,7 +507,9 @@ export async function updateLocalApplicationStatus(
 ): Promise<void> {
   try {
     const backendStatus = status === "approved" ? "aceito" : "rejeitado";
-    await api.patch(`/projetos/${projectId}/candidaturas/${applicationId}`, { status: backendStatus });
+    await api.patch(`/projetos/${projectId}/candidaturas/${applicationId}`, {
+      status: backendStatus,
+    });
   } catch {
     throw new Error(
       status === "approved"

@@ -80,9 +80,7 @@ function DashboardPage() {
   // reputação (GET /usuarios/me/reputacao → history, baseado em membros_equipe).
   const myProjectIds = useMemo(() => {
     if (!reputation) return [];
-    return Array.from(
-      new Set((reputation.history ?? []).map((h) => String(h.id)).filter(Boolean)),
-    );
+    return Array.from(new Set((reputation.history ?? []).map((h) => String(h.id)).filter(Boolean)));
   }, [reputation]);
 
   // 3. Tarefas reais de cada squad do usuário (GET /projetos/:id/tarefas)
@@ -248,9 +246,7 @@ function DashboardPage() {
             <Card className="rounded-2xl border-border/60 md:col-span-2">
               <CardHeader>
                 <CardTitle className="text-lg">Progresso Semanal (XP)</CardTitle>
-                <CardDescription>
-                  Evolução do XP acumulado ao longo da semana.
-                </CardDescription>
+                <CardDescription>Evolução do XP acumulado ao longo da semana.</CardDescription>
               </CardHeader>
               <CardContent className="flex h-72 flex-col items-center justify-center gap-3 text-center">
                 <span className="grid h-12 w-12 place-items-center rounded-xl bg-primary/10 text-primary">

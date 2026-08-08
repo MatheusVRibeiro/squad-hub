@@ -184,7 +184,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             `[auth] Skills sincronizadas pós-cadastro: ${result.added} adicionadas, ${result.skipped.length} ignoradas.`,
           );
         } catch (err) {
-          console.warn("[auth] Falha ao sincronizar skills após o cadastro (cadastro mantido).", err);
+          console.warn(
+            "[auth] Falha ao sincronizar skills após o cadastro (cadastro mantido).",
+            err,
+          );
         }
       }
 

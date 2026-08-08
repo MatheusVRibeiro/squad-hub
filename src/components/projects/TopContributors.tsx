@@ -8,6 +8,7 @@ import {
   GitPullRequest,
   GitCommitHorizontal,
   CheckCircle2,
+  RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -69,11 +70,19 @@ export function TopContributors({
           <Loader2 className="h-3.5 w-3.5 animate-spin" /> Carregando ranking…
         </div>
       ) : query.isError ? (
-        <p className="mt-3 text-xs text-muted-foreground">
-          {query.error instanceof Error
-            ? query.error.message
-            : "Não foi possível carregar o ranking."}
-        </p>
+        <div className="mt-3">
+          <p className="text-xs text-muted-foreground">
+            {query.error instanceof Error
+              ? query.error.message
+              : "Não foi possível carregar o ranking."}
+          </p>
+          <button
+            onClick={() => query.refetch()}
+            className="mt-2 inline-flex items-center gap-1 rounded-full border border-border/50 px-2.5 py-1 text-[10px] font-medium text-foreground/80 hover:bg-muted cursor-pointer"
+          >
+            <RefreshCw className="h-3 w-3" /> Tentar novamente
+          </button>
+        </div>
       ) : !query.data || query.data.length === 0 ? (
         <p className="mt-3 text-xs text-muted-foreground">
           Nenhuma contribuição verificada ainda. Entregue tarefas com merge de PR para pontuar!

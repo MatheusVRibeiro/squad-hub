@@ -285,7 +285,7 @@ export function KanbanBoard({
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-3">
+    <div className="grid gap-6 overflow-x-auto pb-2 md:grid-cols-4 md:overflow-x-visible">
       {COLUMNS.map((col) => {
         const list = tasks.filter((t) => t.status === col.key);
         return (
@@ -300,7 +300,7 @@ export function KanbanBoard({
               setDragId(null);
             }}
             className={cn(
-              "flex min-h-[450px] flex-col gap-4 rounded-2xl border border-border/50 bg-card/45 p-4 backdrop-blur-sm transition-all duration-300",
+              "flex min-h-[450px] min-w-[260px] flex-col gap-4 rounded-2xl border border-border/50 bg-card/45 p-4 backdrop-blur-sm transition-all duration-300 md:min-w-0",
               dragId ? "border-primary/20 bg-primary/5/10 shadow-sm" : "",
             )}
           >

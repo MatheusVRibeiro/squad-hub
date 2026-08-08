@@ -29,6 +29,9 @@ export type UserGithubStatus = {
 
 type ApiEnvelope<T> = { sucesso: boolean; message?: string; dados: T | null };
 
+/** Mensagem do backend (409) quando conta criada via GitHub ainda não tem senha local. */
+export const ERRO_SENHA_NECESSARIA = "Crie uma senha local antes de desconectar o GitHub";
+
 function toFriendlyError(err: unknown, fallback: string): Error {
   if (axios.isAxiosError(err)) {
     const msg = err.response?.data?.message;

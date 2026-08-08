@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { api, TOKEN_KEY, USER_KEY } from "@/services/api";
-import { syncUserSkills } from "@/services/perfil";
+import { syncUserSkills, fetchMe } from "@/services/perfil";
 
 export type User = {
   id?: string;
@@ -70,6 +70,10 @@ type AuthContextValue = {
   signUp: (data: SignUpData) => Promise<boolean>;
   signOut: () => void;
   updateUser: (nextUser: User) => void;
+  /** Persiste token + usuário na sessão (fluxo GitHub pós-callback). */
+  persistSession: (token: string, nextUser: User) => void;
+  /** Login via GitHub (ETAPA 1): salva o token do callback e busca /usuarios/me. */
+  signInWithGithubToken: (token: string) => Promise<User>;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -102,6 +106,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     setUser(nextUser);
   }, []);
+
+  /** Persiste token + usuário (mesma base do signIn/signUp local). */
+  const persistSession = useCallback(
+    (token: string, nextUser: User) => {
+      persist(token, nextUser);
+    },
+    [persist],
+  );
+
+  /**
+   * Fluxo GitHub (ETAPA 1) — usuário já existente: o callback entrega apenas o
+   * token. Persiste o token (para o interceptor autenticar), busca os dados em
+   * /usuarios/me e salva a sessão completa.
+   */
+  const signInWithGithubToken = useCallback(
+    async (token: string): Promise<User> => {
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(TOKEN_KEY, token);
+      }
+      const dados = await fetchMe();
+      const user: User = {
+        id: String(dados.id),
+        name: dados.nome,
+        email: dados.email,
+        bio: dados.bio ?? undefined,
+        location: dados.localizacao ?? undefined,
+        avatarUrl: dados.avatar_url ?? undefined,
+        role: dados.tipo === "adm" ? "admin" : "user",
+      };
+      persist(token, user);
+      return user;
+    },
+    [persist],
+  );
 
   const signIn = useCallback(
     async ({ email, password }: SignInData) => {
@@ -215,8 +253,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signUp,
       signOut,
       updateUser,
+      persistSession,
+      signInWithGithubToken,
     }),
-    [user, isLoading, signIn, signInTemp, signUp, signOut, updateUser],
+    [
+      user,
+      isLoading,
+      signIn,
+      signInTemp,
+      signUp,
+      signOut,
+      updateUser,
+      persistSession,
+      signInWithGithubToken,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

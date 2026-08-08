@@ -4,7 +4,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Loader2, Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown, Github, Loader2 } from "lucide-react";
 import axios from "axios";
 
 import { AuthLayout } from "@/layouts/AuthLayout";
@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { getGithubAuthUrl } from "@/services/githubAuth";
 import { Popover, PopoverTrigger, PopoverContent, PopoverAnchor } from "@/components/ui/popover";
 import {
   Command,
@@ -77,12 +78,30 @@ function RegisterPage() {
   const { signUp, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
+  const [githubLoading, setGithubLoading] = useState(false);
   const [locationOpen, setLocationOpen] = useState(false);
   const [locationSearch, setLocationSearch] = useState("");
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) navigate({ to: "/dashboard" });
   }, [isAuthenticated, isLoading, navigate]);
+
+  /** Continua com GitHub: busca a URL de autorização e redireciona o navegador. */
+  const handleGithubRegister = async () => {
+    setGithubLoading(true);
+    try {
+      const { url } = await getGithubAuthUrl();
+      window.location.href = url;
+    } catch (err) {
+      const message =
+        axios.isAxiosError(err) && err.response?.data
+          ? ((err.response.data as { message?: string }).message ??
+            "Não foi possível conectar com o GitHub")
+          : "Não foi possível conectar com o GitHub";
+      toast.error(message);
+      setGithubLoading(false);
+    }
+  };
 
   const {
     register,
@@ -134,6 +153,27 @@ function RegisterPage() {
       }
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <Button
+          type="button"
+          variant="outline"
+          className="h-11 w-full rounded-xl font-medium shadow-sm"
+          disabled={submitting || githubLoading}
+          onClick={handleGithubRegister}
+        >
+          {githubLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Github className="h-4 w-4" />
+          )}
+          Continuar com GitHub
+        </Button>
+
+        <div className="flex items-center gap-3">
+          <span className="h-px flex-1 bg-border/60" />
+          <span className="text-xs text-muted-foreground">ou crie com e-mail</span>
+          <span className="h-px flex-1 bg-border/60" />
+        </div>
+
         <div className="space-y-1.5">
           <Label
             htmlFor="name"

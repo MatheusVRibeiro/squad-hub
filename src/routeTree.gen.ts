@@ -23,6 +23,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProjetosIndexRouteImport } from './routes/projetos.index'
 import { Route as ProjetosNovoRouteImport } from './routes/projetos.novo'
 import { Route as ProjetosIdRouteImport } from './routes/projetos.$id'
+import { Route as AuthGithubSuccessRouteImport } from './routes/auth.github.success'
+import { Route as AuthGithubEmailExistsRouteImport } from './routes/auth.github.email-exists'
+import { Route as AuthGithubCompleteProfileRouteImport } from './routes/auth.github.complete-profile'
 
 const ResetarSenhaRoute = ResetarSenhaRouteImport.update({
   id: '/resetar-senha',
@@ -94,6 +97,22 @@ const ProjetosIdRoute = ProjetosIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ProjetosRoute,
 } as any)
+const AuthGithubSuccessRoute = AuthGithubSuccessRouteImport.update({
+  id: '/auth/github/success',
+  path: '/auth/github/success',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthGithubEmailExistsRoute = AuthGithubEmailExistsRouteImport.update({
+  id: '/auth/github/email-exists',
+  path: '/auth/github/email-exists',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthGithubCompleteProfileRoute =
+  AuthGithubCompleteProfileRouteImport.update({
+    id: '/auth/github/complete-profile',
+    path: '/auth/github/complete-profile',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -110,6 +129,9 @@ export interface FileRoutesByFullPath {
   '/projetos/$id': typeof ProjetosIdRoute
   '/projetos/novo': typeof ProjetosNovoRoute
   '/projetos/': typeof ProjetosIndexRoute
+  '/auth/github/complete-profile': typeof AuthGithubCompleteProfileRoute
+  '/auth/github/email-exists': typeof AuthGithubEmailExistsRoute
+  '/auth/github/success': typeof AuthGithubSuccessRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -125,6 +147,9 @@ export interface FileRoutesByTo {
   '/projetos/$id': typeof ProjetosIdRoute
   '/projetos/novo': typeof ProjetosNovoRoute
   '/projetos': typeof ProjetosIndexRoute
+  '/auth/github/complete-profile': typeof AuthGithubCompleteProfileRoute
+  '/auth/github/email-exists': typeof AuthGithubEmailExistsRoute
+  '/auth/github/success': typeof AuthGithubSuccessRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -142,6 +167,9 @@ export interface FileRoutesById {
   '/projetos/$id': typeof ProjetosIdRoute
   '/projetos/novo': typeof ProjetosNovoRoute
   '/projetos/': typeof ProjetosIndexRoute
+  '/auth/github/complete-profile': typeof AuthGithubCompleteProfileRoute
+  '/auth/github/email-exists': typeof AuthGithubEmailExistsRoute
+  '/auth/github/success': typeof AuthGithubSuccessRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -160,6 +188,9 @@ export interface FileRouteTypes {
     | '/projetos/$id'
     | '/projetos/novo'
     | '/projetos/'
+    | '/auth/github/complete-profile'
+    | '/auth/github/email-exists'
+    | '/auth/github/success'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -175,6 +206,9 @@ export interface FileRouteTypes {
     | '/projetos/$id'
     | '/projetos/novo'
     | '/projetos'
+    | '/auth/github/complete-profile'
+    | '/auth/github/email-exists'
+    | '/auth/github/success'
   id:
     | '__root__'
     | '/'
@@ -191,6 +225,9 @@ export interface FileRouteTypes {
     | '/projetos/$id'
     | '/projetos/novo'
     | '/projetos/'
+    | '/auth/github/complete-profile'
+    | '/auth/github/email-exists'
+    | '/auth/github/success'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -205,6 +242,9 @@ export interface RootRouteChildren {
   RecuperarSenhaRoute: typeof RecuperarSenhaRoute
   RegisterRoute: typeof RegisterRoute
   ResetarSenhaRoute: typeof ResetarSenhaRoute
+  AuthGithubCompleteProfileRoute: typeof AuthGithubCompleteProfileRoute
+  AuthGithubEmailExistsRoute: typeof AuthGithubEmailExistsRoute
+  AuthGithubSuccessRoute: typeof AuthGithubSuccessRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -307,6 +347,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjetosIdRouteImport
       parentRoute: typeof ProjetosRoute
     }
+    '/auth/github/success': {
+      id: '/auth/github/success'
+      path: '/auth/github/success'
+      fullPath: '/auth/github/success'
+      preLoaderRoute: typeof AuthGithubSuccessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/github/email-exists': {
+      id: '/auth/github/email-exists'
+      path: '/auth/github/email-exists'
+      fullPath: '/auth/github/email-exists'
+      preLoaderRoute: typeof AuthGithubEmailExistsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/github/complete-profile': {
+      id: '/auth/github/complete-profile'
+      path: '/auth/github/complete-profile'
+      fullPath: '/auth/github/complete-profile'
+      preLoaderRoute: typeof AuthGithubCompleteProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -338,6 +399,9 @@ const rootRouteChildren: RootRouteChildren = {
   RecuperarSenhaRoute: RecuperarSenhaRoute,
   RegisterRoute: RegisterRoute,
   ResetarSenhaRoute: ResetarSenhaRoute,
+  AuthGithubCompleteProfileRoute: AuthGithubCompleteProfileRoute,
+  AuthGithubEmailExistsRoute: AuthGithubEmailExistsRoute,
+  AuthGithubSuccessRoute: AuthGithubSuccessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

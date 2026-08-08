@@ -25,9 +25,16 @@ export type UserGithubStatus = {
   github_login: string | null;
   github_avatar_url: string | null;
   github_connected_at: string | null;
+  /** ETAPA 2: usuário tem senha local utilizável (pode desconectar o GitHub). */
+  senha_definida: boolean;
+  /** ETAPA 1: origem do cadastro — 'local' ou 'github'. */
+  cadastro_origem: "local" | "github" | null;
 };
 
 type ApiEnvelope<T> = { sucesso: boolean; message?: string; dados: T | null };
+
+/** Mensagem do backend (409) quando conta criada via GitHub ainda não tem senha local. */
+export const ERRO_SENHA_NECESSARIA = "Crie uma senha local antes de desconectar o GitHub";
 
 function toFriendlyError(err: unknown, fallback: string): Error {
   if (axios.isAxiosError(err)) {

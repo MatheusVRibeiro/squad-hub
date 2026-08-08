@@ -1,18 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import {
-  Settings,
-  Moon,
-  Sun,
-  Lock,
-  Bell,
-  Loader2,
-  Save,
-  Github,
-  Link2,
-  Unlink,
-  RefreshCw,
-} from "lucide-react";
+import { Settings, Moon, Sun, Lock, Bell, Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
 
@@ -25,12 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/services/api";
-import {
-  getUserGithubStatus,
-  getGithubConnectUrl,
-  disconnectGithubAccount,
-  type UserGithubStatus,
-} from "@/services/github";
+import { GitHubConnectionCard } from "@/components/settings/GitHubConnectionCard";
 
 function ConfiguracoesPage() {
   const { user, signOut } = useAuth();
@@ -113,64 +96,6 @@ function ConfiguracoesPage() {
     setter(value);
     localStorage.setItem(key, String(value));
     toast.success("Preferência de notificação salva");
-  }
-
-  // 4. GitHub — identidade do usuário (ETAPA 6)
-  const [ghStatus, setGhStatus] = useState<UserGithubStatus | null>(null);
-  const [ghLoading, setGhLoading] = useState(true);
-  const [ghBusy, setGhBusy] = useState(false);
-
-  useEffect(() => {
-    let ativo = true;
-    getUserGithubStatus()
-      .then((s) => {
-        if (ativo) setGhStatus(s);
-      })
-      .catch(() => {
-        if (ativo) setGhStatus(null);
-      })
-      .finally(() => {
-        if (ativo) setGhLoading(false);
-      });
-    return () => {
-      ativo = false;
-    };
-  }, []);
-
-  async function handleConnectGithub() {
-    setGhBusy(true);
-    try {
-      const { url } = await getGithubConnectUrl();
-      window.location.href = url;
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao conectar GitHub");
-    } finally {
-      setGhBusy(false);
-    }
-  }
-
-  async function handleDisconnectGithub() {
-    setGhBusy(true);
-    try {
-      await disconnectGithubAccount();
-      setGhStatus((prev) =>
-        prev
-          ? {
-              ...prev,
-              conectado: false,
-              github_user_id: null,
-              github_login: null,
-              github_avatar_url: null,
-              github_connected_at: null,
-            }
-          : prev,
-      );
-      toast.success("GitHub desconectado (histórico preservado)");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao desconectar GitHub");
-    } finally {
-      setGhBusy(false);
-    }
   }
 
   return (
@@ -316,7 +241,10 @@ function ConfiguracoesPage() {
             </Card>
 
             {/* SEGURANÇA (MUDAR SENHA) */}
-            <Card className="rounded-3xl border border-border/60 bg-card shadow-sm">
+            <Card
+              id="seguranca"
+              className="rounded-3xl border border-border/60 bg-card shadow-sm scroll-mt-6"
+            >
               <CardHeader className="px-6 pt-6 pb-4">
                 <div className="flex items-center gap-3">
                   <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary">
@@ -384,102 +312,8 @@ function ConfiguracoesPage() {
               </CardContent>
             </Card>
 
-            {/* GITHUB — IDENTIDADE (ETAPA 6) */}
-            <Card className="rounded-3xl border border-border/60 bg-card shadow-sm">
-              <CardHeader className="px-6 pt-6 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="grid h-10 w-10 place-items-center rounded-xl bg-neutral-900/5 text-neutral-900 dark:bg-neutral-100/10 dark:text-neutral-100">
-                    <Github className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-base font-bold text-foreground/90">
-                      Conta GitHub
-                    </CardTitle>
-                    <CardDescription className="text-xs">
-                      Vincule sua conta GitHub para que commits e Pull Requests das suas tarefas
-                      sejam atribuídos automaticamente a você.
-                    </CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="border-t border-border/20 px-6 py-5">
-                {ghLoading ? (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin" /> Verificando vínculo...
-                  </div>
-                ) : ghStatus?.conectado ? (
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      {ghStatus.github_avatar_url ? (
-                        <img
-                          src={ghStatus.github_avatar_url}
-                          alt={ghStatus.github_login || "GitHub"}
-                          className="h-10 w-10 rounded-full border border-border/60"
-                        />
-                      ) : (
-                        <div className="grid h-10 w-10 place-items-center rounded-full bg-neutral-900/5 text-neutral-900 dark:bg-neutral-100/10 dark:text-neutral-100">
-                          <Github className="h-5 w-5" />
-                        </div>
-                      )}
-                      <div>
-                        <p className="text-sm font-bold text-foreground">
-                          @{ghStatus.github_login}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Conectado{" "}
-                          {ghStatus.github_connected_at
-                            ? `em ${new Date(ghStatus.github_connected_at).toLocaleDateString("pt-BR")}`
-                            : ""}
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={ghBusy}
-                      onClick={handleDisconnectGithub}
-                      className="cursor-pointer"
-                    >
-                      {ghBusy ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Unlink className="h-3.5 w-3.5" />
-                      )}
-                      Desconectar
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <p className="text-sm text-muted-foreground">
-                      Sua conta ainda não está vinculada ao GitHub.
-                    </p>
-                    <Button
-                      size="sm"
-                      disabled={ghBusy}
-                      onClick={handleConnectGithub}
-                      className="cursor-pointer"
-                    >
-                      {ghBusy ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Link2 className="h-3.5 w-3.5" />
-                      )}
-                      Conectar com GitHub
-                    </Button>
-                  </div>
-                )}
-                {!ghLoading && ghStatus === null && !ghBusy && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => window.location.reload()}
-                    className="mt-2 cursor-pointer"
-                  >
-                    <RefreshCw className="h-3.5 w-3.5" /> Tentar novamente
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
+            {/* GITHUB — CONTA (ETAPA 2: conectar/desconectar com regra de senha) */}
+            <GitHubConnectionCard />
           </div>
         </div>
       </AppLayout>

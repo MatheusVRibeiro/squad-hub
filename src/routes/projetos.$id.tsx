@@ -20,11 +20,8 @@ import { Mural } from "@/components/projects/Mural";
 import { MembersList } from "@/components/projects/MembersList";
 import { Applications } from "@/components/projects/Applications";
 import { Vagas } from "@/components/projects/Vagas";
-import {
-  fetchProjectDetail,
-  applyToProjectLocal,
-  closeProjectLocal,
-} from "@/services/projectDetail";
+import { fetchProjectDetail, closeProjectLocal } from "@/services/projectDetail";
+import { candidatarComVaga } from "@/services/candidaturas";
 import { useAuth } from "@/contexts/AuthContext";
 import { notificationsIntegration } from "@/services/notificationsIntegration";
 import { useQueryClient } from "@tanstack/react-query";
@@ -80,15 +77,10 @@ function ApplicationForm({
     }
     setSubmitting(true);
     try {
-      const skillsArray = skills
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
-      await applyToProjectLocal(projectId, {
-        name: user?.name || "Usuário",
-        message: message.trim(),
-        skills: skillsArray,
-        vagaId: vagaId ? Number(vagaId) : undefined,
+      // ETAPA 5: candidatura direcionada por vaga — vaga_id opcional, mensagem obrigatória.
+      await candidatarComVaga(projectId, {
+        vaga_id: vagaId ? Number(vagaId) : null,
+        mensagem: message.trim(),
       });
       // Notifica
       notificationsIntegration.notifyApplied(projectName, user?.name || "Usuário", projectId);
@@ -115,7 +107,7 @@ function ApplicationForm({
       </div>
       {vagasDisponiveis.length > 0 && (
         <div className="space-y-2">
-          <Label htmlFor="app-vaga">Vaga de interesse (opcional)</Label>
+          <Label htmlFor="app-vaga">Vaga desejada (opcional)</Label>
           <Select value={vagaId} onValueChange={setVagaId}>
             <SelectTrigger id="app-vaga" className="w-full cursor-pointer">
               <SelectValue placeholder="Selecione uma vaga do projeto" />

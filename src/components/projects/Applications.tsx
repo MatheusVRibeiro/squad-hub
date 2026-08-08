@@ -81,6 +81,14 @@ export function Applications({
                       <p className="text-sm font-semibold text-foreground/90">{a.name}</p>
                       <p className="text-sm text-muted-foreground leading-relaxed">{a.message}</p>
                       <div className="flex flex-wrap gap-1.5 pt-1">
+                        {a.vaga_id != null && a.vaga_nome && (
+                          <Badge
+                            variant="outline"
+                            className="rounded-full border-primary/25 bg-primary/5 text-primary text-[10px] font-semibold tracking-wide"
+                          >
+                            Vaga: {a.vaga_nome}
+                          </Badge>
+                        )}
                         {a.skills.map((s) => (
                           <Badge
                             key={s}
@@ -128,7 +136,14 @@ export function Applications({
                 key={a.id}
                 className="flex items-center justify-between rounded-xl border border-border/50 bg-card/45 px-4 py-3 text-sm shadow-sm backdrop-blur-sm"
               >
-                <span className="font-semibold text-foreground/80">{a.name}</span>
+                <span className="font-semibold text-foreground/80">
+                  {a.name}
+                  {a.vaga_id != null && a.vaga_nome && (
+                    <span className="ml-2 font-medium text-muted-foreground">
+                      · Vaga: {a.vaga_nome}
+                    </span>
+                  )}
+                </span>
                 <Badge
                   variant="outline"
                   className={

@@ -61,6 +61,9 @@ export type Application = {
   skills: string[];
   createdAt: string;
   status: "pending" | "approved" | "rejected";
+  /** ETAPA 5: vaga vinculada à candidatura (opcional) — `vaga_id`/`vaga_nome` vindos do backend. */
+  vaga_id?: number | null;
+  vaga_nome?: string | null;
 };
 
 export type ProjectDetail = Project & {
@@ -126,6 +129,33 @@ function normalizeText(text: string): string {
     .trim();
 }
 
+/**
+ * Normaliza uma candidatura vinda do backend para o tipo `Application` da UI.
+ * Aceita o shape camelCase do GET /projetos/:id (id/name/message/skills) e,
+ * desde a ETAPA 5, os campos de vaga — `vaga_id`/`vaga_nome` (snake_case do
+ * SQL) ou `vagaId`/`vagaNome` (camelCase). Ausência de vaga → null.
+ */
+function normalizarApplication(raw: Record<string, unknown>): Application {
+  const statusRaw = String(raw.status ?? "pendente");
+  let status: Application["status"] = "pending";
+  if (statusRaw === "approved" || statusRaw === "aceito") status = "approved";
+  if (statusRaw === "rejected" || statusRaw === "rejeitado") status = "rejected";
+
+  const vagaId = raw.vaga_id ?? raw.vagaId;
+  const vagaNome = raw.vaga_nome ?? raw.vagaNome ?? raw.funcao_nome;
+
+  return {
+    id: String(raw.id),
+    name: String(raw.name ?? raw.usuario_nome ?? "Usuário"),
+    message: String(raw.message ?? raw.mensagem ?? ""),
+    skills: Array.isArray(raw.skills) ? raw.skills.map((s) => String(s)) : [],
+    createdAt: String(raw.createdAt ?? raw.criado_em ?? new Date().toISOString()),
+    status,
+    vaga_id: vagaId != null ? Number(vagaId) : null,
+    vaga_nome: vagaNome != null ? String(vagaNome) : null,
+  };
+}
+
 function mockDetail(p: Project): ProjectDetail {
   return {
     ...p,
@@ -167,6 +197,8 @@ function mockDetail(p: Project): ProjectDetail {
         skills: ["Node.js", "Docker"],
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(),
         status: "pending",
+        vaga_id: null,
+        vaga_nome: null,
       },
       {
         id: "a2",
@@ -175,6 +207,8 @@ function mockDetail(p: Project): ProjectDetail {
         skills: ["UI/UX", "React"],
         createdAt: new Date(Date.now() - 1000 * 60 * 60 * 30).toISOString(),
         status: "pending",
+        vaga_id: null,
+        vaga_nome: null,
       },
     ],
     vagas: [],
@@ -236,6 +270,12 @@ export async function fetchProjectDetail(id: string): Promise<ProjectDetail> {
         creatorId: data.dados.criador_id != null ? String(data.dados.criador_id) : undefined,
         // ETAPA 4: vagas vêm no detalhe (camelCase) — normaliza para o contrato da UI.
         vagas: Array.isArray(data.dados.vagas) ? data.dados.vagas.map(normalizarVaga) : [],
+        // ETAPA 5: candidaturas ganham vaga_id/vaga_nome — normaliza (snake ou camel).
+        applications: Array.isArray(data.dados.applications)
+          ? data.dados.applications.map((a) =>
+              normalizarApplication(a as unknown as Record<string, unknown>),
+            )
+          : [],
       };
       if (import.meta.env.DEV) {
         saveLocalProjectDetail(id, detail);

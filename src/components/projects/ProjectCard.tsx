@@ -110,8 +110,8 @@ export function ProjectCard({ project, index = 0 }: { project: Project; index?: 
 
       setLocalApplied(true);
       setIsSuccess(true);
-    } catch {
-      toast.error("Erro ao enviar candidatura.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao enviar candidatura.");
     } finally {
       setIsApplying(false);
     }

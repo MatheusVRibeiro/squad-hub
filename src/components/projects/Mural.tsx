@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Send } from "lucide-react";
+import { toast } from "sonner";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -46,14 +47,18 @@ export function Mural({
     const authorName = user?.name || "Você";
     const content = draft.trim();
 
-    // 1. Salva localmente via serviço offline
-    const newMessage = await addLocalMuralMessage(projectId, authorName, content);
+    try {
+      // 1. Persiste a mensagem via serviço (lança Error em falha)
+      const newMessage = await addLocalMuralMessage(projectId, authorName, content);
 
-    setMessages((m) => [...m, newMessage]);
-    setDraft("");
+      setMessages((m) => [...m, newMessage]);
+      setDraft("");
 
-    // 2. Dispara notificação integrada
-    notificationsIntegration.notifyMuralMessage(projectName, authorName, content, projectId);
+      // 2. Dispara notificação integrada
+      notificationsIntegration.notifyMuralMessage(projectName, authorName, content, projectId);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível enviar a mensagem.");
+    }
   }
 
   return (

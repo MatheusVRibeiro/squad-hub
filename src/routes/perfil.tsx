@@ -21,6 +21,7 @@ import { Achievements } from "@/components/profile/Achievements";
 import { ProjectHistory } from "@/components/profile/ProjectHistory";
 import { Reviews } from "@/components/profile/Reviews";
 import { fetchReputation } from "@/services/reputation";
+import { updateUserProfile, syncUserSkills } from "@/services/perfil";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverTrigger, PopoverContent, PopoverAnchor } from "@/components/ui/popover";
 import {
@@ -120,10 +121,33 @@ function PerfilPage() {
     if (!user) return;
     setSaving(true);
     try {
+      // 1) Persiste o perfil no backend (PATCH /usuarios/:id)
+      await updateUserProfile({ nome: name, bio, localizacao: location });
+
+      // 2) Só atualiza o estado local depois da resposta 200 da API
       const next = { ...user, name, bio, location, skills };
       updateUser(next);
-      await new Promise((r) => setTimeout(r, 400));
-      toast.success("Perfil atualizado");
+
+      // 3) Persiste as habilidades (best-effort: perfil já foi salvo)
+      try {
+        const { added, skipped } = await syncUserSkills(skills);
+        let message = "Perfil atualizado";
+        if (added > 0) {
+          message = `Perfil atualizado com ${added} habilidade(s)`;
+        }
+        if (skipped.length > 0) {
+          message += ` — ${skipped.length} habilidade(s) não encontrada(s) na base global e foram ignoradas`;
+        }
+        toast.success(message);
+      } catch (skillsErr) {
+        console.warn("[perfil] Falha ao sincronizar habilidades:", skillsErr);
+        toast.warning("Perfil salvo, mas não foi possível sincronizar as habilidades.");
+      }
+    } catch (err) {
+      // Não finge sucesso: não atualiza o estado local
+      const msg =
+        err instanceof Error ? err.message : "Erro ao salvar perfil. Tente novamente.";
+      toast.error(msg);
     } finally {
       setSaving(false);
     }

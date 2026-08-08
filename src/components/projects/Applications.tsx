@@ -34,14 +34,18 @@ export function Applications({
     const app = items.find((a) => a.id === id);
     if (!app) return;
 
-    // 1. Persiste localmente via serviço offline
-    await updateLocalApplicationStatus(projectId, id, status);
+    try {
+      // 1. Persiste via serviço (lança Error em falha)
+      await updateLocalApplicationStatus(projectId, id, status);
 
-    setItems((arr) => arr.map((a) => (a.id === id ? { ...a, status } : a)));
-    toast.success(status === "approved" ? "Candidatura aprovada" : "Candidatura recusada");
+      setItems((arr) => arr.map((a) => (a.id === id ? { ...a, status } : a)));
+      toast.success(status === "approved" ? "Candidatura aprovada" : "Candidatura recusada");
 
-    // 2. Envia notificação
-    notificationsIntegration.notifyApplicationStatus(projectName, app.name, status, projectId);
+      // 2. Envia notificação
+      notificationsIntegration.notifyApplicationStatus(projectName, app.name, status, projectId);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao atualizar candidatura.");
+    }
   }
 
   const pending = items.filter((a) => a.status === "pending");

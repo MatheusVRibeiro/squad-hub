@@ -206,56 +206,10 @@ export async function createProject(payload: {
       };
     }
   } catch {
-    // fallback
+    // ignore
   }
 
-  const newProject: Project = {
-    id: `local-${Date.now()}`,
-    name: payload.name,
-    description: payload.description,
-    status: "Aberto",
-    technologies: payload.technologies,
-    membersCount: 1,
-    membersLimit: payload.membersLimit,
-    createdBy: "Você",
-    createdAt: new Date().toISOString(),
-    repositorioUrl: payload.repositorioUrl,
-    figmaUrl: payload.figmaUrl,
-    discordUrl: payload.discordUrl,
-    documentacaoUrl: payload.documentacaoUrl,
-  };
-
-  // Salva na lista de projetos local
-  const projects = getLocalProjects();
-  projects.push(newProject);
-  saveLocalProjects(projects);
-
-  // Cria e salva o detalhe inicial
-  const detail: ProjectDetail = {
-    ...newProject,
-    longDescription:
-      payload.description +
-      " Este squad se reúne semanalmente para alinhar metas e planejar próximos passos.",
-    tasks: [
-      { id: "t1", title: "Configurar repositório e README", status: "todo" },
-      { id: "t2", title: "Mapear backlog inicial", status: "todo" },
-    ],
-    messages: [
-      {
-        id: "m1",
-        author: "Você",
-        content: "Squad criado! Sejam bem-vindos.",
-        createdAt: new Date().toISOString(),
-      },
-    ],
-    members: [
-      { id: "u-owner", name: "Você", role: "Owner", skills: payload.technologies.slice(0, 2) },
-    ],
-    applications: [],
-  };
-  saveLocalProjectDetail(newProject.id, detail);
-
-  return newProject;
+  throw new Error("Não foi possível criar o projeto.");
 }
 
 // Funções extras de mutação para desenvolvimento offline
@@ -406,7 +360,7 @@ export async function addLocalMuralMessage(
       return {
         id: String(data.dados.id),
         author,
-        content: data.dados.conteudo,
+        content: data.dados.conteudo || content,
         createdAt: data.dados.criado_em || new Date().toISOString(),
       };
     }
@@ -414,16 +368,7 @@ export async function addLocalMuralMessage(
     // ignore
   }
 
-  const detail = getLocalProjectDetail(projectId);
-  const newMessage: MuralMessage = {
-    id: `msg-${Date.now()}`,
-    author,
-    content,
-    createdAt: new Date().toISOString(),
-  };
-  detail.messages.unshift(newMessage); // mais recentes primeiro
-  saveLocalProjectDetail(projectId, detail);
-  return newMessage;
+  throw new Error("Não foi possível enviar a mensagem.");
 }
 
 export async function updateLocalApplicationStatus(
@@ -435,27 +380,11 @@ export async function updateLocalApplicationStatus(
     const backendStatus = status === "approved" ? "aceito" : "rejeitado";
     await api.patch(`/projetos/${projectId}/candidaturas/${applicationId}`, { status: backendStatus });
   } catch {
-    // ignore
-  }
-
-  const detail = getLocalProjectDetail(projectId);
-  const app = detail.applications.find((a) => a.id === applicationId);
-  if (app) {
-    app.status = status;
-    if (status === "approved") {
-      // Se aprovado, adiciona aos membros do projeto
-      const exists = detail.members.some((m) => m.name === app.name);
-      if (!exists) {
-        detail.members.push({
-          id: `u-${app.id}`,
-          name: app.name,
-          role: "Membro",
-          skills: app.skills,
-        });
-        detail.membersCount = detail.members.length;
-      }
-    }
-    saveLocalProjectDetail(projectId, detail);
+    throw new Error(
+      status === "approved"
+        ? "Não foi possível aprovar a candidatura."
+        : "Não foi possível rejeitar a candidatura.",
+    );
   }
 }
 
@@ -463,17 +392,13 @@ export async function applyToProjectLocal(
   projectId: string,
   applicant: { name: string; message: string; skills: string[] },
 ): Promise<void> {
-  const detail = getLocalProjectDetail(projectId);
-  const newApp: Application = {
-    id: `app-${Date.now()}`,
-    name: applicant.name,
-    message: applicant.message,
-    skills: applicant.skills,
-    createdAt: new Date().toISOString(),
-    status: "pending",
-  };
-  detail.applications.push(newApp);
-  saveLocalProjectDetail(projectId, detail);
+  try {
+    await api.post(`/projetos/${projectId}/candidaturas`, {
+      mensagem: applicant.message,
+    });
+  } catch {
+    throw new Error("Não foi possível enviar a candidatura.");
+  }
 }
 
 export async function closeProjectLocal(projectId: string): Promise<void> {

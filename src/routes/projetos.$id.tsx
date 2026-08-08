@@ -72,8 +72,8 @@ function ApplicationForm({
       notificationsIntegration.notifyApplied(projectName, user?.name || "Usuário", projectId);
       toast.success("Sua candidatura foi enviada com sucesso!");
       onSubmitted();
-    } catch {
-      toast.error("Erro ao enviar candidatura.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao enviar candidatura.");
     } finally {
       setSubmitting(false);
     }

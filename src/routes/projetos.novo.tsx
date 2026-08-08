@@ -92,8 +92,8 @@ function NovoProjetoPage() {
       // Invalida a query de projetos para atualizar a lista imediatamente
       queryClient.invalidateQueries({ queryKey: ["projects"] });
       navigate({ to: "/projetos/$id", params: { id: created.id } });
-    } catch {
-      toast.error("Não foi possível criar o projeto");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao criar projeto.");
     }
   }
 

@@ -29,6 +29,7 @@ import { AppLayout } from "@/layouts/AppLayout";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { TopCommitters } from "@/components/projects/TopCommitters";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchProjects } from "@/services/projects";
 import { fetchReputation } from "@/services/reputation";
@@ -382,6 +383,18 @@ function DashboardPage() {
                 )}
               </CardContent>
             </Card>
+          </div>
+
+          {/* Top Committers da plataforma (ETAPA 12) */}
+          <div className="grid gap-6 md:grid-cols-3">
+            <div className="md:col-span-1">
+              <TopCommitters
+                scope="global"
+                limit={5}
+                period="all"
+                title="Top Committers da plataforma"
+              />
+            </div>
           </div>
 
           {/* Atalhos Rápidos */}

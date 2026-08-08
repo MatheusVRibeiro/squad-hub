@@ -103,9 +103,9 @@ function RegisterPage() {
   const onSubmit = async (values: FormValues) => {
     setSubmitting(true);
     try {
-      await signUp(values);
+      const loggedIn = await signUp(values);
       toast.success("Conta criada com sucesso!");
-      navigate({ to: isAuthenticated ? "/dashboard" : "/login" });
+      navigate({ to: loggedIn ? "/dashboard" : "/login" });
     } catch (err) {
       const message =
         axios.isAxiosError(err) && err.response?.data

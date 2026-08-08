@@ -46,12 +46,27 @@ export type Application = {
 };
 
 export type ProjectDetail = Project & {
+  /** Id do usuário criador — mapeado de `criador_id` (snake_case) do backend GET /projetos/:id.
+   *  Permite isOwner/isMember por id (FASE-03.H) em vez de comparação por nome. */
+  creatorId?: string;
   longDescription: string;
   tasks: KanbanTask[];
   messages: MuralMessage[];
   members: Member[];
   applications: Application[];
 };
+
+/**
+ * Normaliza acentos/maiúsculas para casar nomes de tecnologias com a base
+ * global de habilidades (mesmo critério usado em services/perfil.ts).
+ */
+function normalizeText(text: string): string {
+  return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
 
 function mockDetail(p: Project): ProjectDetail {
   return {
@@ -154,8 +169,15 @@ export async function fetchProjectDetail(id: string): Promise<ProjectDetail> {
   try {
     const { data } = await api.get<any>(`/projetos/${id}`);
     if (data && data.sucesso && data.dados && data.dados.id) {
-      saveLocalProjectDetail(id, data.dados);
-      return data.dados;
+      // FASE-03.H: o backend retorna criador_id em snake_case no detalhe; expõe
+      // no contrato camelCase (creatorId) para comparações por id na UI. O spread
+      // preserva todos os demais campos que a UI já consome.
+      const detail: ProjectDetail = {
+        ...data.dados,
+        creatorId: data.dados.criador_id != null ? String(data.dados.criador_id) : undefined,
+      };
+      saveLocalProjectDetail(id, detail);
+      return detail;
     }
     return getLocalProjectDetail(id);
   } catch {
@@ -188,6 +210,48 @@ export async function createProject(payload: {
       let status: ProjectStatus = "Aberto";
       if (p.status === "em_andamento") status = "Em andamento";
       if (p.status === "finalizado") status = "Finalizado";
+
+      // Persistência best-effort das tecnologias (stack) do projeto: busca a
+      // base global de habilidades, casa os nomes (normalizando acentos) e
+      // vincula via POST /habilidades-projeto em paralelo. Falhas aqui NÃO
+      // derrubam a criação do projeto — apenas logam e seguem.
+      const projetoId: number = p.id;
+      if (Array.isArray(payload.technologies) && payload.technologies.length > 0) {
+        try {
+          const { data: habData } = await api.get<{
+            sucesso: boolean;
+            dados: { id: number; nome: string }[];
+          }>("/habilidades");
+          const habilidades = habData?.dados ?? [];
+          const byNormalizedName = new Map<string, number>();
+          habilidades.forEach((h) => byNormalizedName.set(normalizeText(h.nome), h.id));
+
+          await Promise.all(
+            payload.technologies.map(async (techName) => {
+              const habilidadeId = byNormalizedName.get(normalizeText(techName));
+              if (!habilidadeId) {
+                console.warn(
+                  `[projeto] Tecnologia "${techName}" não encontrada na base global de habilidades; ignorada.`,
+                );
+                return;
+              }
+              try {
+                await api.post("/habilidades-projeto", {
+                  projeto_id: projetoId,
+                  habilidade_id: habilidadeId,
+                });
+              } catch (err) {
+                console.warn(
+                  `[projeto] Falha ao vincular tecnologia "${techName}" ao projeto ${projetoId}:`,
+                  err,
+                );
+              }
+            }),
+          );
+        } catch (err) {
+          console.warn("[projeto] Falha ao persistir tecnologias do projeto:", err);
+        }
+      }
 
       return {
         id: String(p.id),

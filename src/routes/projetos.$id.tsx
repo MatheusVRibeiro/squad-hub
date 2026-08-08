@@ -120,9 +120,13 @@ function ProjectDetailPage() {
     queryFn: () => fetchProjectDetail(id),
   });
 
-  const isOwner = data ? data.createdBy === user?.name || data.createdBy === "Você" : false;
+  // FASE-03.H: permissões por id (não por nome) — homônimos não quebram.
+  // creatorId vem mapeado de criador_id do backend; Number() normaliza string/número.
+  const isOwner = data ? Number(data.creatorId) === Number(user?.id) : false;
 
-  const isMember = data ? isOwner || data.members.some((m) => m.name === user?.name) : false;
+  const isMember = data
+    ? isOwner || data.members.some((m) => Number(m.id) === Number(user?.id))
+    : false;
 
   const application = data?.applications.find((a) => a.name === user?.name);
   const hasApplied = !!application && application.status === "pending";

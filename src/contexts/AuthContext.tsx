@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { api, TOKEN_KEY, USER_KEY } from "@/services/api";
+import { syncUserSkills } from "@/services/perfil";
 
 export type User = {
   id?: string;
@@ -22,13 +23,49 @@ export type SignUpData = {
   skills: string[];
 };
 
+type LoginResponse = {
+  sucesso: boolean;
+  message: string;
+  token: string;
+  dados: {
+    id: number;
+    nome: string;
+    email: string;
+    tipo: string;
+    bio?: string;
+    localizacao?: string;
+  };
+};
+
+/** POST /login e mapeia a resposta para o formato User usado pelo contexto. */
+async function loginAndMap(
+  email: string,
+  password: string,
+): Promise<{ token: string; user: User }> {
+  const { data } = await api.post<LoginResponse>("/login", {
+    email,
+    senha: password,
+  });
+
+  const user: User = {
+    id: String(data.dados.id),
+    name: data.dados.nome,
+    email: data.dados.email,
+    bio: data.dados.bio,
+    location: data.dados.localizacao,
+    role: data.dados.tipo === "adm" ? "admin" : "user",
+  };
+
+  return { token: data.token, user };
+}
+
 type AuthContextValue = {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   signIn: (data: SignInData) => Promise<void>;
   signInTemp: (data?: SignInData & { role?: "admin" | "user" }) => Promise<void>;
-  signUp: (data: SignUpData) => Promise<void>;
+  signUp: (data: SignUpData) => Promise<boolean>;
   signOut: () => void;
   updateUser: (nextUser: User) => void;
 };
@@ -78,33 +115,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      const { data } = await api.post<{
-        sucesso: boolean;
-        message: string;
-        token: string;
-        dados: {
-          id: number;
-          nome: string;
-          email: string;
-          tipo: string;
-          bio?: string;
-          localizacao?: string;
-        };
-      }>("/login", {
-        email,
-        senha: password,
-      });
-
-      const mappedUser: User = {
-        id: String(data.dados.id),
-        name: data.dados.nome,
-        email: data.dados.email,
-        bio: data.dados.bio,
-        location: data.dados.localizacao,
-        role: data.dados.tipo === "adm" ? "admin" : "user",
-      };
-
-      persist(data.token, mappedUser);
+      const { token, user } = await loginAndMap(email, password);
+      persist(token, user);
     },
     [persist],
   );
@@ -124,7 +136,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const signUp = useCallback(
-    async (payload: SignUpData) => {
+    async (payload: SignUpData): Promise<boolean> => {
       await api.post<{
         sucesso: boolean;
         message: string;
@@ -142,6 +154,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         bio: payload.bio,
         localizacao: payload.location,
       });
+
+      // Login automático pós-cadastro: garante que o token e o id do usuário
+      // recém-criado fiquem disponíveis para o sync de skills (GET /habilidades
+      // e POST /habilidades-usuario são endpoints autenticados). Se o login
+      // falhar, o cadastro continua válido e o usuário entra manualmente — nesse
+      // caso o sync é pulado (não há token para autenticar as chamadas).
+      let token: string;
+      let user: User;
+      try {
+        const auth = await loginAndMap(payload.email, payload.password);
+        token = auth.token;
+        user = auth.user;
+      } catch (err) {
+        console.warn(
+          "[auth] Conta criada, mas o login automático falhou; o usuário deve entrar manualmente.",
+          err,
+        );
+        return false;
+      }
+
+      persist(token, { ...user, skills: payload.skills });
+
+      // Best-effort: falha no sync NÃO derruba o cadastro.
+      if (payload.skills.length > 0) {
+        try {
+          const result = await syncUserSkills(payload.skills);
+          console.info(
+            `[auth] Skills sincronizadas pós-cadastro: ${result.added} adicionadas, ${result.skipped.length} ignoradas.`,
+          );
+        } catch (err) {
+          console.warn("[auth] Falha ao sincronizar skills após o cadastro (cadastro mantido).", err);
+        }
+      }
+
+      return true;
     },
     [persist],
   );

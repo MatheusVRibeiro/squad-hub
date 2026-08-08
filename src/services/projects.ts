@@ -132,6 +132,7 @@ export async function fetchProjects(): Promise<Project[]> {
         figma_url?: string | null;
         discord_url?: string | null;
         documentacao_url?: string | null;
+        tecnologias?: string[] | string | null;
       }[];
     }>("/projetos");
 
@@ -141,12 +142,20 @@ export async function fetchProjects(): Promise<Project[]> {
         if (p.status === "em_andamento") status = "Em andamento";
         if (p.status === "finalizado") status = "Finalizado";
 
+        // O backend retorna `tecnologias` como array de nomes (ou string
+        // separada por "||" em versões antigas); normaliza para array.
+        const tecnologias: string[] = Array.isArray(p.tecnologias)
+          ? p.tecnologias
+          : typeof p.tecnologias === "string" && p.tecnologias.length > 0
+            ? p.tecnologias.split("||")
+            : [];
+
         return {
           id: String(p.id),
           name: p.titulo,
           description: p.descricao || "",
           status,
-          technologies: [],
+          technologies: tecnologias,
           membersCount: p.total_membros,
           membersLimit: p.limite_membros,
           createdBy: p.criador_nome || "Desconhecido",

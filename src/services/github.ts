@@ -19,6 +19,14 @@ export type InstallationRepository = {
   private: boolean;
 };
 
+export type UserGithubStatus = {
+  conectado: boolean;
+  github_user_id: number | null;
+  github_login: string | null;
+  github_avatar_url: string | null;
+  github_connected_at: string | null;
+};
+
 type ApiEnvelope<T> = { sucesso: boolean; message?: string; dados: T | null };
 
 function toFriendlyError(err: unknown, fallback: string): Error {
@@ -87,5 +95,41 @@ export async function disconnectProjectRepository(projectId: string | number): P
     if (!data.sucesso) throw new Error(data.message || "Falha ao desconectar repositório");
   } catch (err) {
     throw toFriendlyError(err, "Erro ao desconectar repositório.");
+  }
+}
+
+// ── Identidade GitHub do usuário (ETAPA 6) ────────────────────────────────
+
+/** GET /github/me — estado de conexão do usuário autenticado. */
+export async function getUserGithubStatus(): Promise<UserGithubStatus> {
+  try {
+    const { data } = await api.get<ApiEnvelope<UserGithubStatus>>("/github/me");
+    if (!data.sucesso || !data.dados)
+      throw new Error(data.message || "Falha ao buscar status GitHub");
+    return data.dados;
+  } catch (err) {
+    throw toFriendlyError(err, "Erro ao buscar status GitHub.");
+  }
+}
+
+/** GET /github/connect — retorna a URL OAuth (com state anti-CSRF) para conectar. */
+export async function getGithubConnectUrl(): Promise<{ url: string; state: string }> {
+  try {
+    const { data } = await api.get<ApiEnvelope<{ url: string; state: string }>>("/github/connect");
+    if (!data.sucesso || !data.dados)
+      throw new Error(data.message || "Falha ao gerar URL de conexão");
+    return data.dados;
+  } catch (err) {
+    throw toFriendlyError(err, "Erro ao gerar URL de conexão GitHub.");
+  }
+}
+
+/** DELETE /github/disconnect — remove o vínculo (histórico preservado). */
+export async function disconnectGithubAccount(): Promise<void> {
+  try {
+    const { data } = await api.delete<ApiEnvelope<null>>("/github/disconnect");
+    if (!data.sucesso) throw new Error(data.message || "Falha ao desconectar GitHub");
+  } catch (err) {
+    throw toFriendlyError(err, "Erro ao desconectar GitHub.");
   }
 }

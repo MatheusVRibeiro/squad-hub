@@ -133,3 +133,60 @@ export async function disconnectGithubAccount(): Promise<void> {
     throw toFriendlyError(err, "Erro ao desconectar GitHub.");
   }
 }
+
+// ── Atividade GitHub da tarefa (ETAPA 8) ──────────────────────────────────
+
+export type TaskGithubStatus = {
+  github_branch: string | null;
+  github_pr_number: number | null;
+  github_pr_url: string | null;
+  github_pr_status: string | null;
+  github_last_activity_at: string | null;
+  completion_source: string | null;
+  completed_at: string | null;
+};
+
+export type TaskCommit = {
+  sha: string;
+  sha_curto: string;
+  mensagem: string;
+  autor: string;
+  login: string | null;
+  email: string | null;
+  url: string | null;
+  commit_em: string | null;
+  branch: string | null;
+};
+
+/** GET /projetos/:id/tarefas/:tarefaId/github — status GitHub da task. */
+export async function getTaskGithubStatus(
+  projectId: string | number,
+  taskId: string | number,
+): Promise<TaskGithubStatus> {
+  try {
+    const { data } = await api.get<ApiEnvelope<TaskGithubStatus>>(
+      `/projetos/${projectId}/tarefas/${taskId}/github`,
+    );
+    if (!data.sucesso || !data.dados)
+      throw new Error(data.message || "Falha ao buscar status GitHub");
+    return data.dados;
+  } catch (err) {
+    throw toFriendlyError(err, "Erro ao buscar status GitHub da tarefa.");
+  }
+}
+
+/** GET /projetos/:id/tarefas/:tarefaId/commits — commits da branch da task. */
+export async function getTaskCommits(
+  projectId: string | number,
+  taskId: string | number,
+): Promise<TaskCommit[]> {
+  try {
+    const { data } = await api.get<ApiEnvelope<TaskCommit[]>>(
+      `/projetos/${projectId}/tarefas/${taskId}/commits`,
+    );
+    if (!data.sucesso) throw new Error(data.message || "Falha ao listar commits");
+    return data.dados ?? [];
+  } catch (err) {
+    throw toFriendlyError(err, "Erro ao listar commits da tarefa.");
+  }
+}

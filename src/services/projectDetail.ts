@@ -26,15 +26,17 @@ export type KanbanTask = {
   priority?: "low" | "medium" | "high";
   dueDate?: string;
   subtasks?: SubTask[];
-  // Campos GitHub (ETAPA 2) — opcionais; projetos sem GitHub não os possuem
-  githubBranch?: string | null;
-  githubPrNumber?: number | null;
-  githubPrUrl?: string | null;
-  githubPrStatus?: "none" | "open" | "closed" | "merged" | null;
-  githubLastActivityAt?: string | null;
-  completionSource?: "manual" | "github_merge" | null;
-  completedAt?: string | null;
-  assigneeId?: number | null;
+  createdAt?: string;
+  // GitHub (ETAPAS 2/8)
+  githubBranch?: string;
+  githubPrNumber?: number;
+  githubPrUrl?: string;
+  githubPrStatus?: string;
+  githubLastActivityAt?: string;
+  githubCommitsCount?: number;
+  completionSource?: string;
+  completedAt?: string;
+  assigneeId?: number;
 };
 
 export type MuralMessage = {

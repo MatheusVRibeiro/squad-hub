@@ -40,6 +40,8 @@ import {
   type SubTask,
 } from "@/services/projectDetail";
 import { notificationsIntegration } from "@/services/notificationsIntegration";
+import { GithubTaskBadge } from "@/components/projects/GithubTaskBadge";
+import { GithubTaskActivity } from "@/components/projects/GithubTaskActivity";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   DropdownMenu,
@@ -482,6 +484,11 @@ export function KanbanBoard({
                             <span>Assumir tarefa</span>
                           </button>
                         )}
+                        <GithubTaskBadge
+                          branch={t.githubBranch}
+                          commitsCount={t.githubCommitsCount}
+                          lastActivityAt={t.githubLastActivityAt}
+                        />
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <button
@@ -759,6 +766,11 @@ export function KanbanBoard({
                   {modalMode === "create" ? "Criar Tarefa" : "Salvar Alterações"}
                 </Button>
               </div>
+
+              {/* Atividade GitHub da tarefa (ETAPA 8) — apenas no modo edição */}
+              {modalMode === "edit" && editingTask && (
+                <GithubTaskActivity projectId={projectId} taskId={editingTask.id} open />
+              )}
             </div>
           )}
         </DialogContent>

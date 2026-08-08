@@ -1,10 +1,13 @@
-import { Github, GitCommitHorizontal } from "lucide-react";
+import { Github, GitCommitHorizontal, GitPullRequest, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Props = {
   branch: string | null | undefined;
   commitsCount: number | null | undefined;
   lastActivityAt: string | null | undefined;
+  prNumber?: number | null;
+  prStatus?: string | null;
+  completionSource?: string | null;
   loading?: boolean;
 };
 
@@ -25,10 +28,19 @@ function tempoRelativo(iso: string | null | undefined): string | null {
  * Badge de integração GitHub no card da tarefa (ETAPA 8).
  * Mostra: GitHub ✓ · N commits · última atividade.
  */
-export function GithubTaskBadge({ branch, commitsCount, lastActivityAt, loading }: Props) {
-  if (!branch && !commitsCount && !loading) return null;
+export function GithubTaskBadge({
+  branch,
+  commitsCount,
+  lastActivityAt,
+  prNumber,
+  prStatus,
+  completionSource,
+  loading,
+}: Props) {
+  if (!branch && !commitsCount && !prNumber && !loading) return null;
 
   const relativo = tempoRelativo(lastActivityAt);
+  const mergeado = completionSource === "github_merge" || prStatus === "merged";
 
   return (
     <span
@@ -46,6 +58,32 @@ export function GithubTaskBadge({ branch, commitsCount, lastActivityAt, loading 
       ) : (
         <>
           <span>GitHub ✓</span>
+          {prNumber && (
+            <span
+              className={cn(
+                "inline-flex items-center gap-0.5",
+                mergeado
+                  ? "text-emerald-600 dark:text-emerald-400"
+                  : "text-sky-600 dark:text-sky-400",
+              )}
+            >
+              <GitPullRequest className="h-3 w-3" />
+              PR #{prNumber}{" "}
+              {prStatus === "open"
+                ? "aberto"
+                : mergeado
+                  ? "mergeado"
+                  : prStatus === "closed"
+                    ? "fechado"
+                    : ""}
+            </span>
+          )}
+          {mergeado && (
+            <span className="inline-flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400">
+              <CheckCircle2 className="h-3 w-3" />
+              Concluído via GitHub
+            </span>
+          )}
           {typeof commitsCount === "number" && commitsCount > 0 && (
             <span className="inline-flex items-center gap-0.5">
               <GitCommitHorizontal className="h-3 w-3" />

@@ -488,6 +488,9 @@ export function KanbanBoard({
                           branch={t.githubBranch}
                           commitsCount={t.githubCommitsCount}
                           lastActivityAt={t.githubLastActivityAt}
+                          prNumber={t.githubPrNumber}
+                          prStatus={t.githubPrStatus}
+                          completionSource={t.completionSource}
                         />
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>

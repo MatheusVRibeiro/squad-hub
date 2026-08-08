@@ -190,3 +190,39 @@ export async function getTaskCommits(
     throw toFriendlyError(err, "Erro ao listar commits da tarefa.");
   }
 }
+
+// ── Timeline técnica da tarefa (ETAPA 15) ─────────────────────────────────
+
+export type TimelineEvent = {
+  tipo:
+    | "assumida"
+    | "branch"
+    | "commit"
+    | "pr_open"
+    | "pr_closed"
+    | "pr_merged"
+    | "concluida"
+    | string;
+  titulo: string;
+  detalhe: string | null;
+  sha?: string | null;
+  autor?: string | null;
+  url?: string | null;
+  quando: string | null;
+};
+
+/** GET /projetos/:id/tarefas/:tarefaId/timeline — timeline derivada da task. */
+export async function getTaskTimeline(
+  projectId: string | number,
+  taskId: string | number,
+): Promise<TimelineEvent[]> {
+  try {
+    const { data } = await api.get<ApiEnvelope<TimelineEvent[]>>(
+      `/projetos/${projectId}/tarefas/${taskId}/timeline`,
+    );
+    if (!data.sucesso) throw new Error(data.message || "Falha ao carregar timeline");
+    return data.dados ?? [];
+  } catch (err) {
+    throw toFriendlyError(err, "Erro ao carregar timeline da tarefa.");
+  }
+}

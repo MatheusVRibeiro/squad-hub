@@ -7,11 +7,13 @@ import {
   GitBranch,
   GitPullRequest,
   CheckCircle2,
+  History,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   getTaskGithubStatus,
   getTaskCommits,
+  getTaskTimeline,
   type TaskGithubStatus,
   type TaskCommit,
 } from "@/services/github";
@@ -171,6 +173,95 @@ export function GithubTaskActivity({ projectId, taskId, open }: Props) {
           )}
         </div>
       )}
+
+      {/* Timeline técnica (ETAPA 15) */}
+      <TimelineBlock projectId={projectId} taskId={taskId} open={open} />
+    </div>
+  );
+}
+
+function TimelineBlock({
+  projectId,
+  taskId,
+  open,
+}: {
+  projectId: string | number;
+  taskId: string | number;
+  open: boolean;
+}) {
+  const timelineQuery = useQuery({
+    queryKey: ["task-timeline", String(projectId), String(taskId)],
+    queryFn: () => getTaskTimeline(projectId, taskId),
+    enabled: open,
+    refetchInterval: open ? 30000 : false,
+  });
+
+  const eventos = timelineQuery.data ?? [];
+  if (timelineQuery.isLoading) {
+    return (
+      <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+        <Loader2 className="h-3.5 w-3.5 animate-spin" /> Carregando timeline…
+      </div>
+    );
+  }
+  if (eventos.length === 0) return null;
+
+  const iconeTipo: Record<string, typeof History> = {
+    assumida: History,
+    branch: GitBranch,
+    commit: GitCommitHorizontal,
+    pr_open: GitPullRequest,
+    pr_closed: GitPullRequest,
+    pr_merged: GitPullRequest,
+    concluida: CheckCircle2,
+  };
+
+  return (
+    <div className="mt-4 border-t border-border/20 pt-3">
+      <p className="mb-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+        <History className="h-3 w-3" /> Timeline
+      </p>
+      <ol className="relative ml-2 space-y-2.5 border-l border-border/40 pl-4">
+        {eventos.map((ev, i) => {
+          const Icone = iconeTipo[ev.tipo] ?? History;
+          return (
+            <li key={`${ev.tipo}-${i}`} className="relative">
+              <span className="absolute -left-[21px] grid h-4 w-4 place-items-center rounded-full bg-background border border-border/50">
+                <Icone
+                  className={cn(
+                    "h-2.5 w-2.5",
+                    ev.tipo === "pr_merged" || ev.tipo === "concluida"
+                      ? "text-emerald-600 dark:text-emerald-400"
+                      : "text-muted-foreground",
+                  )}
+                />
+              </span>
+              <p className="text-xs font-medium text-foreground/90">{ev.titulo}</p>
+              {ev.detalhe && (
+                <p className="truncate text-[10px] text-muted-foreground">{ev.detalhe}</p>
+              )}
+              {ev.sha && (
+                <code className="rounded bg-muted px-1 py-0.5 text-[10px] font-mono">{ev.sha}</code>
+              )}
+              {ev.url ? (
+                <a
+                  href={ev.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="ml-1 inline-flex items-center gap-0.5 text-[10px] text-primary hover:underline"
+                >
+                  ver <ExternalLink className="h-2.5 w-2.5" />
+                </a>
+              ) : null}
+              {ev.quando && (
+                <p className="text-[10px] text-muted-foreground">
+                  {new Date(ev.quando).toLocaleString("pt-BR")}
+                </p>
+              )}
+            </li>
+          );
+        })}
+      </ol>
     </div>
   );
 }

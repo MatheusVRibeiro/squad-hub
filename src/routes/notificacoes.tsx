@@ -125,7 +125,7 @@ function NotificacoesPage() {
           ) : (
             <ul className="space-y-2">
               {notifications.map((n) => {
-                const Icon = ICONS[n.type];
+                const Icon = ICONS[n.type] ?? Sparkles;
                 const content = (
                   <Card className="rounded-2xl border-border/60 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm">
                     <CardContent className="flex gap-3 p-4">

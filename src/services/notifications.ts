@@ -14,16 +14,23 @@ export type AppNotification = {
 
 /**
  * Formato retornado pelo backend em GET /notificacoes (autenticado):
- * { sucesso, message, dados: [{ id, tipo, titulo, descricao, link, lida, criado_em }], nItens }
+ * { sucesso, message, dados: [{ id, type, title, description, createdAt, read, link }], nItens }
+ * O controller já devolve camelCase; os campos snake_case são aceitos como
+ * fallback para robustez (caso o backend mude o contrato).
  */
 type ApiNotification = {
   id: string;
-  tipo: NotificationType;
-  titulo: string;
-  descricao: string;
+  type?: NotificationType;
+  tipo?: NotificationType;
+  title?: string;
+  titulo?: string;
+  description?: string;
+  descricao?: string;
   link?: string | null;
-  lida: boolean;
-  criado_em: string;
+  read?: boolean;
+  lida?: boolean;
+  createdAt?: string;
+  criado_em?: string;
 };
 
 type NotificationsApiResponse = {
@@ -122,15 +129,15 @@ export function addLocalNotification(
   return newNotif;
 }
 
-/** Mapeia o formato do backend (snake_case) para o contrato do frontend (camelCase). */
+/** Mapeia o formato do backend para o contrato do frontend (camelCase). */
 function mapNotification(n: ApiNotification): AppNotification {
   return {
     id: n.id,
-    type: n.tipo,
-    title: n.titulo,
-    description: n.descricao,
-    createdAt: n.criado_em,
-    read: n.lida,
+    type: n.type ?? n.tipo ?? "system",
+    title: n.title ?? n.titulo ?? "",
+    description: n.description ?? n.descricao ?? "",
+    createdAt: n.createdAt ?? n.criado_em ?? "",
+    read: Boolean(n.read ?? n.lida),
     link: n.link ?? undefined,
   };
 }

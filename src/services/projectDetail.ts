@@ -444,6 +444,23 @@ export async function updateLocalTaskAssignee(
   saveLocalProjectDetail(projectId, detail);
 }
 
+/**
+ * POST /projetos/:projetoId/tarefas/:tarefaId/assumir — membro assume task livre (ETAPA 7).
+ * Retorna a task atualizada (status doing + github_branch quando aplicável).
+ */
+export async function claimTask(
+  projectId: string | number,
+  taskId: string | number,
+): Promise<KanbanTask> {
+  const { data } = await api.post<ApiResponse<KanbanTask | null>>(
+    `/projetos/${projectId}/tarefas/${taskId}/assumir`,
+  );
+  if (!data.sucesso || !data.dados) {
+    throw new Error(data.message || "Falha ao assumir tarefa");
+  }
+  return data.dados;
+}
+
 export async function updateLocalTaskDetails(
   projectId: string,
   taskId: string,

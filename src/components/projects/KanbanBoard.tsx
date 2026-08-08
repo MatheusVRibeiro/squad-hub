@@ -9,6 +9,8 @@ import {
   CheckSquare,
   Trash,
   Sparkles,
+  Loader2,
+  Hand,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -31,6 +33,7 @@ import {
   updateLocalTaskStatus,
   updateLocalTaskAssignee,
   updateLocalTaskDetails,
+  claimTask,
   type KanbanStatus,
   type KanbanTask,
   type Member,
@@ -108,6 +111,7 @@ export function KanbanBoard({
   const [newSubtask, setNewSubtask] = useState("");
   const [assignee, setAssignee] = useState<string | undefined>(undefined);
   const [dragId, setDragId] = useState<string | null>(null);
+  const [claimingId, setClaimingId] = useState<string | null>(null);
 
   function openCreateModal(colKey: KanbanStatus) {
     setModalCol(colKey);
@@ -185,6 +189,39 @@ export function KanbanBoard({
       );
     } else {
       toast.success("Responsável removido");
+    }
+  }
+
+  // ETAPA 7: membro assume task livre (POST .../assumir) — status vira doing
+  async function handleClaim(taskId: string) {
+    if (readOnly) return;
+    setClaimingId(taskId);
+    try {
+      const updated = await claimTask(projectId, taskId);
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === taskId
+            ? {
+                ...t,
+                status: updated.status || "doing",
+                assignee: updated.assignee || "Você",
+                githubBranch: updated.githubBranch,
+              }
+            : t,
+        ),
+      );
+      toast.success("Tarefa assumida! Status: Em progresso");
+      notificationsIntegration.notifyTaskActivity(
+        projectName,
+        tasks.find((t) => t.id === taskId)?.title || "Tarefa",
+        "assigned",
+        "Você",
+        projectId,
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao assumir tarefa");
+    } finally {
+      setClaimingId(null);
     }
   }
 
@@ -431,6 +468,20 @@ export function KanbanBoard({
                       </div>
 
                       <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border/20 pt-3">
+                        {!t.assignee && !readOnly && (
+                          <button
+                            onClick={() => handleClaim(t.id)}
+                            disabled={claimingId === t.id}
+                            className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-medium tracking-wide border transition-all outline-none bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20 cursor-pointer disabled:opacity-60"
+                          >
+                            {claimingId === t.id ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Hand className="h-3 w-3 shrink-0" />
+                            )}
+                            <span>Assumir tarefa</span>
+                          </button>
+                        )}
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <button

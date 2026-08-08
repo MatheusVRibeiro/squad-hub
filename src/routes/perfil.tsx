@@ -1,7 +1,7 @@
 import { useState, useEffect, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Loader2, Plus, X, Github, Check, ChevronsUpDown } from "lucide-react";
+import { Loader2, Plus, X, Github, Check, ChevronsUpDown, Target } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppLayout } from "@/layouts/AppLayout";
@@ -21,8 +21,26 @@ import { Achievements } from "@/components/profile/Achievements";
 import { ProjectHistory } from "@/components/profile/ProjectHistory";
 import { Reviews } from "@/components/profile/Reviews";
 import { fetchReputation, type Reputation } from "@/services/reputation";
-import { updateUserProfile, syncUserSkills, fetchMe } from "@/services/perfil";
+import { fetchMe } from "@/services/perfil";
+import {
+  getFuncoes,
+  getMeuPerfilTecnico,
+  atualizarPerfilTecnico,
+  salvarFuncoes,
+  salvarHabilidadesComNivel,
+  type Funcao,
+  type NivelHabilidade,
+  type NivelInteresse,
+} from "@/services/perfilTecnico";
 import { cn } from "@/lib/utils";
+import { Progress } from "@/components/ui/progress";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Popover, PopoverTrigger, PopoverContent, PopoverAnchor } from "@/components/ui/popover";
 import {
   Command,
@@ -82,6 +100,34 @@ const normalizeText = (text: string) =>
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
+
+type SkillComNivel = { nome: string; nivel: NivelHabilidade };
+type FuncaoInteresse = { nome: string; nivel_interesse: NivelInteresse };
+
+/** Fallback offline das 9 funções (ETAPA 3) — a lista real vem de GET /funcoes. */
+const FUNCOES_PADRAO: Funcao[] = [
+  { id: 1, nome: "Backend" },
+  { id: 2, nome: "Frontend" },
+  { id: 3, nome: "Full Stack" },
+  { id: 4, nome: "Mobile" },
+  { id: 5, nome: "QA" },
+  { id: 6, nome: "DevOps" },
+  { id: 7, nome: "UX/UI" },
+  { id: 8, nome: "Data" },
+  { id: 9, nome: "Product" },
+];
+
+const NIVEIS_HABILIDADE: { value: NivelHabilidade; label: string }[] = [
+  { value: "iniciante", label: "Iniciante" },
+  { value: "intermediario", label: "Intermediário" },
+  { value: "avancado", label: "Avançado" },
+];
+
+const NIVEIS_INTERESSE: { value: NivelInteresse; label: string }[] = [
+  { value: "baixo", label: "Baixo" },
+  { value: "medio", label: "Médio" },
+  { value: "alto", label: "Alto" },
+];
 
 /**
  * Estado de carregamento/erro/vazio da seção de reputação.
@@ -148,29 +194,79 @@ function PerfilPage() {
   const [bio, setBio] = useState(user?.bio ?? "");
   const [location, setLocation] = useState(user?.location ?? "");
   const [avatar, setAvatar] = useState(user?.avatarUrl ?? "");
-  const [skills, setSkills] = useState<string[]>(user?.skills ?? []);
+  const [skills, setSkills] = useState<SkillComNivel[]>(
+    (user?.skills ?? []).map((s) => ({ nome: s, nivel: "iniciante" })),
+  );
   const [draft, setDraft] = useState("");
   const [saving, setSaving] = useState(false);
   const [locationOpen, setLocationOpen] = useState(false);
   const [locationSearch, setLocationSearch] = useState(user?.location ?? "");
 
+  // ETAPA 3 — perfil técnico (funções, disponibilidade, objetivo, perfil_completo)
+  const [funcoesDisponiveis, setFuncoesDisponiveis] = useState<Funcao[]>(FUNCOES_PADRAO);
+  const [funcoesInteresse, setFuncoesInteresse] = useState<FuncaoInteresse[]>([]);
+  const [disponibilidade, setDisponibilidade] = useState("");
+  const [objetivo, setObjetivo] = useState("");
+  const [perfilCompleto, setPerfilCompleto] = useState<boolean | null>(null);
+  const [perfilTecnicoCarregado, setPerfilTecnicoCarregado] = useState(false);
+
   // Opção B (fix B12): busca os dados frescos do usuário no BACKEND ao montar
   // a página — o formulário nunca depende apenas do localStorage, então um
   // user corrompido (ex: nome "") não sobrescreve campos reais no salvar.
+  // ETAPA 3 — carrega o perfil técnico completo (GET /usuarios/me/perfil) e a
+  // lista de funções (GET /funcoes). Se o backend ainda não expõe o endpoint
+  // (fallback), usa GET /usuarios/me como antes — o formulário continua editável.
   useEffect(() => {
     let ativo = true;
-    fetchMe()
-      .then((dados) => {
-        if (!ativo) return;
-        setName((prev) => prev || dados.nome || "");
-        setBio((prev) => prev || dados.bio || "");
-        setLocation((prev) => prev || dados.localizacao || "");
-        setAvatar((prev) => prev || dados.avatar_url || "");
+
+    getFuncoes()
+      .then((funcoes) => {
+        if (ativo && funcoes.length > 0) setFuncoesDisponiveis(funcoes);
       })
       .catch((err) => {
-        if (!ativo) return;
-        console.warn("[perfil] Não foi possível carregar dados do backend:", err);
+        console.warn("[perfil] Não foi possível carregar a lista de funções:", err);
       });
+
+    getMeuPerfilTecnico()
+      .then((perfil) => {
+        if (!ativo) return;
+        setName(perfil.nome || "");
+        setBio(perfil.bio ?? "");
+        setLocation(perfil.localizacao ?? "");
+        setAvatar(perfil.avatar_url ?? "");
+        setSkills((perfil.habilidades ?? []).map((h) => ({ nome: h.nome, nivel: h.nivel })));
+        setFuncoesInteresse(
+          (perfil.funcoes ?? []).map((f) => ({ nome: f.nome, nivel_interesse: f.nivel_interesse })),
+        );
+        setDisponibilidade(
+          perfil.disponibilidade_horas_semana != null
+            ? String(perfil.disponibilidade_horas_semana)
+            : "",
+        );
+        setObjetivo(perfil.objetivo_profissional ?? "");
+        setPerfilCompleto(perfil.perfil_completo);
+      })
+      .catch((err) => {
+        // Backend ETAPA 3 ainda não disponível: fallback para os dados básicos.
+        if (!ativo) return;
+        console.warn("[perfil] Perfil técnico ainda não disponível; usando fallback:", err);
+        fetchMe()
+          .then((dados) => {
+            if (!ativo) return;
+            setName((prev) => prev || dados.nome || "");
+            setBio((prev) => prev || dados.bio || "");
+            setLocation((prev) => prev || dados.localizacao || "");
+            setAvatar((prev) => prev || dados.avatar_url || "");
+          })
+          .catch((err2) => {
+            if (!ativo) return;
+            console.warn("[perfil] Não foi possível carregar dados do backend:", err2);
+          });
+      })
+      .finally(() => {
+        if (ativo) setPerfilTecnicoCarregado(true);
+      });
+
     return () => {
       ativo = false;
     };
@@ -208,36 +304,98 @@ function PerfilPage() {
 
   function addSkill(value: string) {
     const v = value.trim();
-    if (!v || skills.includes(v)) return;
-    setSkills((arr) => [...arr, v]);
+    if (!v || skills.some((s) => s.nome === v)) return;
+    setSkills((arr) => [...arr, { nome: v, nivel: "iniciante" }]);
     setDraft("");
+  }
+
+  function removerSkill(nome: string) {
+    setSkills((arr) => arr.filter((s) => s.nome !== nome));
+  }
+
+  function mudarNivelSkill(nome: string, nivel: NivelHabilidade) {
+    setSkills((arr) => arr.map((s) => (s.nome === nome ? { ...s, nivel } : s)));
+  }
+
+  function toggleFuncao(nome: string) {
+    setFuncoesInteresse((arr) =>
+      arr.some((f) => f.nome === nome)
+        ? arr.filter((f) => f.nome !== nome)
+        : [...arr, { nome, nivel_interesse: "medio" }],
+    );
+  }
+
+  function mudarNivelInteresse(nome: string, nivel: NivelInteresse) {
+    setFuncoesInteresse((arr) =>
+      arr.map((f) => (f.nome === nome ? { ...f, nivel_interesse: nivel } : f)),
+    );
+  }
+
+  // Percentual local de completude (espelha o critério do backend para o
+  // indicador: nome, bio, localização, objetivo, disponibilidade > 0, ≥1
+  // habilidade e ≥1 função).
+  const criterios = [
+    name.trim().length > 0,
+    bio.trim().length > 0,
+    location.trim().length > 0,
+    objetivo.trim().length > 0,
+    Number(disponibilidade) > 0,
+    skills.length > 0,
+    funcoesInteresse.length > 0,
+  ];
+  const percentual = Math.round((criterios.filter(Boolean).length / criterios.length) * 100);
+
+  function rolarParaPerfilTecnico() {
+    document
+      .getElementById("perfil-tecnico")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   async function save() {
     if (!user) return;
     setSaving(true);
     try {
-      // 1) Persiste o perfil no backend (PATCH /usuarios/:id)
-      await updateUserProfile({ nome: name, bio, localizacao: location, avatarUrl: avatar });
+      // 1) Persiste o perfil técnico no backend (PATCH /usuarios/me/perfil)
+      const horas = Number(disponibilidade);
+      await atualizarPerfilTecnico({
+        nome: name,
+        bio,
+        localizacao: location,
+        avatarUrl: avatar,
+        disponibilidade_horas_semana: Number.isFinite(horas) && horas > 0 ? horas : undefined,
+        objetivo_profissional: objetivo.trim() || undefined,
+      });
 
       // 2) Só atualiza o estado local depois da resposta 200 da API
-      const next = { ...user, name, bio, location, avatarUrl: avatar, skills };
+      const next = {
+        ...user,
+        name,
+        bio,
+        location,
+        avatarUrl: avatar,
+        skills: skills.map((s) => s.nome),
+      };
       updateUser(next);
 
-      // 3) Persiste as habilidades (best-effort: perfil já foi salvo)
+      // 3) Funções e habilidades com nível (best-effort: perfil já foi salvo)
+      let aviso = "";
       try {
-        const { added, skipped } = await syncUserSkills(skills);
-        let message = "Perfil atualizado";
-        if (added > 0) {
-          message = `Perfil atualizado com ${added} habilidade(s)`;
-        }
-        if (skipped.length > 0) {
-          message += ` — ${skipped.length} habilidade(s) não encontrada(s) na base global e foram ignoradas`;
-        }
-        toast.success(message);
+        await salvarFuncoes(funcoesInteresse);
+      } catch (funcoesErr) {
+        aviso = "funções";
+        console.warn("[perfil] Falha ao salvar funções de interesse:", funcoesErr);
+      }
+      try {
+        await salvarHabilidadesComNivel(skills);
       } catch (skillsErr) {
-        console.warn("[perfil] Falha ao sincronizar habilidades:", skillsErr);
-        toast.warning("Perfil salvo, mas não foi possível sincronizar as habilidades.");
+        aviso = aviso ? "funções e habilidades" : "habilidades";
+        console.warn("[perfil] Falha ao salvar habilidades com nível:", skillsErr);
+      }
+
+      if (aviso) {
+        toast.warning(`Perfil salvo, mas não foi possível sincronizar ${aviso}.`);
+      } else {
+        toast.success("Perfil atualizado");
       }
     } catch (err) {
       // Não finge sucesso: não atualiza o estado local
@@ -279,7 +437,13 @@ function PerfilPage() {
             }
           });
           if (langs.size > 0) {
-            setSkills((prev) => Array.from(new Set([...prev, ...Array.from(langs)])));
+            setSkills((prev) => {
+              const nomes = new Set(prev.map((s) => s.nome));
+              const novos = Array.from(langs)
+                .filter((l) => !nomes.has(l))
+                .map((l) => ({ nome: l, nivel: "iniciante" as NivelHabilidade }));
+              return [...prev, ...novos];
+            });
           }
         }
       }
@@ -333,6 +497,38 @@ function PerfilPage() {
               </div>
             </CardContent>
           </Card>
+
+          {perfilTecnicoCarregado && perfilCompleto === false && (
+            <div className="rounded-3xl border border-primary/30 bg-gradient-to-r from-primary/10 via-indigo-500/10 to-primary/5 p-5 shadow-sm sm:p-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                <div className="flex-1 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Target className="h-5 w-5 text-primary" />
+                    <p className="text-sm font-semibold text-foreground">
+                      Complete seu perfil técnico
+                    </p>
+                  </div>
+                  <p className="max-w-lg text-xs text-muted-foreground">
+                    Adicione funções de interesse, disponibilidade semanal e nível por tecnologia
+                    para aparecer no matching de squads.
+                  </p>
+                  <div className="flex items-center gap-3 pt-1">
+                    <Progress value={percentual} className="h-2 flex-1" />
+                    <span className="w-10 text-right text-xs font-semibold text-primary">
+                      {percentual}%
+                    </span>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  onClick={rolarParaPerfilTecnico}
+                  className="shrink-0 rounded-xl text-xs font-semibold cursor-pointer"
+                >
+                  Preencher agora
+                </Button>
+              </div>
+            </div>
+          )}
 
           <ReputationState
             data={reputation}
@@ -498,77 +694,247 @@ function PerfilPage() {
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-foreground/80 tracking-wide uppercase">
-                      Suas Habilidades (Skills)
-                    </Label>
-                    <div className="flex gap-2">
-                      <Input
-                        value={draft}
-                        onChange={(e) => setDraft(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            addSkill(draft);
-                          }
-                        }}
-                        placeholder="React, Node.js, Figma... (Pressione Enter para adicionar)"
-                        className="h-11 rounded-xl border border-border/60 bg-background px-4 focus-visible:ring-primary/20 text-sm"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => addSkill(draft)}
-                        className="h-11 w-11 rounded-xl border border-border/60 flex items-center justify-center shrink-0 hover:bg-primary/5 hover:text-primary transition-colors cursor-pointer"
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-
-                    {/* Sugestões Rápidas */}
-                    <div className="flex flex-wrap gap-1.5 pt-0.5">
-                      {POPULAR_TECHS.map((t) => {
-                        const isAdded = skills.includes(t);
-                        return (
-                          <button
-                            key={t}
-                            type="button"
-                            disabled={isAdded}
-                            onClick={() => addSkill(t)}
-                            className="outline-none disabled:opacity-50"
-                          >
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                "cursor-pointer rounded-full px-2.5 py-0.5 text-[10px] transition-all font-medium border",
-                                isAdded
-                                  ? "bg-muted text-muted-foreground border-border cursor-not-allowed"
-                                  : "bg-background/20 border-border/80 text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5",
-                              )}
-                            >
-                              + {t}
-                            </Badge>
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {skills.length > 0 && (
-                      <div className="mt-2.5 flex flex-wrap gap-1.5">
-                        {skills.map((s) => (
-                          <Badge
-                            key={s}
-                            variant="secondary"
-                            className="cursor-pointer rounded-full px-2.5 py-0.5 text-[11px] font-medium tracking-wide border border-border bg-muted/40 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-all flex items-center gap-1"
-                            onClick={() => setSkills((arr) => arr.filter((x) => x !== s))}
-                            title="Clique para remover"
-                          >
-                            {s}
-                            <X className="ml-1 h-3 w-3 shrink-0" />
-                          </Badge>
-                        ))}
+                  <div
+                    id="perfil-tecnico"
+                    className="scroll-mt-24 space-y-6 border-t border-border/20 pt-6"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="space-y-0.5">
+                        <h2 className="text-base font-semibold text-foreground">Perfil técnico</h2>
+                        <p className="text-xs text-muted-foreground">
+                          Funções de interesse, disponibilidade semanal e nível por tecnologia
+                          alimentam o matching de squads.
+                        </p>
                       </div>
-                    )}
+                      {perfilCompleto ? (
+                        <Badge className="gap-1 rounded-full border-emerald-500/30 bg-emerald-500/15 px-2.5 py-1 text-[10px] font-semibold text-emerald-600 shrink-0">
+                          <Check className="h-3 w-3" />
+                          Perfil completo
+                        </Badge>
+                      ) : (
+                        <Badge
+                          variant="outline"
+                          className="rounded-full px-2.5 py-1 text-[10px] font-semibold text-primary shrink-0"
+                        >
+                          {percentual}% completo
+                        </Badge>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold text-foreground/80 tracking-wide uppercase">
+                        Suas Habilidades (Skills)
+                      </Label>
+                      <div className="flex gap-2">
+                        <Input
+                          value={draft}
+                          onChange={(e) => setDraft(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              addSkill(draft);
+                            }
+                          }}
+                          placeholder="React, Node.js, Figma... (Pressione Enter para adicionar)"
+                          className="h-11 rounded-xl border border-border/60 bg-background px-4 focus-visible:ring-primary/20 text-sm"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => addSkill(draft)}
+                          className="h-11 w-11 rounded-xl border border-border/60 flex items-center justify-center shrink-0 hover:bg-primary/5 hover:text-primary transition-colors cursor-pointer"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+
+                      {/* Sugestões Rápidas */}
+                      <div className="flex flex-wrap gap-1.5 pt-0.5">
+                        {POPULAR_TECHS.map((t) => {
+                          const isAdded = skills.some((s) => s.nome === t);
+                          return (
+                            <button
+                              key={t}
+                              type="button"
+                              disabled={isAdded}
+                              onClick={() => addSkill(t)}
+                              className="outline-none disabled:opacity-50"
+                            >
+                              <Badge
+                                variant="outline"
+                                className={cn(
+                                  "cursor-pointer rounded-full px-2.5 py-0.5 text-[10px] transition-all font-medium border",
+                                  isAdded
+                                    ? "bg-muted text-muted-foreground border-border cursor-not-allowed"
+                                    : "bg-background/20 border-border/80 text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5",
+                                )}
+                              >
+                                + {t}
+                              </Badge>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {skills.length > 0 && (
+                        <div className="mt-2.5 flex flex-col gap-2">
+                          {skills.map((s) => (
+                            <div
+                              key={s.nome}
+                              className="flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-muted/30 px-3 py-2"
+                            >
+                              <span className="min-w-0 truncate text-sm font-medium text-foreground">
+                                {s.nome}
+                              </span>
+                              <div className="flex shrink-0 items-center gap-2">
+                                <Select
+                                  value={s.nivel}
+                                  onValueChange={(v) =>
+                                    mudarNivelSkill(s.nome, v as NivelHabilidade)
+                                  }
+                                >
+                                  <SelectTrigger className="h-8 w-[132px] rounded-lg text-xs cursor-pointer">
+                                    <SelectValue placeholder="Nível" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {NIVEIS_HABILIDADE.map((n) => (
+                                      <SelectItem
+                                        key={n.value}
+                                        value={n.value}
+                                        className="cursor-pointer text-xs"
+                                      >
+                                        {n.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <button
+                                  type="button"
+                                  onClick={() => removerSkill(s.nome)}
+                                  className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                                  title="Remover habilidade"
+                                >
+                                  <X className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold text-foreground/80 tracking-wide uppercase">
+                        Funções de interesse
+                      </Label>
+                      <p className="text-[11px] text-muted-foreground">
+                        Selecione as funções que te interessam e o nível de interesse em cada uma.
+                      </p>
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {funcoesDisponiveis.map((f) => {
+                          const selecionada = funcoesInteresse.find((x) => x.nome === f.nome);
+                          return selecionada ? (
+                            <div
+                              key={f.nome}
+                              className="flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 py-1 pr-1 pl-2.5"
+                            >
+                              <span className="text-[11px] font-medium text-primary">{f.nome}</span>
+                              <Select
+                                value={selecionada.nivel_interesse}
+                                onValueChange={(v) =>
+                                  mudarNivelInteresse(f.nome, v as NivelInteresse)
+                                }
+                              >
+                                <SelectTrigger className="h-6 w-[86px] cursor-pointer rounded-full border-0 bg-transparent px-1.5 text-[10px] [&>svg]:h-3 [&>svg]:w-3">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {NIVEIS_INTERESSE.map((n) => (
+                                    <SelectItem
+                                      key={n.value}
+                                      value={n.value}
+                                      className="cursor-pointer text-xs"
+                                    >
+                                      {n.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <button
+                                type="button"
+                                onClick={() => toggleFuncao(f.nome)}
+                                className="flex h-4 w-4 cursor-pointer items-center justify-center rounded-full text-primary/70 transition-colors hover:bg-primary/15 hover:text-primary"
+                                title="Remover função"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              key={f.nome}
+                              type="button"
+                              onClick={() => toggleFuncao(f.nome)}
+                              className="outline-none"
+                            >
+                              <Badge
+                                variant="outline"
+                                className="cursor-pointer rounded-full border-border/80 bg-background/20 px-2.5 py-0.5 text-[10px] font-medium transition-all border text-muted-foreground hover:border-primary hover:bg-primary/5 hover:text-primary"
+                              >
+                                + {f.nome}
+                              </Badge>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {funcoesInteresse.length === 0 && (
+                        <p className="text-[11px] text-muted-foreground/70">
+                          Nenhuma função selecionada ainda.
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="grid gap-5 sm:grid-cols-2">
+                      <div className="space-y-1.5">
+                        <Label
+                          htmlFor="disponibilidade"
+                          className="text-xs font-semibold text-foreground/80 tracking-wide uppercase"
+                        >
+                          Disponibilidade semanal
+                        </Label>
+                        <div className="relative">
+                          <Input
+                            id="disponibilidade"
+                            type="number"
+                            min={0}
+                            max={168}
+                            inputMode="numeric"
+                            placeholder="Ex.: 20"
+                            value={disponibilidade}
+                            onChange={(e) => setDisponibilidade(e.target.value)}
+                            className="h-11 rounded-xl border border-border/60 bg-background px-4 pr-16 text-sm focus-visible:ring-primary/20"
+                          />
+                          <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-xs text-muted-foreground">
+                            horas/semana
+                          </span>
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label
+                          htmlFor="objetivo"
+                          className="text-xs font-semibold text-foreground/80 tracking-wide uppercase"
+                        >
+                          Objetivo profissional
+                        </Label>
+                        <Input
+                          id="objetivo"
+                          maxLength={255}
+                          placeholder="Ex.: Evoluir para tech lead em squads de produto"
+                          value={objetivo}
+                          onChange={(e) => setObjetivo(e.target.value)}
+                          className="h-11 rounded-xl border border-border/60 bg-background px-4 text-sm focus-visible:ring-primary/20"
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   <div className="flex justify-end pt-4 border-t border-border/20">

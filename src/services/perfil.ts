@@ -111,7 +111,7 @@ export async function addHabilidadeUsuario(usuarioId: string, habilidadeId: numb
     const { data } = await api.post<ApiEnvelope>("/habilidades-usuario", {
       usuario_id: usuarioIdNum,
       habilidade_id: habilidadeId,
-      nivel: 1,
+      nivel: "iniciante",
     });
     if (!data.sucesso) throw new Error(data.message || "Não foi possível salvar a habilidade.");
   } catch (err) {

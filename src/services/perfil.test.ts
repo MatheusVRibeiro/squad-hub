@@ -100,17 +100,17 @@ describe("syncUserSkills", () => {
     expect(mocks.post).toHaveBeenCalledWith("/habilidades-usuario", {
       usuario_id: 42,
       habilidade_id: 1,
-      nivel: 1,
+      nivel: "iniciante",
     });
     expect(mocks.post).toHaveBeenCalledWith("/habilidades-usuario", {
       usuario_id: 42,
       habilidade_id: 2,
-      nivel: 1,
+      nivel: "iniciante",
     });
     expect(mocks.post).toHaveBeenCalledWith("/habilidades-usuario", {
       usuario_id: 42,
       habilidade_id: 3,
-      nivel: 1,
+      nivel: "iniciante",
     });
     expect(result).toEqual({ added: 3, skipped: [] });
   });
@@ -143,7 +143,7 @@ describe("syncUserSkills", () => {
     expect(mocks.post).toHaveBeenCalledWith("/habilidades-usuario", {
       usuario_id: 42,
       habilidade_id: 5,
-      nivel: 1,
+      nivel: "iniciante",
     });
   });
 

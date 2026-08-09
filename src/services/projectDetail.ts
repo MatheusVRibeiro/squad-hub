@@ -316,6 +316,13 @@ export async function fetchProjectDetail(id: string): Promise<ProjectDetail> {
         creatorId: data.dados.criador_id != null ? String(data.dados.criador_id) : undefined,
         // ETAPA 4: vagas vêm no detalhe (camelCase) — normaliza para o contrato da UI.
         vagas: Array.isArray(data.dados.vagas) ? data.dados.vagas.map(normalizarVaga) : [],
+        // ETAPA 10: tarefas arquivadas (excluida_em não-nulo) nunca chegam ao Kanban —
+        // o backend já filtra, mas o frontend aplica defesa em profundidade.
+        tasks: Array.isArray(data.dados.tasks)
+          ? data.dados.tasks.filter(
+              (t) => !(t as KanbanTask & { excluida_em?: string | null }).excluida_em,
+            )
+          : [],
         // ETAPA 5: candidaturas ganham vaga_id/vaga_nome — normaliza (snake ou camel).
         applications: Array.isArray(data.dados.applications)
           ? data.dados.applications.map((a) =>

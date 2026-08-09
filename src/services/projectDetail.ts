@@ -764,3 +764,32 @@ export async function atualizarVisibilidadeProjeto(
     throw toFriendlyError(err, "Não foi possível atualizar a privacidade do projeto.");
   }
 }
+
+/**
+ * ETAPA QA — PATCH /projetos/:id atualiza os links de trabalho do squad.
+ *
+ * O backend (controllers/projetos.js editarProjeto) aceita
+ * repositorio_url|figma_url|discord_url|documentacao_url (e camelCase).
+ * Apenas o dono pode alterar (somenteDonoDoProjeto). Strings vazias são
+ * enviadas como null para limpar o link. Anti-fallback: erro PROPAGA.
+ */
+export async function atualizarLinksProjeto(
+  projectId: string | number,
+  links: {
+    repositorioUrl?: string;
+    figmaUrl?: string;
+    discordUrl?: string;
+    documentacaoUrl?: string;
+  },
+): Promise<void> {
+  const payload: Record<string, string | null> = {};
+  if (links.repositorioUrl !== undefined) payload.repositorio_url = links.repositorioUrl || null;
+  if (links.figmaUrl !== undefined) payload.figma_url = links.figmaUrl || null;
+  if (links.discordUrl !== undefined) payload.discord_url = links.discordUrl || null;
+  if (links.documentacaoUrl !== undefined) payload.documentacao_url = links.documentacaoUrl || null;
+  try {
+    await api.patch(`/projetos/${projectId}`, payload);
+  } catch (err) {
+    throw toFriendlyError(err, "Não foi possível atualizar os links do projeto.");
+  }
+}

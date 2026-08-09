@@ -18,7 +18,11 @@ function MeusProjetosPage() {
     staleTime: 60_000,
   });
 
-  const mine = (data ?? []).filter((p) => p.createdBy === user?.name || p.createdBy === "Você");
+  // A2: dono por ID (creatorId mapeado de criador_id do backend), não por nome —
+  // homônimos não quebram. `createdBy === "Você"` mantém o preview DEV (mock/recém-criado).
+  const mine = (data ?? []).filter(
+    (p) => Number(p.creatorId) === Number(user?.id) || p.createdBy === "Você",
+  );
 
   return (
     <ProtectedRoute>

@@ -14,6 +14,9 @@ export type Project = {
   membersCount: number;
   membersLimit: number;
   createdBy: string;
+  /** Id do usuário criador (mapeado de criador_id do GET /projetos) — permite
+   *  "meus projetos" por id (A2) em vez de comparação por nome. */
+  creatorId?: string;
   createdAt: string; // ISO
   repositorioUrl?: string;
   figmaUrl?: string;
@@ -78,6 +81,8 @@ export async function fetchProjects(): Promise<Project[]> {
           membersCount: p.total_membros,
           membersLimit: p.limite_membros,
           createdBy: p.criador_nome || "Desconhecido",
+          // A2: id do criador (criador_id) para "meus projetos" por id.
+          creatorId: p.criador_id != null ? String(p.criador_id) : undefined,
           createdAt: p.criado_em,
           repositorioUrl: p.repositorio_url || undefined,
           figmaUrl: p.figma_url || undefined,

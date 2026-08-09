@@ -2,7 +2,7 @@ import axios from "axios";
 import { api } from "./api";
 import type { TaskDificuldade } from "./projectDetail";
 
-export type KanbanStatus = "todo" | "doing" | "done";
+export type KanbanStatus = "todo" | "doing" | "review" | "done";
 
 export type KanbanTask = {
   id: string;
@@ -262,7 +262,7 @@ export async function getHistoricoResponsaveis(
 function normalizarTaskResponsavel(dados?: BackendTaskResponsavel | null): TaskResponsavelResult {
   if (!dados) return {};
   const status = dados.status;
-  const statusValido: KanbanStatus[] = ["todo", "doing", "done"];
+  const statusValido: KanbanStatus[] = ["todo", "doing", "review", "done"];
   return {
     id: dados.id != null ? String(dados.id) : undefined,
     status: statusValido.includes(status as KanbanStatus) ? (status as KanbanStatus) : undefined,

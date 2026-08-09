@@ -1,7 +1,17 @@
 import { useState } from "react";
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Calendar, Users, Lock, Github, MessageSquare, BookOpen } from "lucide-react";
+import {
+  ArrowLeft,
+  Calendar,
+  Users,
+  Lock,
+  Github,
+  MessageSquare,
+  BookOpen,
+  AlertTriangle,
+  RefreshCcw,
+} from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
@@ -156,7 +166,7 @@ function ProjectDetailPage() {
   const [closing, setClosing] = useState(false);
   const [saindo, setSaindo] = useState(false);
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["project", id],
     queryFn: () => fetchProjectDetail(id),
   });
@@ -200,7 +210,11 @@ function ProjectDetailPage() {
     ? isOwner || data.members.some((m) => Number(m.id) === Number(user?.id))
     : false;
 
-  const application = data?.applications.find((a) => a.name === user?.name);
+  // A2: candidatura do usuário por ID (a.userId mapeado de usuario_id) — cai
+  // por nome apenas quando o backend ainda não envia o id (pré-correção).
+  const application = data?.applications.find((a) =>
+    a.userId != null ? Number(a.userId) === Number(user?.id) : a.name === user?.name,
+  );
   const hasApplied = !!application && application.status === "pending";
 
   async function handleCloseProject() {
@@ -267,11 +281,35 @@ function ProjectDetailPage() {
             </Link>
           </Button>
 
-          {isLoading || !data ? (
+          {isLoading ? (
             <div className="space-y-4">
               <Skeleton className="h-32 w-full rounded-2xl" />
               <Skeleton className="h-9 w-72 rounded-xl" />
               <Skeleton className="h-64 w-full rounded-2xl" />
+            </div>
+          ) : isError || !data ? (
+            /* A1: falha na API nunca deixa skeleton infinito — card de erro com retry. */
+            <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-8 text-center">
+              <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-destructive/10 text-destructive">
+                <AlertTriangle className="h-6 w-6" />
+              </span>
+              <p className="mt-3 text-sm font-semibold text-foreground">
+                Não foi possível carregar o projeto
+              </p>
+              <p className="mx-auto mt-1 max-w-md text-xs text-muted-foreground">
+                {error instanceof Error
+                  ? error.message
+                  : "Verifique sua conexão com o backend e tente novamente."}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => refetch()}
+                className="mt-4 cursor-pointer"
+              >
+                <RefreshCcw className="mr-1.5 h-3.5 w-3.5" /> Tentar novamente
+              </Button>
             </div>
           ) : (
             <>

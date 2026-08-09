@@ -113,6 +113,54 @@ describe("fetchTasksRecomendadas (ETAPA 17 — matching desenvolvedor ↔ task)"
     expect(tasks).toEqual([]);
   });
 
+  it("aceita o envelope real do backend ETAPA 17 — dados:{recomendacoes:[...]} (regressão C1)", async () => {
+    mocks.get.mockResolvedValue({
+      data: {
+        sucesso: true,
+        message: "Tasks recomendadas",
+        nItens: 2,
+        dados: {
+          recomendacoes: [
+            {
+              taskId: 41,
+              titulo: "Criar endpoint de login",
+              compatibilidade: 95,
+              motivos: ["Você domina Node.js"],
+            },
+            {
+              taskId: 42,
+              titulo: "Montar dashboard React",
+              compatibilidade: 82,
+              motivos: ["Experiência com React"],
+            },
+          ],
+        },
+      },
+    });
+
+    const tasks = await fetchTasksRecomendadas(7);
+
+    expect(mocks.get).toHaveBeenCalledWith("/projetos/7/tasks/recomendadas");
+    expect(tasks).toHaveLength(2);
+    expect(tasks[0]).toMatchObject({ taskId: 41, compatibilidade: 95 });
+    expect(tasks[1].titulo).toBe("Montar dashboard React");
+  });
+
+  it("dados:{recomendacoes:[]} (vazio no envelope) resolve como [] sem erro", async () => {
+    mocks.get.mockResolvedValue({
+      data: {
+        sucesso: true,
+        message: "Tasks recomendadas",
+        nItens: 0,
+        dados: { recomendacoes: [] },
+      },
+    });
+
+    const tasks = await fetchTasksRecomendadas(3);
+
+    expect(tasks).toEqual([]);
+  });
+
   it("erro do backend (axios) propaga a mensagem amigável do servidor", async () => {
     mocks.get.mockRejectedValue({
       isAxiosError: true,

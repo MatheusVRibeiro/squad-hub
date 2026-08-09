@@ -30,12 +30,15 @@ export type TaskRecomendada = {
   motivos: string[];
 };
 
-/** Envelope real de GET /projetos/:projetoId/tasks/recomendadas. */
+/** Envelope real de GET /projetos/:projetoId/tasks/recomendadas. O backend
+ *  devolve as recomendações em `dados.recomendacoes` (mesmo shape do matching
+ *  de projetos, ETAPA 16) — versões antigas podem devolver `dados` como array
+ *  direto; ambos os formatos são aceitos. */
 type TasksRecomendadasResponse = {
   sucesso: boolean;
   message?: string;
   nItens?: number;
-  dados?: Array<Record<string, unknown>> | null;
+  dados?: Record<string, unknown> | Array<Record<string, unknown>> | null;
 };
 
 function toFriendlyError(err: unknown, fallback: string): Error {
@@ -71,6 +74,18 @@ function mapTaskRecomendada(item: Record<string, unknown>): TaskRecomendada | nu
   };
 }
 
+/** Extrai a lista de recomendações do envelope, tolerando os formatos do
+ *  backend: `dados` como array direto OU `dados.recomendacoes` (mesmo critério
+ *  do matching de projetos, ETAPA 16 — ver src/services/matching.ts). */
+function extrairRecomendacoes(data: TasksRecomendadasResponse): unknown[] | null {
+  if (Array.isArray(data?.dados)) return data.dados;
+  if (data?.dados && typeof data.dados === "object") {
+    const recs = (data.dados as Record<string, unknown>).recomendacoes;
+    if (Array.isArray(recs)) return recs;
+  }
+  return null;
+}
+
 /**
  * GET /projetos/:projetoId/tasks/recomendadas — tasks recomendadas para o
  * desenvolvedor autenticado dentro de um projeto (exige ser membro/dono).
@@ -85,8 +100,9 @@ export async function fetchTasksRecomendadas(
     const { data } = await api.get<TasksRecomendadasResponse>(
       `/projetos/${projetoId}/tasks/recomendadas`,
     );
-    if (data?.sucesso && Array.isArray(data.dados)) {
-      return data.dados
+    const lista = extrairRecomendacoes(data);
+    if (data?.sucesso && lista) {
+      return lista
         .filter((c): c is Record<string, unknown> => typeof c === "object" && c !== null)
         .map(mapTaskRecomendada)
         .filter((r): r is TaskRecomendada => r !== null);

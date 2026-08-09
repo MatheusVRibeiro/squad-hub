@@ -222,8 +222,13 @@ export function KanbanBoard({
     const oldStatus = task.status;
     if (oldStatus === status) return;
 
-    // 1. Persiste localmente
-    await updateLocalTaskStatus(projectId, id, status);
+    // 1. Persiste na API — anti-fallback (C2): falha PROPAGA e NÃO atualiza a UI
+    try {
+      await updateLocalTaskStatus(projectId, id, status);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao mover a tarefa.");
+      return;
+    }
 
     setTasks((t) => t.map((x) => (x.id === id ? { ...x, status } : x)));
 
@@ -245,8 +250,13 @@ export function KanbanBoard({
   async function handleAssign(taskId: string, assigneeName: string | undefined) {
     if (readOnly) return;
 
-    // 1. Persiste localmente via serviço
-    await updateLocalTaskAssignee(projectId, taskId, assigneeName);
+    // 1. Persiste na API — anti-fallback (C2): falha PROPAGA e NÃO atualiza a UI
+    try {
+      await updateLocalTaskAssignee(projectId, taskId, assigneeName);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao atribuir responsável.");
+      return;
+    }
 
     setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, assignee: assigneeName } : t)));
 
@@ -449,7 +459,13 @@ export function KanbanBoard({
       habilidades,
     };
 
-    await updateLocalTaskDetails(projectId, editingTask.id, updates);
+    // Persiste na API — anti-fallback (C2): falha PROPAGA e NÃO atualiza a UI
+    try {
+      await updateLocalTaskDetails(projectId, editingTask.id, updates);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao salvar os detalhes.");
+      return;
+    }
     setTasks((prev) => prev.map((t) => (t.id === editingTask.id ? { ...t, ...updates } : t)));
     toast.success("Detalhes salvos com sucesso");
     setModalMode(null);
@@ -479,8 +495,14 @@ export function KanbanBoard({
       habilidades,
     };
 
-    // 1. Persiste localmente com campos extras
-    const createdTask = await addLocalTask(projectId, taskTitle, extra);
+    // 1. Persiste na API — anti-fallback (C2): falha PROPAGA e NÃO cria task local
+    let createdTask: KanbanTask;
+    try {
+      createdTask = await addLocalTask(projectId, taskTitle, extra);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao criar a tarefa.");
+      return;
+    }
 
     setTasks((t) => [...t, createdTask]);
     toast.success("Tarefa criada com sucesso!");

@@ -75,6 +75,10 @@ export type Member = {
 
 export type Application = {
   id: string;
+  /** Id do usuário candidato (mapeado de usuario_id/userId/usuarioId quando o
+   *  backend enviar) — permite comparar candidatura do usuário por id (A2),
+   *  em vez de por nome (homônimos). Backend pré-correção não envia → undefined. */
+  userId?: string;
   name: string;
   message: string;
   skills: string[];
@@ -172,9 +176,13 @@ function normalizarApplication(raw: Record<string, unknown>): Application {
 
   const vagaId = raw.vaga_id ?? raw.vagaId;
   const vagaNome = raw.vaga_nome ?? raw.vagaNome ?? raw.funcao_nome;
+  // A2: id do usuário candidato — tolerante a snake (usuario_id) e camel
+  // (userId/usuarioId); ausente quando o backend ainda não envia o campo.
+  const userId = raw.usuario_id ?? raw.userId ?? raw.usuarioId;
 
   return {
     id: String(raw.id),
+    userId: userId != null ? String(userId) : undefined,
     name: String(raw.name ?? raw.usuario_nome ?? "Usuário"),
     message: String(raw.message ?? raw.mensagem ?? ""),
     skills: Array.isArray(raw.skills) ? raw.skills.map((s) => String(s)) : [],
@@ -506,40 +514,28 @@ export async function addLocalTask(
       habilidades: extra?.habilidadeIds ?? [],
     });
 
-    if (data.sucesso && data.dados) {
-      const created: KanbanTask = {
-        id: String(data.dados.id),
-        title: data.dados.titulo,
-        description: data.dados.descricao || undefined,
-        status: data.dados.status,
-        priority: data.dados.prioridade,
-        dueDate: data.dados.data_vencimento || undefined,
-        assignee: extra?.assignee,
-        subtasks: [],
-        dificuldade: data.dados.dificuldade || extra?.dificuldade,
-        habilidadeIds: extra?.habilidadeIds ?? [],
-        habilidades: extra?.habilidades ?? [],
-      };
-
-      // Cache locally as well
-      detail.tasks.push(created);
-      saveLocalProjectDetail(projectId, detail);
-      return created;
+    // Anti-fallback: resposta sem sucesso PROPAGA erro — nunca "finge sucesso"
+    // com task local (correção C2 do QA). A UI (KanbanBoard) mostra toast de erro.
+    if (!data.sucesso || !data.dados) {
+      throw new Error(data.message || "Não foi possível criar a tarefa.");
     }
-  } catch {
-    // ignore
-  }
 
-  const detail = getLocalProjectDetail(projectId);
-  const newTask: KanbanTask = {
-    id: `task-${Date.now()}`,
-    title,
-    status: "todo",
-    ...extra,
-  };
-  detail.tasks.push(newTask);
-  saveLocalProjectDetail(projectId, detail);
-  return newTask;
+    return {
+      id: String(data.dados.id),
+      title: data.dados.titulo,
+      description: data.dados.descricao || undefined,
+      status: data.dados.status,
+      priority: data.dados.prioridade,
+      dueDate: data.dados.data_vencimento || undefined,
+      assignee: extra?.assignee,
+      subtasks: [],
+      dificuldade: data.dados.dificuldade || extra?.dificuldade,
+      habilidadeIds: extra?.habilidadeIds ?? [],
+      habilidades: extra?.habilidades ?? [],
+    };
+  } catch (err) {
+    throw toFriendlyError(err, "Não foi possível criar a tarefa.");
+  }
 }
 
 export async function updateLocalTaskStatus(
@@ -548,14 +544,18 @@ export async function updateLocalTaskStatus(
   status: KanbanStatus,
 ): Promise<void> {
   try {
-    await api.patch(`/projetos/${projectId}/tarefas/${taskId}`, { status });
-  } catch {
-    // ignore
+    const { data } = await api.patch<ApiResponse<unknown>>(
+      `/projetos/${projectId}/tarefas/${taskId}`,
+      { status },
+    );
+    if (!data?.sucesso) {
+      throw new Error(data?.message || "Não foi possível atualizar o status da tarefa.");
+    }
+  } catch (err) {
+    // Anti-fallback: a falha PROPAGA para a UI exibir toast de erro — nenhuma
+    // escrita local "fingindo" persistência (correção C2 do QA).
+    throw toFriendlyError(err, "Não foi possível atualizar o status da tarefa.");
   }
-
-  const detail = getLocalProjectDetail(projectId);
-  detail.tasks = detail.tasks.map((t) => (t.id === taskId ? { ...t, status } : t));
-  saveLocalProjectDetail(projectId, detail);
 }
 
 export async function updateLocalTaskAssignee(
@@ -568,16 +568,19 @@ export async function updateLocalTaskAssignee(
     const member = detail?.members?.find((m) => m.name === assigneeName);
     const responsavel_id = member ? Number(member.id) : null;
 
-    await api.patch(`/projetos/${projectId}/tarefas/${taskId}`, {
-      responsavel_id,
-    });
-  } catch {
-    // ignore
+    const { data } = await api.patch<ApiResponse<unknown>>(
+      `/projetos/${projectId}/tarefas/${taskId}`,
+      {
+        responsavel_id,
+      },
+    );
+    if (!data?.sucesso) {
+      throw new Error(data?.message || "Não foi possível atribuir o responsável.");
+    }
+  } catch (err) {
+    // Anti-fallback: a falha PROPAGA para a UI exibir toast de erro (C2).
+    throw toFriendlyError(err, "Não foi possível atribuir o responsável.");
   }
-
-  const detail = getLocalProjectDetail(projectId);
-  detail.tasks = detail.tasks.map((t) => (t.id === taskId ? { ...t, assignee: assigneeName } : t));
-  saveLocalProjectDetail(projectId, detail);
 }
 
 /**
@@ -632,14 +635,17 @@ export async function updateLocalTaskDetails(
     if (updates.dificuldade !== undefined) payload.dificuldade = updates.dificuldade;
     if (updates.habilidadeIds !== undefined) payload.habilidades = updates.habilidadeIds;
 
-    await api.patch(`/projetos/${projectId}/tarefas/${taskId}`, payload);
-  } catch {
-    // ignore
+    const { data } = await api.patch<ApiResponse<unknown>>(
+      `/projetos/${projectId}/tarefas/${taskId}`,
+      payload,
+    );
+    if (!data?.sucesso) {
+      throw new Error(data?.message || "Não foi possível salvar os detalhes da tarefa.");
+    }
+  } catch (err) {
+    // Anti-fallback: a falha PROPAGA para a UI exibir toast de erro (C2).
+    throw toFriendlyError(err, "Não foi possível salvar os detalhes da tarefa.");
   }
-
-  const detail = getLocalProjectDetail(projectId);
-  detail.tasks = detail.tasks.map((t) => (t.id === taskId ? { ...t, ...updates } : t));
-  saveLocalProjectDetail(projectId, detail);
 }
 
 export async function addLocalMuralMessage(
@@ -705,14 +711,16 @@ export async function applyToProjectLocal(
 
 export async function closeProjectLocal(projectId: string): Promise<void> {
   try {
-    await api.patch(`/projetos/${projectId}`, { status: "finalizado" });
-  } catch {
-    // ignore
+    const { data } = await api.patch<ApiResponse<unknown>>(`/projetos/${projectId}`, {
+      status: "finalizado",
+    });
+    if (!data?.sucesso) {
+      throw new Error(data?.message || "Não foi possível encerrar o projeto.");
+    }
+  } catch (err) {
+    // Anti-fallback: a falha PROPAGA para a UI exibir toast de erro (C2).
+    throw toFriendlyError(err, "Não foi possível encerrar o projeto.");
   }
-
-  const detail = getLocalProjectDetail(projectId);
-  detail.status = "Finalizado";
-  saveLocalProjectDetail(projectId, detail);
 }
 
 function toFriendlyError(err: unknown, fallback: string): Error {

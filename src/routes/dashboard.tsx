@@ -11,6 +11,8 @@ import {
   CheckSquare,
   Bell,
   Sparkles,
+  AlertTriangle,
+  RefreshCcw,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -29,6 +31,7 @@ import { AppLayout } from "@/layouts/AppLayout";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import { TopCommitters } from "@/components/projects/TopCommitters";
 import { TopContributors } from "@/components/projects/TopContributors";
 import { RecomendadosParaVoce } from "@/components/projects/RecomendadosParaVoce";
@@ -48,18 +51,32 @@ const tiles = [
 function DashboardPage() {
   const { user } = useAuth();
 
-  // Queries para dados agregados em tempo real
-  const { data: projects = [] } = useQuery({
+  // Queries para dados agregados em tempo real — M1: falha de query NUNCA vira
+  // valor falso ('Level 1'/'0 projetos'/XP 0); a UI mostra estado de erro/retry.
+  const {
+    data: projects = [],
+    isError: projectsError,
+    refetch: refetchProjects,
+  } = useQuery({
     queryKey: ["projects"],
     queryFn: fetchProjects,
   });
 
-  const { data: reputation } = useQuery({
+  const {
+    data: reputation,
+    isLoading: reputationLoading,
+    isError: reputationError,
+    refetch: refetchReputation,
+  } = useQuery({
     queryKey: ["reputation", user?.id || user?.email],
     queryFn: () => fetchReputation(user?.id),
   });
 
-  const { data: notifications = [] } = useQuery({
+  const {
+    data: notifications = [],
+    isError: notificationsError,
+    refetch: refetchNotifications,
+  } = useQuery({
     queryKey: ["notifications"],
     queryFn: fetchNotifications,
   });
@@ -99,12 +116,14 @@ function DashboardPage() {
   const taskStatusData = useMemo(() => {
     let todo = 0;
     let doing = 0;
+    let review = 0;
     let done = 0;
 
     for (const query of taskQueries) {
       for (const task of query.data ?? []) {
         if (task.status === "todo") todo++;
         else if (task.status === "doing") doing++;
+        else if (task.status === "review") review++;
         else if (task.status === "done") done++;
       }
     }
@@ -112,6 +131,7 @@ function DashboardPage() {
     return [
       { name: "A fazer", quantidade: todo, fill: "#94a3b8" },
       { name: "Em progresso", quantidade: doing, fill: "#f59e0b" },
+      { name: "Em revisão", quantidade: review, fill: "#0ea5e9" },
       { name: "Concluído", quantidade: done, fill: "#10b981" },
     ];
   }, [taskQueries]);
@@ -125,6 +145,12 @@ function DashboardPage() {
   }, [taskStatusData]);
 
   const tasksLoading = taskQueries.some((q) => q.isPending);
+  const tasksError = taskQueries.some((q) => q.isError);
+  const retryTasks = () => {
+    taskQueries.forEach((q) => {
+      q.refetch();
+    });
+  };
 
   const unreadNotifCount = useMemo(() => {
     return notifications.filter((n) => !n.read).length;
@@ -162,27 +188,45 @@ function DashboardPage() {
             {/* Card de Nível e XP */}
             <Card className="w-full rounded-2xl border-border/60 bg-gradient-to-br from-primary/5 via-card to-card md:max-w-xs">
               <CardContent className="flex flex-col gap-3 p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary/10 text-primary">
-                      <Trophy className="h-4 w-4" />
-                    </span>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Nível Atual</p>
-                      <p className="text-sm font-semibold">Level {reputation?.level || 1}</p>
-                    </div>
+                {reputationError ? (
+                  <div className="flex flex-col items-center justify-center gap-2 py-3 text-center">
+                    <AlertTriangle className="h-6 w-6 text-destructive" />
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Não foi possível carregar seu nível/XP
+                    </p>
+                    <button
+                      onClick={() => refetchReputation()}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/5"
+                    >
+                      <RefreshCcw className="h-3 w-3" />
+                      Tentar novamente
+                    </button>
                   </div>
-                  <span className="text-xs font-medium text-primary">
-                    {reputation?.xp || 0} / {reputation?.xpToNext || 1000} XP
-                  </span>
-                </div>
-                <div className="space-y-1">
-                  <Progress value={xpProgressPercent} className="h-2" />
-                  <p className="text-[10px] text-right text-muted-foreground">
-                    Faltam {reputation ? Math.max(0, reputation.xpToNext - reputation.xp) : 0} XP
-                    para o próximo nível
-                  </p>
-                </div>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary/10 text-primary">
+                          <Trophy className="h-4 w-4" />
+                        </span>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Nível Atual</p>
+                          <p className="text-sm font-semibold">Level {reputation?.level || 1}</p>
+                        </div>
+                      </div>
+                      <span className="text-xs font-medium text-primary">
+                        {reputation?.xp || 0} / {reputation?.xpToNext || 1000} XP
+                      </span>
+                    </div>
+                    <div className="space-y-1">
+                      <Progress value={xpProgressPercent} className="h-2" />
+                      <p className="text-[10px] text-right text-muted-foreground">
+                        Faltam {reputation ? Math.max(0, reputation.xpToNext - reputation.xp) : 0}{" "}
+                        XP para o próximo nível
+                      </p>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -196,7 +240,19 @@ function DashboardPage() {
                 </span>
                 <div>
                   <p className="text-xs font-medium text-muted-foreground">Total de Projetos</p>
-                  <p className="text-2xl font-bold">{projects.length}</p>
+                  {projectsError ? (
+                    <div className="flex items-center gap-1.5">
+                      <AlertTriangle className="h-4 w-4 text-destructive" />
+                      <button
+                        onClick={() => refetchProjects()}
+                        className="text-xs font-medium text-primary hover:underline"
+                      >
+                        Tentar novamente
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-2xl font-bold">{projects.length}</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -208,12 +264,24 @@ function DashboardPage() {
                 </span>
                 <div>
                   <p className="text-xs font-medium text-muted-foreground">Tarefas Entregues</p>
-                  <p className="text-2xl font-bold">
-                    {completedTasksCount}{" "}
-                    <span className="text-xs font-normal text-muted-foreground">
-                      / {totalTasksCount}
-                    </span>
-                  </p>
+                  {tasksError ? (
+                    <div className="flex items-center gap-1.5">
+                      <AlertTriangle className="h-4 w-4 text-destructive" />
+                      <button
+                        onClick={() => retryTasks()}
+                        className="text-xs font-medium text-primary hover:underline"
+                      >
+                        Tentar novamente
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-2xl font-bold">
+                      {completedTasksCount}{" "}
+                      <span className="text-xs font-normal text-muted-foreground">
+                        / {totalTasksCount}
+                      </span>
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -225,7 +293,19 @@ function DashboardPage() {
                 </span>
                 <div>
                   <p className="text-xs font-medium text-muted-foreground">Avisos Pendentes</p>
-                  <p className="text-2xl font-bold">{unreadNotifCount}</p>
+                  {notificationsError ? (
+                    <div className="flex items-center gap-1.5">
+                      <AlertTriangle className="h-4 w-4 text-destructive" />
+                      <button
+                        onClick={() => refetchNotifications()}
+                        className="text-xs font-medium text-primary hover:underline"
+                      >
+                        Tentar novamente
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-2xl font-bold">{unreadNotifCount}</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -237,7 +317,19 @@ function DashboardPage() {
                 </span>
                 <div>
                   <p className="text-xs font-medium text-muted-foreground">Conquistas Ganhas</p>
-                  <p className="text-2xl font-bold">{reputation?.achievements.length || 0}</p>
+                  {reputationError ? (
+                    <div className="flex items-center gap-1.5">
+                      <AlertTriangle className="h-4 w-4 text-destructive" />
+                      <button
+                        onClick={() => refetchReputation()}
+                        className="text-xs font-medium text-primary hover:underline"
+                      >
+                        Tentar novamente
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-2xl font-bold">{reputation?.achievements.length || 0}</p>
+                  )}
                 </div>
               </CardContent>
             </Card>

@@ -210,6 +210,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const signOut = useCallback(() => {
+    // A3 (auditoria): revoga o token no servidor (POST /logout) antes de limpar
+    // a sessão local — best-effort: se a chamada falhar, o logout local segue
+    // (o token expira sozinho). O interceptor do axios anexa o Bearer token
+    // automaticamente a partir do localStorage, lido no dispatch da requisição.
+    api.post("/logout").catch(() => {
+      // ignora — a sessão local é limpa de qualquer forma
+    });
     window.localStorage.removeItem(TOKEN_KEY);
     window.localStorage.removeItem(USER_KEY);
     setUser(null);

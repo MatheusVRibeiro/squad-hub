@@ -219,7 +219,7 @@ function DashboardPage() {
                       </span>
                     </div>
                     <div className="space-y-1">
-                      <Progress value={xpProgressPercent} className="h-2" />
+                      <Progress value={xpProgressPercent} className="h-2.5" />
                       <p className="text-[10px] text-right text-muted-foreground">
                         Faltam {reputation ? Math.max(0, reputation.xpToNext - reputation.xp) : 0}{" "}
                         XP para o próximo nível
@@ -253,6 +253,7 @@ function DashboardPage() {
                   ) : (
                     <p className="text-2xl font-bold">{projects.length}</p>
                   )}
+                  <p className="text-[10px] text-muted-foreground">no total</p>
                 </div>
               </CardContent>
             </Card>
@@ -306,6 +307,7 @@ function DashboardPage() {
                   ) : (
                     <p className="text-2xl font-bold">{unreadNotifCount}</p>
                   )}
+                  <p className="text-[10px] text-muted-foreground">não lidas</p>
                 </div>
               </CardContent>
             </Card>
@@ -330,6 +332,7 @@ function DashboardPage() {
                   ) : (
                     <p className="text-2xl font-bold">{reputation?.achievements.length || 0}</p>
                   )}
+                  <p className="text-[10px] text-muted-foreground">no total</p>
                 </div>
               </CardContent>
             </Card>

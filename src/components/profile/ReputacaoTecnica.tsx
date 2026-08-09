@@ -95,7 +95,10 @@ export function ReputacaoTecnica({ reputacao }: { reputacao: ReputacaoTecnicaDat
           </div>
         ) : (
           <div className="rounded-2xl border border-dashed p-6 text-center">
-            <p className="text-sm font-semibold text-foreground">
+            <span className="mx-auto grid h-10 w-10 place-items-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              <ShieldCheck className="h-5 w-5" />
+            </span>
+            <p className="mt-2 text-sm font-semibold text-foreground">
               Sem evidências verificadas ainda
             </p>
             <p className="mx-auto mt-1 max-w-md text-xs text-muted-foreground">

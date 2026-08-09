@@ -15,6 +15,7 @@ import {
   History,
   UserMinus,
   ArrowLeftRight,
+  Inbox,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -859,6 +860,14 @@ export function KanbanBoard({
                   </motion.div>
                 );
               })}
+              {list.length === 0 && (
+                <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border/40 p-6 text-center">
+                  <Inbox className="h-5 w-5 text-muted-foreground/50" />
+                  <p className="text-xs font-medium text-muted-foreground/70">
+                    {readOnly ? "Nenhuma tarefa aqui" : "Arraste tasks para cá"}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         );

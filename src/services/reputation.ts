@@ -16,6 +16,9 @@ export type Review = {
   createdAt: string;
 };
 
+/** ETAPA 10: vínculo do usuário com o projeto (soft-delete preserva o histórico). */
+export type MemberStatus = "ativo" | "saiu" | "removido";
+
 export type HistoryEntry = {
   id: string;
   projectName: string;
@@ -23,6 +26,15 @@ export type HistoryEntry = {
   status: "Concluído" | "Em andamento" | "Saiu";
   period: string;
   technologies: string[];
+  /**
+   * ETAPA 10: status do vínculo em membros_equipe. 'saiu'/'removido' NÃO
+   * apagam o projeto do histórico — a participação permanece visível.
+   */
+  memberStatus: MemberStatus;
+  /** ETAPA 10: função exercida no squad (ex.: "Backend") quando o backend expõe. */
+  funcao?: string;
+  /** ETAPA 10: quantidade de tarefas verificadas no projeto (opcional). */
+  tasksVerified?: number;
 };
 
 export type Reputation = {
@@ -113,6 +125,10 @@ const MOCK: Reputation = {
       status: "Em andamento",
       period: "Mai/2026 — atual",
       technologies: ["React", "Node.js", "Postgres"],
+      // ETAPA 10: vínculo ativo — sem badge de saída.
+      memberStatus: "ativo",
+      funcao: "Full Stack",
+      tasksVerified: 12,
     },
     {
       id: "h2",
@@ -121,6 +137,9 @@ const MOCK: Reputation = {
       status: "Concluído",
       period: "Jan/2026 — Abr/2026",
       technologies: ["React", "UI/UX"],
+      memberStatus: "ativo",
+      funcao: "Frontend",
+      tasksVerified: 8,
     },
     {
       id: "h3",
@@ -129,6 +148,21 @@ const MOCK: Reputation = {
       status: "Concluído",
       period: "Set/2025 — Dez/2025",
       technologies: ["Node.js", "Docker"],
+      // ETAPA 10: saiu do squad, mas o projeto permanece no histórico.
+      memberStatus: "saiu",
+      funcao: "Backend",
+      tasksVerified: 3,
+    },
+    {
+      id: "h4",
+      projectName: "Bot de Monitoria",
+      role: "Membro",
+      status: "Em andamento",
+      period: "Fev/2026 — Mar/2026",
+      technologies: ["Python"],
+      // ETAPA 10: removido pelo owner — contribuição anterior não é apagada.
+      memberStatus: "removido",
+      funcao: "Data",
     },
   ],
 };
@@ -192,6 +226,9 @@ type AchievementIcon = (typeof ACHIEVEMENT_ICONS)[number];
 
 const HISTORY_STATUS: readonly HistoryEntry["status"][] = ["Concluído", "Em andamento", "Saiu"];
 
+/** ETAPA 10: status do vínculo aceitos pelo contrato (soft-delete de membros). */
+const MEMBER_STATUS: readonly MemberStatus[] = ["ativo", "saiu", "removido"];
+
 type ReputationResponse = {
   sucesso: boolean;
   message: string;
@@ -223,6 +260,12 @@ type ReputationResponse = {
       status: string;
       period: string;
       technologies: string[];
+      /** ETAPA 10: status do vínculo (me.status) — 'saiu'/'removido' preservam o histórico. */
+      memberStatus?: string | null;
+      /** ETAPA 10: função exercida no squad (me.funcao) quando o backend expõe. */
+      funcao?: string | null;
+      /** ETAPA 10: tarefas verificadas no projeto (opcional). */
+      tasksVerified?: number | null;
     }[];
   };
 };
@@ -262,6 +305,14 @@ function mapReputation(dados: ReputationResponse["dados"]): Reputation {
         : "Em andamento",
       period: h.period ?? "",
       technologies: Array.isArray(h.technologies) ? h.technologies.map(String) : [],
+      // ETAPA 10: normaliza o vínculo; valor desconhecido → 'ativo' (retrocompatível
+      // com o backend pré-ETAPA 6, que não expunha me.status).
+      memberStatus: (MEMBER_STATUS as readonly string[]).includes(h.memberStatus ?? "")
+        ? (h.memberStatus as MemberStatus)
+        : "ativo",
+      funcao: h.funcao && String(h.funcao).trim() ? String(h.funcao).trim() : undefined,
+      tasksVerified:
+        typeof h.tasksVerified === "number" && h.tasksVerified >= 0 ? h.tasksVerified : undefined,
     })),
   };
 }

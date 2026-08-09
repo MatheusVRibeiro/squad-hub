@@ -45,6 +45,10 @@ const validDados = {
       status: "Concluído",
       period: "Jan/2026",
       technologies: ["React", 123],
+      // ETAPA 10: removido do squad — projeto permanece no histórico.
+      memberStatus: "removido",
+      funcao: "Backend",
+      tasksVerified: 3,
     },
     {
       id: 4,
@@ -53,6 +57,8 @@ const validDados = {
       status: "Desconhecido",
       period: "Fev/2026",
       technologies: [],
+      // ETAPA 10: saiu voluntariamente — também permanece.
+      memberStatus: "saiu",
     },
   ],
 };
@@ -145,5 +151,57 @@ describe("fetchReputation", () => {
     mocks.get.mockResolvedValue({ data: { sucesso: false, dados: null } });
 
     await expect(fetchReputation()).rejects.toThrow("Resposta de reputação inválida do servidor.");
+  });
+
+  it("ETAPA 10: preserva projetos no histórico mesmo com vínculo 'saiu'/'removido'", async () => {
+    mocks.get.mockResolvedValue({
+      data: { sucesso: true, message: "ok", dados: validDados },
+    });
+
+    const rep = await fetchReputation();
+
+    expect(rep.history).toHaveLength(2);
+    // Removido pelo owner — projeto permanece com função e métrica de tasks.
+    expect(rep.history[0]).toMatchObject({
+      projectName: "Projeto X",
+      memberStatus: "removido",
+      funcao: "Backend",
+      tasksVerified: 3,
+    });
+    // Saiu voluntariamente — projeto permanece no histórico.
+    expect(rep.history[1]).toMatchObject({
+      projectName: "Projeto Y",
+      memberStatus: "saiu",
+    });
+  });
+
+  it("ETAPA 10: vínculo desconhecido/ausente normaliza para 'ativo' (retrocompatível)", async () => {
+    mocks.get.mockResolvedValue({
+      data: {
+        sucesso: true,
+        dados: {
+          ...validDados,
+          history: [
+            {
+              id: 5,
+              projectName: "Projeto Z",
+              role: "Membro",
+              status: "Em andamento",
+              period: "2026-05-01T00:00:00.000Z",
+              technologies: [],
+              memberStatus: "banido",
+              funcao: null,
+            },
+          ],
+        },
+      },
+    });
+
+    const rep = await fetchReputation();
+
+    expect(rep.history).toHaveLength(1);
+    expect(rep.history[0].memberStatus).toBe("ativo");
+    expect(rep.history[0].funcao).toBeUndefined();
+    expect(rep.history[0].tasksVerified).toBeUndefined();
   });
 });

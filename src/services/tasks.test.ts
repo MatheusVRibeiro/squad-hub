@@ -119,6 +119,44 @@ describe("fetchProjectTasks (ETAPA 7)", () => {
       "Resposta inesperada do servidor ao listar tarefas.",
     );
   });
+
+  it("ETAPA 10: descarta tarefas arquivadas (excluida_em não-nulo) do Kanban", async () => {
+    mocks.get.mockResolvedValue({
+      data: {
+        sucesso: true,
+        dados: [
+          {
+            id: 10,
+            projeto_id: 9,
+            responsavel_id: null,
+            titulo: "Tarefa ativa",
+            descricao: null,
+            status: "todo",
+            prioridade: "medium",
+            data_vencimento: null,
+            excluida_em: null,
+          },
+          {
+            id: 11,
+            projeto_id: 9,
+            responsavel_id: null,
+            titulo: "Tarefa arquivada",
+            descricao: null,
+            status: "done",
+            prioridade: "low",
+            data_vencimento: null,
+            excluida_em: "2026-08-01T12:00:00.000Z",
+          },
+        ],
+      },
+    });
+
+    const tasks = await fetchProjectTasks("9");
+
+    expect(tasks).toHaveLength(1);
+    expect(tasks[0]).toMatchObject({ id: "10", title: "Tarefa ativa" });
+    expect(tasks.some((t) => t.title === "Tarefa arquivada")).toBe(false);
+  });
 });
 
 describe("addLocalTask com dificuldade e habilidades (ETAPA 7)", () => {

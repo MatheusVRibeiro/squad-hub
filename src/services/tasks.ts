@@ -33,6 +33,8 @@ type BackendTask = {
   subtasks?: { id: number; titulo: string; done: boolean }[];
   dificuldade?: TaskDificuldade;
   habilidades?: { id: number; nome: string }[] | string[];
+  /** ETAPA 10: soft-delete de tarefas — não-nulo = arquivada (fora do Kanban). */
+  excluida_em?: string | null;
 };
 
 /** ETAPA 7: normaliza `habilidades` do backend para nomes (aceita objetos
@@ -64,23 +66,28 @@ export async function fetchProjectTasks(projectId: string): Promise<KanbanTask[]
   );
 
   if (data?.sucesso && Array.isArray(data.dados)) {
-    return data.dados.map((t) => ({
-      id: String(t.id),
-      title: t.titulo,
-      description: t.descricao || undefined,
-      status: t.status,
-      assignee: t.responsavel_nome || undefined,
-      priority: t.prioridade,
-      dueDate: t.data_vencimento || undefined,
-      subtasks: (t.subtasks ?? []).map((s) => ({
-        id: String(s.id),
-        title: s.titulo,
-        done: Boolean(s.done),
-      })),
-      dificuldade: t.dificuldade,
-      habilidades: extrairNomesHabilidades(t.habilidades),
-      habilidadeIds: extrairIdsHabilidades(t.habilidades),
-    }));
+    // ETAPA 10: defesa em profundidade — o backend já filtra tarefas arquivadas
+    // (excluida_em), mas o frontend nunca deve exibir uma task soft-deletada no
+    // Kanban, mesmo que a API as retorne por engano.
+    return data.dados
+      .filter((t) => !t.excluida_em)
+      .map((t) => ({
+        id: String(t.id),
+        title: t.titulo,
+        description: t.descricao || undefined,
+        status: t.status,
+        assignee: t.responsavel_nome || undefined,
+        priority: t.prioridade,
+        dueDate: t.data_vencimento || undefined,
+        subtasks: (t.subtasks ?? []).map((s) => ({
+          id: String(s.id),
+          title: s.titulo,
+          done: Boolean(s.done),
+        })),
+        dificuldade: t.dificuldade,
+        habilidades: extrairNomesHabilidades(t.habilidades),
+        habilidadeIds: extrairIdsHabilidades(t.habilidades),
+      }));
   }
 
   throw new Error("Resposta inesperada do servidor ao listar tarefas.");

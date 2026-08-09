@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -33,15 +33,44 @@ function mapGithubUser(dados: GithubAuthUser): User {
   };
 }
 
+/**
+ * Lê o token do fragment (#token=...) — prioritário, pois não vaza via
+ * Referer/histórico/logs — com fallback para a query string (?token=...) por
+ * compatibilidade. Ao ler do fragment, limpa a URL (history.replaceState) para
+ * o token não ficar registrado no histórico do navegador.
+ */
+function readTokenFromHash(): string | undefined {
+  if (typeof window === "undefined") return undefined;
+  const hash = window.location.hash;
+  if (!hash) return undefined;
+  const params = new URLSearchParams(hash.replace(/^#/, ""));
+  const token = params.get("token");
+  if (token) {
+    window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    return token;
+  }
+  return undefined;
+}
+
 function GithubCompleteProfilePage() {
-  // /auth/github/complete-profile?token=... — usuário recém criado via GitHub:
-  // precisa completar o perfil antes de acessar a plataforma (onboarding).
+  // /auth/github/complete-profile#token=... (ou ?token=... por compatibilidade)
+  // — usuário recém criado via GitHub: precisa completar o perfil antes de
+  // acessar a plataforma (onboarding).
   const search = useSearch({ strict: false }) as { token?: string };
-  const token = typeof search?.token === "string" ? search.token : undefined;
+  const queryToken = typeof search?.token === "string" ? search.token : undefined;
+  const [token, setToken] = useState<string | undefined>(queryToken);
+  const [resolved, setResolved] = useState(false);
 
   const { persistSession } = useAuth();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const hashToken = readTokenFromHash();
+    if (hashToken) setToken(hashToken);
+    setResolved(true);
+  }, []);
 
   const {
     register,
@@ -71,6 +100,16 @@ function GithubCompleteProfilePage() {
       setSubmitting(false);
     }
   };
+
+  if (!resolved) {
+    return (
+      <AuthLayout title="Carregando..." subtitle="Preparando seu cadastro com GitHub.">
+        <div className="flex justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </AuthLayout>
+    );
+  }
 
   if (!token) {
     return (

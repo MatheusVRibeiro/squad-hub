@@ -6,16 +6,45 @@ import { AuthLayout } from "@/layouts/AuthLayout";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 
+/**
+ * Lê o token do fragment (#token=...) — prioritário, pois não vaza via
+ * Referer/histórico/logs — com fallback para a query string (?token=...) por
+ * compatibilidade. Ao ler do fragment, limpa a URL (history.replaceState) para
+ * o token não ficar registrado no histórico do navegador.
+ */
+function readTokenFromHash(): string | undefined {
+  if (typeof window === "undefined") return undefined;
+  const hash = window.location.hash;
+  if (!hash) return undefined;
+  const params = new URLSearchParams(hash.replace(/^#/, ""));
+  const token = params.get("token");
+  if (token) {
+    window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    return token;
+  }
+  return undefined;
+}
+
 function GithubSuccessPage() {
-  // /auth/github/success?token=... — o callback do backend redireciona para cá
-  // quando a conta GitHub já está vinculada (login direto).
+  // /auth/github/success#token=... (ou ?token=... por compatibilidade) — o
+  // callback do backend redireciona para cá quando a conta GitHub já está
+  // vinculada (login direto).
   const search = useSearch({ strict: false }) as { token?: string };
-  const token = typeof search?.token === "string" ? search.token : undefined;
+  const queryToken = typeof search?.token === "string" ? search.token : undefined;
+  const [token, setToken] = useState<string | undefined>(queryToken);
+  const [resolved, setResolved] = useState(false);
 
   const { signInWithGithubToken } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const started = useRef(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const hashToken = readTokenFromHash();
+    if (hashToken) setToken(hashToken);
+    setResolved(true);
+  }, []);
 
   useEffect(() => {
     if (!token || started.current) return;
@@ -27,15 +56,15 @@ function GithubSuccessPage() {
       });
   }, [token, signInWithGithubToken, navigate]);
 
-  const failed = !token || error;
+  const failed = resolved && (!token || error);
 
   return (
     <AuthLayout
-      title={error ? "Não foi possível entrar" : !token ? "Link inválido" : "Entrando..."}
+      title={error ? "Não foi possível entrar" : failed ? "Link inválido" : "Entrando..."}
       subtitle={
         error
           ? "Ocorreu um erro ao concluir o login com GitHub."
-          : !token
+          : failed
             ? "Não foi possível concluir o login com GitHub."
             : "Concluindo seu login com GitHub."
       }

@@ -66,7 +66,6 @@ type AuthContextValue = {
   isAuthenticated: boolean;
   isLoading: boolean;
   signIn: (data: SignInData) => Promise<void>;
-  signInTemp: (data?: SignInData & { role?: "admin" | "user" }) => Promise<void>;
   signUp: (data: SignUpData) => Promise<boolean>;
   signOut: () => void;
   updateUser: (nextUser: User) => void;
@@ -143,34 +142,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = useCallback(
     async ({ email, password }: SignInData) => {
-      // In development you can bypass the API by using the TEMP_LOGIN query param
-      // e.g. /login?tempLogin=1 — this will create a temporary user locally.
-      if (typeof window !== "undefined" && window.location.search.includes("tempLogin")) {
-        const tempUser: User = {
-          id: "temp",
-          name: email.split("@")[0] ?? "Usuário temporário",
-          email,
-        };
-        persist("temp-token", tempUser);
-        return;
-      }
-
       const { token, user } = await loginAndMap(email, password);
       persist(token, user);
-    },
-    [persist],
-  );
-
-  const signInTemp = useCallback(
-    async (payload?: SignInData & { role?: "admin" | "user" }) => {
-      const email = payload?.email ?? "temp@example.com";
-      const tempUser: User = {
-        id: "temp",
-        name: email.split("@")[0] ?? "Usuário temporário",
-        email,
-        role: payload?.role ?? "user",
-      };
-      persist("temp-token", tempUser);
     },
     [persist],
   );
@@ -249,24 +222,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAuthenticated: !!user,
       isLoading,
       signIn,
-      signInTemp,
       signUp,
       signOut,
       updateUser,
       persistSession,
       signInWithGithubToken,
     }),
-    [
-      user,
-      isLoading,
-      signIn,
-      signInTemp,
-      signUp,
-      signOut,
-      updateUser,
-      persistSession,
-      signInWithGithubToken,
-    ],
+    [user, isLoading, signIn, signUp, signOut, updateUser, persistSession, signInWithGithubToken],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

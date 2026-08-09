@@ -21,7 +21,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 function LoginPage() {
-  const { signIn, signInTemp, isAuthenticated, isLoading } = useAuth();
+  const { signIn, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [githubLoading, setGithubLoading] = useState(false);
@@ -51,7 +51,6 @@ function LoginPage() {
     register,
     handleSubmit,
     formState: { errors },
-    getValues,
   } = useForm<FormValues>({ resolver: zodResolver(schema) });
 
   const onSubmit = async (values: FormValues) => {
@@ -155,25 +154,6 @@ function LoginPage() {
             disabled={submitting}
           >
             {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Entrar"}
-          </Button>
-
-          <Button
-            type="button"
-            className="h-11 w-full rounded-xl bg-secondary/80 text-secondary-foreground hover:bg-secondary border border-border/50 transition-colors font-medium text-xs shadow-sm"
-            disabled={submitting}
-            onClick={async () => {
-              setSubmitting(true);
-              try {
-                const email = getValues("email");
-                await signInTemp?.({ email: email || "dev@example.com", password: "" });
-                toast.success("Entrando em modo temporário");
-                navigate({ to: "/dashboard" });
-              } finally {
-                setSubmitting(false);
-              }
-            }}
-          >
-            Entrar como visitante temporário
           </Button>
         </div>
       </form>

@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -24,13 +24,42 @@ const schema = z
   });
 type FormValues = z.infer<typeof schema>;
 
+/**
+ * Lê o token do fragment (#token=...) — prioritário, pois não vaza via
+ * Referer/histórico/logs — com fallback para a query string (?token=...) por
+ * compatibilidade. Ao ler do fragment, limpa a URL (history.replaceState) para
+ * o token não ficar registrado no histórico do navegador.
+ */
+function readTokenFromHash(): string | undefined {
+  if (typeof window === "undefined") return undefined;
+  const hash = window.location.hash;
+  if (!hash) return undefined;
+  const params = new URLSearchParams(hash.replace(/^#/, ""));
+  const token = params.get("token");
+  if (token) {
+    window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    return token;
+  }
+  return undefined;
+}
+
 function ResetarSenhaPage() {
   const navigate = useNavigate();
-  // Lê o token do link recebido por e-mail: /resetar-senha?token=...
+  // Lê o token do link recebido por e-mail: /resetar-senha#token=...
+  // (fragment — não vaza via Referer/histórico) ou ?token=... (compat).
   const search = useSearch({ strict: false }) as { token?: string };
-  const token = typeof search?.token === "string" ? search.token : undefined;
+  const queryToken = typeof search?.token === "string" ? search.token : undefined;
+  const [token, setToken] = useState<string | undefined>(queryToken);
+  const [resolved, setResolved] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const hashToken = readTokenFromHash();
+    if (hashToken) setToken(hashToken);
+    setResolved(true);
+  }, []);
 
   const {
     register,
@@ -56,6 +85,16 @@ function ResetarSenhaPage() {
       setSubmitting(false);
     }
   };
+
+  if (!resolved) {
+    return (
+      <AuthLayout title="Carregando..." subtitle="Verificando seu link de redefinição.">
+        <div className="flex justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </AuthLayout>
+    );
+  }
 
   if (!token) {
     return (

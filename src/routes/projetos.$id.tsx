@@ -21,6 +21,7 @@ import { Mural } from "@/components/projects/Mural";
 import { MembersList } from "@/components/projects/MembersList";
 import { Applications } from "@/components/projects/Applications";
 import { Vagas } from "@/components/projects/Vagas";
+import { ProjectTimeline } from "@/components/projects/ProjectTimeline";
 import {
   fetchProjectDetail,
   closeProjectLocal,
@@ -738,6 +739,7 @@ function ProjectDetailPage() {
                   <TabsTrigger value="mural">Mural</TabsTrigger>
                   <TabsTrigger value="membros">Membros</TabsTrigger>
                   <TabsTrigger value="vagas">Vagas</TabsTrigger>
+                  {isMember && <TabsTrigger value="atividade">Atividade</TabsTrigger>}
                   {isOwner && (
                     <TabsTrigger value="candidaturas">
                       Candidaturas
@@ -775,6 +777,12 @@ function ProjectDetailPage() {
                 <TabsContent value="vagas">
                   <Vagas initial={data.vagas} projectId={data.id} isOwner={isOwner} />
                 </TabsContent>
+                {isMember && (
+                  <TabsContent value="atividade">
+                    {/* ETAPA 15: timeline de atividade do projeto (exige ser membro/dono). */}
+                    <ProjectTimeline projectId={data.id} />
+                  </TabsContent>
+                )}
                 {isOwner && (
                   <TabsContent value="candidaturas">
                     <Applications

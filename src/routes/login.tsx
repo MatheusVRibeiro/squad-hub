@@ -84,27 +84,6 @@ function LoginPage() {
       }
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-        <Button
-          type="button"
-          variant="outline"
-          className="h-11 w-full rounded-xl font-medium shadow-sm"
-          disabled={submitting || githubLoading}
-          onClick={handleGithubLogin}
-        >
-          {githubLoading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Github className="h-4 w-4" />
-          )}
-          Continuar com GitHub
-        </Button>
-
-        <div className="flex items-center gap-3">
-          <span className="h-px flex-1 bg-border/60" />
-          <span className="text-xs text-muted-foreground">ou continue com e-mail</span>
-          <span className="h-px flex-1 bg-border/60" />
-        </div>
-
         <div className="space-y-1.5">
           <Label
             htmlFor="email"
@@ -156,6 +135,27 @@ function LoginPage() {
             {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Entrar"}
           </Button>
         </div>
+
+        <div className="flex items-center gap-3">
+          <span className="h-px flex-1 bg-border/60" />
+          <span className="text-xs text-muted-foreground">ou continue com</span>
+          <span className="h-px flex-1 bg-border/60" />
+        </div>
+
+        <Button
+          type="button"
+          variant="outline"
+          className="h-11 w-full rounded-xl font-medium shadow-sm"
+          disabled={submitting || githubLoading}
+          onClick={handleGithubLogin}
+        >
+          {githubLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Github className="h-4 w-4" />
+          )}
+          Continuar com GitHub
+        </Button>
       </form>
     </AuthLayout>
   );

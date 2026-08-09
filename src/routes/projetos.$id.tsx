@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { KanbanBoard } from "@/components/projects/KanbanBoard";
+import { TasksRecomendadas } from "@/components/projects/TasksRecomendadas";
 import { GithubProjectPanel } from "@/components/projects/GithubProjectPanel";
 import { TopCommitters } from "@/components/projects/TopCommitters";
 import { TopContributors } from "@/components/projects/TopContributors";
@@ -740,6 +741,7 @@ function ProjectDetailPage() {
                   <TabsTrigger value="membros">Membros</TabsTrigger>
                   <TabsTrigger value="vagas">Vagas</TabsTrigger>
                   {isMember && <TabsTrigger value="atividade">Atividade</TabsTrigger>}
+                  {isMember && <TabsTrigger value="recomendadas">Recomendadas</TabsTrigger>}
                   {isOwner && (
                     <TabsTrigger value="candidaturas">
                       Candidaturas
@@ -781,6 +783,12 @@ function ProjectDetailPage() {
                   <TabsContent value="atividade">
                     {/* ETAPA 15: timeline de atividade do projeto (exige ser membro/dono). */}
                     <ProjectTimeline projectId={data.id} />
+                  </TabsContent>
+                )}
+                {isMember && (
+                  <TabsContent value="recomendadas">
+                    {/* ETAPA 17: matching desenvolvedor ↔ task (exige ser membro/dono). */}
+                    <TasksRecomendadas projetoId={data.id} projectName={data.name} />
                   </TabsContent>
                 )}
                 {isOwner && (

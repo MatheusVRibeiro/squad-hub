@@ -12,6 +12,9 @@ import {
   Loader2,
   Hand,
   GraduationCap,
+  History,
+  UserMinus,
+  ArrowLeftRight,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -43,6 +46,13 @@ import {
 } from "@/services/projectDetail";
 import { fetchHabilidades, type Habilidade } from "@/services/perfil";
 import { notificationsIntegration } from "@/services/notificationsIntegration";
+import {
+  abandonarTarefa,
+  removerResponsavel,
+  reatribuirTarefa,
+  getHistoricoResponsaveis,
+  type HistoricoResponsavel,
+} from "@/services/tasks";
 import { GithubTaskBadge } from "@/components/projects/GithubTaskBadge";
 import { GithubTaskActivity } from "@/components/projects/GithubTaskActivity";
 import { useAuth } from "@/contexts/AuthContext";
@@ -104,12 +114,15 @@ export function KanbanBoard({
   projectName,
   readOnly,
   members = [],
+  isOwner = false,
 }: {
   initial: KanbanTask[];
   projectId: string;
   projectName: string;
   readOnly?: boolean;
   members?: Member[];
+  /** ETAPA 9: usuário logado é o dono do projeto (libera remover/reatribuir). */
+  isOwner?: boolean;
 }) {
   const { user: currentUser } = useAuth();
   const [tasks, setTasks] = useState<KanbanTask[]>(initial);
@@ -129,6 +142,15 @@ export function KanbanBoard({
   const [habilidadesDisponiveis, setHabilidadesDisponiveis] = useState<Habilidade[]>([]);
   const [dragId, setDragId] = useState<string | null>(null);
   const [claimingId, setClaimingId] = useState<string | null>(null);
+  // ETAPA 9: abandonar / remover responsável / reatribuir + histórico.
+  const [abandoningId, setAbandoningId] = useState<string | null>(null);
+  const [removingId, setRemovingId] = useState<string | null>(null);
+  const [reassignTask, setReassignTask] = useState<KanbanTask | null>(null);
+  const [reassignUserId, setReassignUserId] = useState("");
+  const [reassigning, setReassigning] = useState(false);
+  const [historico, setHistorico] = useState<HistoricoResponsavel[]>([]);
+  const [historicoLoading, setHistoricoLoading] = useState(false);
+  const [historicoError, setHistoricoError] = useState<string | null>(null);
 
   // ETAPA 7: carrega a base global de habilidades para o multi-select do modal.
   useEffect(() => {
@@ -188,9 +210,11 @@ export function KanbanBoard({
             .filter((id): id is number => id != null),
     );
     setModalMode("edit");
-  }
+        // ETAPA 9: carrega o histórico de responsáveis ao abrir o modal de edição.
+        loadHistorico(task.id);
+      }
 
-  async function move(id: string, status: KanbanStatus) {
+      async function move(id: string, status: KanbanStatus) {
     if (readOnly) return;
     const task = tasks.find((t) => t.id === id);
     if (!task) return;
@@ -270,6 +294,124 @@ export function KanbanBoard({
       toast.error(err instanceof Error ? err.message : "Erro ao assumir tarefa");
     } finally {
       setClaimingId(null);
+    }
+  }
+
+  // ETAPA 9: responsável atual abandona a task — volta para 'todo' sem
+  // responsável; o backend registra o histórico (acao='abandonou').
+  async function handleAbandon(taskId: string) {
+    if (readOnly) return;
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
+    if (
+      !window.confirm(
+        `Tem certeza que deseja abandonar a tarefa "${task.title}"? Ela voltará para "A fazer" e ficará sem responsável.`,
+      )
+    )
+      return;
+
+    setAbandoningId(taskId);
+    try {
+      const updated = await abandonarTarefa(projectId, taskId);
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === taskId
+            ? { ...t, assignee: undefined, status: updated.status || "todo" }
+            : t,
+        ),
+      );
+      toast.success("Tarefa abandonada! Ela voltou para 'A fazer'.");
+      notificationsIntegration.notifyTaskActivity(
+        projectName,
+        task.title,
+        "moved",
+        "A fazer",
+        projectId,
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao abandonar tarefa");
+    } finally {
+      setAbandoningId(null);
+    }
+  }
+
+  // ETAPA 9: owner remove o responsável atual (histórico registra 'removido').
+  async function handleRemoveAssignee(taskId: string) {
+    if (readOnly) return;
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
+    if (
+      !window.confirm(
+        `Remover ${task.assignee || "o responsável"} da tarefa "${task.title}"? O histórico de contribuição será preservado.`,
+      )
+    )
+      return;
+
+    setRemovingId(taskId);
+    try {
+      await removerResponsavel(projectId, taskId);
+      setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, assignee: undefined } : t)));
+      toast.success("Responsável removido da tarefa.");
+      notificationsIntegration.notifyTaskActivity(
+        projectName,
+        task.title,
+        "assigned",
+        "Sem responsável",
+        projectId,
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao remover responsável");
+    } finally {
+      setRemovingId(null);
+    }
+  }
+
+  // ETAPA 9: owner reatribui a task a outro membro ativo do squad.
+  async function handleReassign() {
+    if (!reassignTask) return;
+    const member = members.find((m) => m.id === reassignUserId);
+    if (!member) {
+      toast.error("Selecione um membro ativo para reatribuir.");
+      return;
+    }
+    setReassigning(true);
+    try {
+      const updated = await reatribuirTarefa(projectId, reassignTask.id, Number(member.id));
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === reassignTask.id
+            ? { ...t, assignee: member.name, status: updated.status || t.status }
+            : t,
+        ),
+      );
+      toast.success(`Tarefa reatribuída para ${member.name}.`);
+      notificationsIntegration.notifyTaskActivity(
+        projectName,
+        reassignTask.title,
+        "assigned",
+        member.name,
+        projectId,
+      );
+      setReassignTask(null);
+      setReassignUserId("");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao reatribuir tarefa");
+    } finally {
+      setReassigning(false);
+    }
+  }
+
+  // ETAPA 9: carrega o histórico de responsáveis da task (painel do modal).
+  async function loadHistorico(taskId: string) {
+    setHistoricoLoading(true);
+    setHistoricoError(null);
+    try {
+      setHistorico(await getHistoricoResponsaveis(projectId, taskId));
+    } catch (err) {
+      setHistorico([]);
+      setHistoricoError(err instanceof Error ? err.message : "Erro ao carregar histórico");
+    } finally {
+      setHistoricoLoading(false);
     }
   }
 
@@ -644,6 +786,53 @@ export function KanbanBoard({
                           >
                             Pegar tarefa
                           </button>
+                        )}
+
+                        {/* ETAPA 9: responsável atual pode abandonar a task */}
+                        {!readOnly && isAssignedToMe && t.assignee && (
+                          <button
+                            type="button"
+                            onClick={() => handleAbandon(t.id)}
+                            disabled={abandoningId === t.id}
+                            className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-medium tracking-wide border transition-all outline-none bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20 hover:bg-amber-500/20 cursor-pointer disabled:opacity-60"
+                          >
+                            {abandoningId === t.id ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Hand className="h-3 w-3 shrink-0" />
+                            )}
+                            <span>Abandonar tarefa</span>
+                          </button>
+                        )}
+
+                        {/* ETAPA 9: owner remove responsável ou reatribui a outro membro */}
+                        {!readOnly && isOwner && t.assignee && (
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveAssignee(t.id)}
+                              disabled={removingId === t.id}
+                              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-medium tracking-wide border transition-all outline-none bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20 hover:bg-rose-500/20 cursor-pointer disabled:opacity-60"
+                            >
+                              {removingId === t.id ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <UserMinus className="h-3 w-3 shrink-0" />
+                              )}
+                              <span>Remover resp.</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setReassignTask(t);
+                                setReassignUserId("");
+                              }}
+                              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-medium tracking-wide border transition-all outline-none bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 cursor-pointer"
+                            >
+                              <ArrowLeftRight className="h-3 w-3 shrink-0" />
+                              <span>Reatribuir</span>
+                            </button>
+                          </div>
                         )}
                       </div>
                     </Card>

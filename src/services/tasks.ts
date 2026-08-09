@@ -1,4 +1,5 @@
 import { api } from "./api";
+import type { TaskDificuldade } from "./projectDetail";
 
 export type KanbanStatus = "todo" | "doing" | "done";
 
@@ -11,6 +12,10 @@ export type KanbanTask = {
   priority?: "low" | "medium" | "high";
   dueDate?: string;
   subtasks?: { id: string; title: string; done: boolean }[];
+  // ETAPA 7: dificuldade (ENUM) e habilidades esperadas (nomes + ids).
+  dificuldade?: TaskDificuldade;
+  habilidades?: string[];
+  habilidadeIds?: number[];
 };
 
 /** Formato cru retornado pelo backend em GET /projetos/:id/tarefas (snake_case). */
@@ -25,7 +30,27 @@ type BackendTask = {
   data_vencimento: string | null;
   responsavel_nome?: string | null;
   subtasks?: { id: number; titulo: string; done: boolean }[];
+  dificuldade?: TaskDificuldade;
+  habilidades?: { id: number; nome: string }[] | string[];
 };
+
+/** ETAPA 7: normaliza `habilidades` do backend para nomes (aceita objetos
+ *  `{id, nome}` ou strings puras) — retrocompatível com a resposta antiga. */
+function extrairNomesHabilidades(
+  habilidades?: { id: number; nome: string }[] | string[],
+): string[] {
+  if (!Array.isArray(habilidades)) return [];
+  return habilidades
+    .map((h) => (typeof h === "string" ? h : h && typeof h.nome === "string" ? h.nome : ""))
+    .filter(Boolean);
+}
+
+function extrairIdsHabilidades(habilidades?: { id: number; nome: string }[] | string[]): number[] {
+  if (!Array.isArray(habilidades)) return [];
+  return habilidades
+    .map((h) => (typeof h === "string" ? Number.NaN : Number(h?.id)))
+    .filter((id) => Number.isFinite(id));
+}
 
 /**
  * Busca as tarefas reais do Kanban de um projeto (GET /projetos/:id/tarefas).
@@ -51,6 +76,9 @@ export async function fetchProjectTasks(projectId: string): Promise<KanbanTask[]
         title: s.titulo,
         done: Boolean(s.done),
       })),
+      dificuldade: t.dificuldade,
+      habilidades: extrairNomesHabilidades(t.habilidades),
+      habilidadeIds: extrairIdsHabilidades(t.habilidades),
     }));
   }
 

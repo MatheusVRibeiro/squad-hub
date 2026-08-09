@@ -12,6 +12,9 @@ export type KanbanStatus = "todo" | "doing" | "review" | "done";
 
 export type TaskPriority = "low" | "medium" | "high" | "critical";
 
+/** ETAPA 7: dificuldade da tarefa — valores do ENUM do backend. */
+export type TaskDificuldade = "iniciante" | "intermediaria" | "avancada";
+
 export type SubTask = {
   id: string;
   title: string;
@@ -38,6 +41,11 @@ export type KanbanTask = {
   completionSource?: string;
   completedAt?: string;
   assigneeId?: number;
+  // ETAPA 7: dificuldade e habilidades esperadas da tarefa (backend retorna
+  // `habilidades` com nomes; `habilidadeIds` alimenta o payload de criação/edição).
+  dificuldade?: TaskDificuldade;
+  habilidades?: string[];
+  habilidadeIds?: number[];
 };
 
 export type MuralMessage = {
@@ -459,6 +467,8 @@ export async function addLocalTask(
         status: KanbanStatus;
         prioridade: "low" | "medium" | "high";
         data_vencimento: string | null;
+        dificuldade?: TaskDificuldade;
+        habilidades?: { id: number; nome: string }[] | string[];
       };
     }>(`/projetos/${projectId}/tarefas`, {
       titulo: title,
@@ -466,6 +476,9 @@ export async function addLocalTask(
       prioridade: extra?.priority,
       data_vencimento: extra?.dueDate || null,
       responsavel_id,
+      // ETAPA 7: dificuldade (ENUM) e habilidades esperadas (array de ids).
+      dificuldade: extra?.dificuldade || "intermediaria",
+      habilidades: extra?.habilidadeIds ?? [],
     });
 
     if (data.sucesso && data.dados) {
@@ -478,6 +491,9 @@ export async function addLocalTask(
         dueDate: data.dados.data_vencimento || undefined,
         assignee: extra?.assignee,
         subtasks: [],
+        dificuldade: data.dados.dificuldade || extra?.dificuldade,
+        habilidadeIds: extra?.habilidadeIds ?? [],
+        habilidades: extra?.habilidades ?? [],
       };
 
       // Cache locally as well
@@ -573,6 +589,8 @@ export async function updateLocalTaskDetails(
       data_vencimento?: string | null;
       responsavel_id?: number | null;
       subtasks?: { title: string; done: boolean }[];
+      dificuldade?: TaskDificuldade;
+      habilidades?: number[];
     } = {};
     if (updates.title !== undefined) payload.titulo = updates.title;
     if (updates.description !== undefined) payload.descricao = updates.description;
@@ -585,6 +603,9 @@ export async function updateLocalTaskDetails(
         done: s.done,
       }));
     }
+    // ETAPA 7: dificuldade (ENUM) e habilidades (array de ids) na edição.
+    if (updates.dificuldade !== undefined) payload.dificuldade = updates.dificuldade;
+    if (updates.habilidadeIds !== undefined) payload.habilidades = updates.habilidadeIds;
 
     await api.patch(`/projetos/${projectId}/tarefas/${taskId}`, payload);
   } catch {

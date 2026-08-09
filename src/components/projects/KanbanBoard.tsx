@@ -11,6 +11,7 @@ import {
   Sparkles,
   Loader2,
   Hand,
+  GraduationCap,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -38,7 +39,9 @@ import {
   type KanbanTask,
   type Member,
   type SubTask,
+  type TaskDificuldade,
 } from "@/services/projectDetail";
+import { fetchHabilidades, type Habilidade } from "@/services/perfil";
 import { notificationsIntegration } from "@/services/notificationsIntegration";
 import { GithubTaskBadge } from "@/components/projects/GithubTaskBadge";
 import { GithubTaskActivity } from "@/components/projects/GithubTaskActivity";
@@ -85,6 +88,16 @@ const COLUMNS: { key: KanbanStatus; label: string; tone: string; borderTone: str
   },
 ];
 
+/** Normaliza acentos/maiúsculas para casar nomes de habilidades com a base
+ *  global (mesmo critério usado em services/perfil.ts). */
+function normalizeText(text: string): string {
+  return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
 export function KanbanBoard({
   initial,
   projectId,
@@ -110,8 +123,28 @@ export function KanbanBoard({
   const [subtasks, setSubtasks] = useState<SubTask[]>([]);
   const [newSubtask, setNewSubtask] = useState("");
   const [assignee, setAssignee] = useState<string | undefined>(undefined);
+  // ETAPA 7: dificuldade + habilidades da tarefa (multi-select de chips).
+  const [dificuldade, setDificuldade] = useState<TaskDificuldade>("intermediaria");
+  const [habilidadeIds, setHabilidadeIds] = useState<number[]>([]);
+  const [habilidadesDisponiveis, setHabilidadesDisponiveis] = useState<Habilidade[]>([]);
   const [dragId, setDragId] = useState<string | null>(null);
   const [claimingId, setClaimingId] = useState<string | null>(null);
+
+  // ETAPA 7: carrega a base global de habilidades para o multi-select do modal.
+  useEffect(() => {
+    let ativo = true;
+    fetchHabilidades()
+      .then((habs) => {
+        if (ativo) setHabilidadesDisponiveis(habs);
+      })
+      .catch(() => {
+        // Modal segue utilizável sem a lista (chips vazios).
+        if (ativo) setHabilidadesDisponiveis([]);
+      });
+    return () => {
+      ativo = false;
+    };
+  }, []);
 
   function openCreateModal(colKey: KanbanStatus) {
     setModalCol(colKey);
@@ -122,8 +155,14 @@ export function KanbanBoard({
     setSubtasks([]);
     setNewSubtask("");
     setAssignee(undefined);
+    setDificuldade("intermediaria");
+    setHabilidadeIds([]);
     setEditingTask(null);
     setModalMode("create");
+  }
+
+  function toggleHabilidade(id: number) {
+    setHabilidadeIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }
 
   function openEditModal(task: KanbanTask) {
@@ -135,6 +174,19 @@ export function KanbanBoard({
     setSubtasks(task.subtasks || []);
     setNewSubtask("");
     setAssignee(task.assignee);
+    setDificuldade(task.dificuldade || "intermediaria");
+    // Prefere os ids persistidos; caso contrário, casa nomes com a base global.
+    const ids = task.habilidadeIds ?? [];
+    setHabilidadeIds(
+      ids.length > 0
+        ? ids
+        : (task.habilidades ?? [])
+            .map((nome) => {
+              const norm = normalizeText(nome);
+              return habilidadesDisponiveis.find((h) => normalizeText(h.nome) === norm)?.id;
+            })
+            .filter((id): id is number => id != null),
+    );
     setModalMode("edit");
   }
 
@@ -241,12 +293,20 @@ export function KanbanBoard({
   async function handleSaveDetails() {
     if (!editingTask) return;
 
+    // ETAPA 7: deriva os nomes das habilidades selecionadas para refletir no card.
+    const habilidades = habilidadeIds
+      .map((id) => habilidadesDisponiveis.find((h) => h.id === id)?.nome)
+      .filter((nome): nome is string => nome != null);
+
     const updates = {
       description: desc,
       priority,
       dueDate,
       subtasks,
       assignee,
+      dificuldade,
+      habilidadeIds,
+      habilidades,
     };
 
     await updateLocalTaskDetails(projectId, editingTask.id, updates);
@@ -262,6 +322,11 @@ export function KanbanBoard({
       return;
     }
 
+    // ETAPA 7: nomes derivados dos ids selecionados para o badge do card.
+    const habilidades = habilidadeIds
+      .map((id) => habilidadesDisponiveis.find((h) => h.id === id)?.nome)
+      .filter((nome): nome is string => nome != null);
+
     const extra = {
       description: desc,
       priority,
@@ -269,6 +334,9 @@ export function KanbanBoard({
       subtasks,
       assignee,
       status: modalCol,
+      dificuldade,
+      habilidadeIds,
+      habilidades,
     };
 
     // 1. Persiste localmente com campos extras
@@ -437,6 +505,45 @@ export function KanbanBoard({
                                 ? "Média"
                                 : "Alta"}
                           </Badge>
+                        )}
+
+                        {t.dificuldade && (
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "rounded-full text-[9px] font-bold py-0.5 px-2 tracking-wide uppercase border",
+                              t.dificuldade === "avancada"
+                                ? "bg-rose-500/10 text-rose-700 border-rose-500/20 dark:text-rose-400"
+                                : t.dificuldade === "intermediaria"
+                                  ? "bg-violet-500/10 text-violet-700 border-violet-500/20 dark:text-violet-400"
+                                  : "bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-400",
+                            )}
+                          >
+                            {t.dificuldade === "avancada"
+                              ? "Avançada"
+                              : t.dificuldade === "intermediaria"
+                                ? "Intermediária"
+                                : "Iniciante"}
+                          </Badge>
+                        )}
+
+                        {t.habilidades && t.habilidades.length > 0 && (
+                          <span className="inline-flex flex-wrap items-center gap-1">
+                            <GraduationCap className="h-3 w-3 text-muted-foreground/85 shrink-0" />
+                            {t.habilidades.slice(0, 3).map((h) => (
+                              <span
+                                key={h}
+                                className="text-[9px] text-muted-foreground bg-muted/30 px-2 py-0.5 rounded-full border border-border/10 font-medium"
+                              >
+                                {h}
+                              </span>
+                            ))}
+                            {t.habilidades.length > 3 && (
+                              <span className="text-[9px] text-muted-foreground font-medium">
+                                +{t.habilidades.length - 3}
+                              </span>
+                            )}
+                          </span>
                         )}
 
                         {t.dueDate && (
@@ -651,6 +758,77 @@ export function KanbanBoard({
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+              </div>
+
+              {/* ETAPA 7: Dificuldade + Habilidades da tarefa */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="task-dificuldade"
+                    className="text-[10px] font-bold text-foreground/80 uppercase tracking-wide"
+                  >
+                    Dificuldade
+                  </Label>
+                  <Select
+                    value={dificuldade}
+                    onValueChange={(val) => setDificuldade(val as TaskDificuldade)}
+                  >
+                    <SelectTrigger
+                      id="task-dificuldade"
+                      className="h-10 rounded-xl bg-background/40 text-xs"
+                    >
+                      <SelectValue placeholder="Dificuldade" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="iniciante">Iniciante</SelectItem>
+                      <SelectItem value="intermediaria">Intermediária</SelectItem>
+                      <SelectItem value="avancada">Avançada</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-bold text-foreground/80 uppercase tracking-wide">
+                    Habilidades ({habilidadeIds.length} selecionadas)
+                  </Label>
+                  <div className="flex flex-wrap gap-1.5 pt-0.5">
+                    {habilidadesDisponiveis.length === 0 ? (
+                      <span className="text-[10px] text-muted-foreground">
+                        Nenhuma habilidade disponível no momento.
+                      </span>
+                    ) : (
+                      habilidadesDisponiveis.map((h) => {
+                        const ativa = habilidadeIds.includes(h.id);
+                        return (
+                          <button
+                            key={h.id}
+                            type="button"
+                            onClick={() => toggleHabilidade(h.id)}
+                            className="outline-none cursor-pointer"
+                            aria-pressed={ativa}
+                          >
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                "rounded-full px-2.5 py-0.5 text-[10px] transition-all font-medium border",
+                                ativa
+                                  ? "bg-primary/15 text-primary border-primary/30 hover:bg-primary/20"
+                                  : "bg-background/20 border-border/80 text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5",
+                              )}
+                            >
+                              {ativa ? (
+                                <Check className="mr-1 inline h-3 w-3" />
+                              ) : (
+                                <Plus className="mr-1 inline h-3 w-3" />
+                              )}
+                              {h.nome}
+                            </Badge>
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
                 </div>
               </div>
 

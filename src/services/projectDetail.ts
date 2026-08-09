@@ -1,3 +1,4 @@
+import axios from "axios";
 import { api } from "./api";
 import { normalizarVaga, type Vaga } from "./vagas";
 import {
@@ -95,6 +96,11 @@ export type ProjectDetail = Project & {
   applications: Application[];
   /** Vagas do projeto (ETAPA 4) — array camelCase/snake_case vindo do GET /projetos/:id. */
   vagas: Vaga[];
+  /** ETAPA 14: visibilidade do projeto — ENUM('publico','privado') do backend (DEFAULT 'publico'). */
+  visibilidade?: "publico" | "privado";
+  /** ETAPA 14: se o projeto pode aparecer no portfólio público dos membros (DEFAULT true).
+   *  `false` faz o portfólio tratar o projeto como privado (sem detalhes técnicos). */
+  permitirPortfolioPublico?: boolean;
 };
 
 /** Wrapper padrão das respostas da API (sucesso/message/dados). */
@@ -106,11 +112,16 @@ type ApiResponse<T> = {
 
 /** Contrato do GET /projetos/:id — o backend já devolve o shape camelCase
  *  consumido pela UI (FASE-04) acrescido de `criador_id`/`criador_nome` e
- *  `vagas` (array da ETAPA 4, camelCase com funcaoNome). */
+ *  `vagas` (array da ETAPA 4, camelCase com funcaoNome). ETAPA 14 adiciona
+ *  `visibilidade` (idêntico em snake/camel) e `permitir_portfolio_publico`
+ *  (snake_case da coluna) — a UI consome a variante camelCase mapeada. */
 type ProjectDetailData = ProjectDetail & {
   criador_id?: number | null;
   criador_nome?: string;
   vagas?: Record<string, unknown>[];
+  /** ETAPA 14: variante snake_case de permitirPortfolioPublico — o GET pode
+   *  devolver camelCase; o mapeamento tolerante aceita os dois. */
+  permitir_portfolio_publico?: boolean;
 };
 
 /** Contrato do POST /projetos — campos snake_case do backend. */
@@ -329,6 +340,13 @@ export async function fetchProjectDetail(id: string): Promise<ProjectDetail> {
               normalizarApplication(a as unknown as Record<string, unknown>),
             )
           : [],
+        // ETAPA 14: permissão de portfólio público — aceita a variante snake_case
+        // da coluna OU a camelCase do GET /projetos/:id. Ausência (backend
+        // pré-ETAPA 14) mantém o DEFAULT do schema (true) para não marcar
+        // projetos antigos como privados por engano. `visibilidade` passa pelo
+        // spread (nome idêntico em snake/camel).
+        permitirPortfolioPublico:
+          data.dados.permitir_portfolio_publico ?? data.dados.permitirPortfolioPublico ?? true,
         // ETAPA 6: membros ganham função/vaga/status — normaliza (snake ou camel) e
         // mantém apenas vínculos ativos ('saiu'/'removido' ficam fora da lista).
         members: Array.isArray(data.dados.members)
@@ -695,4 +713,46 @@ export async function closeProjectLocal(projectId: string): Promise<void> {
   const detail = getLocalProjectDetail(projectId);
   detail.status = "Finalizado";
   saveLocalProjectDetail(projectId, detail);
+}
+
+function toFriendlyError(err: unknown, fallback: string): Error {
+  if (axios.isAxiosError(err)) {
+    const msg = err.response?.data?.message;
+    if (typeof msg === "string" && msg.trim()) return new Error(msg);
+  }
+  return err instanceof Error ? err : new Error(fallback);
+}
+
+/**
+ * ETAPA 14 — PATCH /projetos/:id atualiza a privacidade do projeto.
+ *
+ * O backend aceita `visibilidade` (ENUM 'publico'|'privado') e
+ * `permitir_portfolio_publico` (boolean) — rota protegida por
+ * somenteDonoDoProjeto. Payload envia snake_case (contrato do PATCH); a UI
+ * consome camelCase (`permitirPortfolioPublico`), convertido aqui.
+ *
+ * Anti-fallback: em caso de erro a falha PROPAGA (mensagem amigável do
+ * servidor quando houver) — a UI faz rollback otimista + toast.
+ */
+export async function atualizarVisibilidadeProjeto(
+  projectId: string | number,
+  changes: {
+    visibilidade?: "publico" | "privado";
+    permitirPortfolioPublico?: boolean;
+  },
+): Promise<void> {
+  const payload: {
+    visibilidade?: "publico" | "privado";
+    permitir_portfolio_publico?: boolean;
+  } = {};
+  if (changes.visibilidade !== undefined) payload.visibilidade = changes.visibilidade;
+  if (changes.permitirPortfolioPublico !== undefined) {
+    payload.permitir_portfolio_publico = changes.permitirPortfolioPublico;
+  }
+
+  try {
+    await api.patch(`/projetos/${projectId}`, payload);
+  } catch (err) {
+    throw toFriendlyError(err, "Não foi possível atualizar a privacidade do projeto.");
+  }
 }

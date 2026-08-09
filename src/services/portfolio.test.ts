@@ -152,6 +152,96 @@ describe("getPortfolio (ETAPA 11 — portfólio verificável)", () => {
     });
   });
 
+  it("ETAPA 14: permitir_portfolio_publico=false (snake) marca o projeto como privado", async () => {
+    mocks.get.mockResolvedValue({
+      data: {
+        sucesso: true,
+        dados: {
+          projetos: [
+            {
+              projetoId: 10,
+              projetoNome: "Squad Interno",
+              tasksVerificadas: 3,
+              commits: 9,
+              prsMergeados: 2,
+              tecnologias: [],
+              contribuicoes: [],
+              permitir_portfolio_publico: false,
+            },
+          ],
+        },
+      },
+    });
+
+    const portfolio = await getPortfolio("7");
+
+    expect(portfolio.projetos[0]).toMatchObject({
+      projetoId: 10,
+      projetoNome: "Squad Interno",
+      privado: true,
+    });
+  });
+
+  it("ETAPA 14: permitirPortfolioPublico=false (camel) também marca como privado", async () => {
+    mocks.get.mockResolvedValue({
+      data: {
+        sucesso: true,
+        dados: {
+          projetos: [
+            {
+              projetoId: 11,
+              projetoNome: "Repo Fechado",
+              tasksVerificadas: 1,
+              commits: 2,
+              prsMergeados: 0,
+              tecnologias: [],
+              contribuicoes: [],
+              permitirPortfolioPublico: false,
+            },
+          ],
+        },
+      },
+    });
+
+    const portfolio = await getPortfolio("7");
+
+    expect(portfolio.projetos[0]).toMatchObject({
+      projetoId: 11,
+      projetoNome: "Repo Fechado",
+      privado: true,
+    });
+  });
+
+  it("ETAPA 14: permitir_portfolio_publico=true mantém o projeto público", async () => {
+    mocks.get.mockResolvedValue({
+      data: {
+        sucesso: true,
+        dados: {
+          projetos: [
+            {
+              projetoId: 12,
+              projetoNome: "Squad Aberto",
+              tasksVerificadas: 2,
+              commits: 4,
+              prsMergeados: 1,
+              tecnologias: [],
+              contribuicoes: [],
+              permitir_portfolio_publico: true,
+            },
+          ],
+        },
+      },
+    });
+
+    const portfolio = await getPortfolio("7");
+
+    expect(portfolio.projetos[0]).toMatchObject({
+      projetoId: 12,
+      projetoNome: "Squad Aberto",
+      privado: false,
+    });
+  });
+
   it("erro do backend (axios) rejeita com a mensagem amigável do servidor", async () => {
     mocks.get.mockRejectedValue({
       isAxiosError: true,

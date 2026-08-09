@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Calendar, Users, Lock, Github, MessageSquare, BookOpen } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import { KanbanBoard } from "@/components/projects/KanbanBoard";
 import { GithubProjectPanel } from "@/components/projects/GithubProjectPanel";
 import { TopCommitters } from "@/components/projects/TopCommitters";
@@ -23,6 +24,7 @@ import { Vagas } from "@/components/projects/Vagas";
 import {
   fetchProjectDetail,
   closeProjectLocal,
+  atualizarVisibilidadeProjeto,
   type ProjectDetail,
 } from "@/services/projectDetail";
 import { candidatarComVaga } from "@/services/candidaturas";
@@ -157,6 +159,37 @@ function ProjectDetailPage() {
     queryFn: () => fetchProjectDetail(id),
   });
 
+  // ETAPA 14: privacidade do projeto — PATCH /projetos/:id (somente o dono).
+  // Otimista: aplica a mudança no cache imediatamente e reverte em caso de erro.
+  const updatePrivacy = useMutation({
+    mutationFn: (changes: {
+      visibilidade?: "publico" | "privado";
+      permitirPortfolioPublico?: boolean;
+    }) => atualizarVisibilidadeProjeto(data?.id ?? "", changes),
+    onMutate: async (changes) => {
+      if (!data) return undefined;
+      await queryClient.cancelQueries({ queryKey: ["project", data.id] });
+      const previous = queryClient.getQueryData<ProjectDetail>(["project", data.id]);
+      queryClient.setQueryData<ProjectDetail>(["project", data.id], (old) =>
+        old ? { ...old, ...changes } : old,
+      );
+      return { previous, projectId: data.id };
+    },
+    onError: (err: Error, _changes, context) => {
+      if (context?.previous && context?.projectId) {
+        queryClient.setQueryData<ProjectDetail>(["project", context.projectId], context.previous);
+      }
+      toast.error(err.message || "Não foi possível atualizar a privacidade do projeto.");
+    },
+    onSuccess: () => {
+      toast.success("Privacidade do projeto atualizada!");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["project", data?.id] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+    },
+  });
+
   // FASE-03.H: permissões por id (não por nome) — homônimos não quebram.
   // creatorId vem mapeado de criador_id do backend; Number() normaliza string/número.
   const isOwner = data ? Number(data.creatorId) === Number(user?.id) : false;
@@ -270,6 +303,18 @@ function ProjectDetailPage() {
                           {data.status}
                         </Badge>
 
+                        {/* ETAPA 14: projeto privado (visibilidade 'privado' ou portfólio
+                            público bloqueado) — mesmo padrão do VerifiedContributions. */}
+                        {(data.visibilidade === "privado" || !data.permitirPortfolioPublico) && (
+                          <Badge
+                            variant="outline"
+                            className="rounded-full border-amber-500/30 bg-amber-500/10 text-[10px] text-amber-700 dark:text-amber-400"
+                          >
+                            <Lock className="mr-1 h-3 w-3" />
+                            Privado
+                          </Badge>
+                        )}
+
                         {isOwner && data.status !== "Finalizado" && (
                           <Button
                             size="sm"
@@ -366,6 +411,74 @@ function ProjectDetailPage() {
                   </CardContent>
                 </Card>
               </motion.div>
+
+              {/* ETAPA 14: controle de privacidade do projeto (somente o dono) */}
+              {isOwner && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.1 }}
+                >
+                  <Card className="rounded-3xl border border-border/60 bg-card shadow-sm">
+                    <CardContent className="space-y-4 p-6">
+                      <div className="flex items-center gap-2">
+                        <Lock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                        <h2 className="text-base font-bold text-foreground">Privacidade</h2>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Controle quem vê o projeto e se as entregas do squad aparecem no portfólio
+                        público dos membros.
+                      </p>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="privacidade-visibilidade">Visibilidade</Label>
+                          <Select
+                            value={data.visibilidade ?? "publico"}
+                            onValueChange={(value) =>
+                              updatePrivacy.mutate({
+                                visibilidade: value as "publico" | "privado",
+                              })
+                            }
+                          >
+                            <SelectTrigger
+                              id="privacidade-visibilidade"
+                              className="w-full cursor-pointer"
+                            >
+                              <SelectValue placeholder="Selecione a visibilidade" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="publico">Público</SelectItem>
+                              <SelectItem value="privado">Privado</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="flex items-center justify-between gap-3 rounded-2xl border border-border/50 bg-muted/30 p-3.5">
+                          <div className="space-y-0.5">
+                            <Label
+                              htmlFor="permitir-portfolio-publico"
+                              className="text-xs font-semibold"
+                            >
+                              Permitir portfólio público
+                            </Label>
+                            <p className="text-[11px] text-muted-foreground">
+                              Se desativado, o projeto aparece sem detalhes técnicos no portfólio
+                              dos membros.
+                            </p>
+                          </div>
+                          <Switch
+                            id="permitir-portfolio-publico"
+                            checked={data.permitirPortfolioPublico ?? true}
+                            onCheckedChange={(checked) =>
+                              updatePrivacy.mutate({ permitirPortfolioPublico: checked })
+                            }
+                            className="scale-95 cursor-pointer"
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )}
 
               <motion.div
                 initial={{ opacity: 0, y: 8 }}

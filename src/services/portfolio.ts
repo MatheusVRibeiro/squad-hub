@@ -96,7 +96,15 @@ function mapProjeto(p: Record<string, unknown>): PortfolioProjeto {
         .filter((c): c is Record<string, unknown> => typeof c === "object" && c !== null)
         .map(mapContribuicao)
     : [];
-  const ehPrivado = p.privado === true || str(p.visibilidade) === "privado";
+  // ETAPA 14: o projeto é tratado como privado quando o backend sinaliza via
+  // flag explícita `privado`, via visibilidade ENUM, OU quando o dono bloqueou
+  // a exibição no portfólio público (permitir_portfolio_publico=false) — aceita
+  // a variante snake_case da coluna e a camelCase do GET /usuarios/:id/portfolio.
+  const ehPrivado =
+    p.privado === true ||
+    str(p.visibilidade) === "privado" ||
+    p.permitir_portfolio_publico === false ||
+    p.permitirPortfolioPublico === false;
 
   return {
     projetoId: num(p.projetoId) ?? 0,

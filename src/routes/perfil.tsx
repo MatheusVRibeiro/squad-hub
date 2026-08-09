@@ -634,7 +634,7 @@ function PerfilPage() {
                     {avatar ? (
                       <AvatarImage src={avatar} alt={name || "Avatar"} className="object-cover" />
                     ) : null}
-                    <AvatarFallback className="bg-gradient-to-tr from-primary/10 to-primary/20 text-xl font-semibold text-primary">
+                    <AvatarFallback className="bg-gradient-to-tr from-primary to-indigo-600 text-xl font-semibold text-white">
                       {initials}
                     </AvatarFallback>
                   </Avatar>

@@ -31,6 +31,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { TopCommitters } from "@/components/projects/TopCommitters";
 import { TopContributors } from "@/components/projects/TopContributors";
+import { RecomendadosParaVoce } from "@/components/projects/RecomendadosParaVoce";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchProjects } from "@/services/projects";
 import { fetchReputation } from "@/services/reputation";
@@ -241,6 +242,9 @@ function DashboardPage() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Recomendados para você (ETAPA 16 — matching desenvolvedor ↔ projeto) */}
+          <RecomendadosParaVoce />
 
           {/* Seção de Gráficos Recharts */}
           <div className="grid gap-6 md:grid-cols-3">

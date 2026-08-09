@@ -20,7 +20,9 @@ import { ReputationOverview } from "@/components/profile/ReputationOverview";
 import { Achievements } from "@/components/profile/Achievements";
 import { ProjectHistory } from "@/components/profile/ProjectHistory";
 import { Reviews } from "@/components/profile/Reviews";
+import { VerifiedContributions } from "@/components/profile/VerifiedContributions";
 import { fetchReputation, type Reputation } from "@/services/reputation";
+import { getPortfolio, type Portfolio } from "@/services/portfolio";
 import { fetchMe } from "@/services/perfil";
 import {
   getFuncoes,
@@ -188,6 +190,64 @@ function ReputationState({
   return <>{render(data)}</>;
 }
 
+/**
+ * ETAPA 11 — estado de carregamento/erro/vazio da seção "Contribuições
+ * verificadas" (GET /usuarios/me/portfolio). Mesmo padrão do ReputationState:
+ * falha exibe mensagem + ação de tentar novamente — nunca dados fictícios.
+ */
+function PortfolioState({
+  data,
+  isLoading,
+  isError,
+  errorMessage,
+  onRetry,
+  skeletonClass,
+  render,
+}: {
+  data: Portfolio | undefined;
+  isLoading: boolean;
+  isError: boolean;
+  errorMessage: string;
+  onRetry: () => void;
+  skeletonClass: string;
+  render: (portfolio: Portfolio) => ReactNode;
+}) {
+  if (isLoading) return <Skeleton className={skeletonClass} />;
+
+  if (isError) {
+    return (
+      <div className="rounded-2xl border border-dashed p-8 text-center">
+        <p className="text-sm font-semibold text-foreground">
+          Não foi possível carregar suas contribuições verificadas
+        </p>
+        <p className="mx-auto mt-1 max-w-md text-xs text-muted-foreground">{errorMessage}</p>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={onRetry}
+          className="mt-4 cursor-pointer"
+        >
+          Tentar novamente
+        </Button>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="rounded-2xl border border-dashed p-8 text-center">
+        <p className="text-sm font-semibold text-foreground">Sem dados de portfólio</p>
+        <p className="mx-auto mt-1 max-w-md text-xs text-muted-foreground">
+          Conecte seu GitHub e conclua tarefas em squads para acumular evidências verificáveis.
+        </p>
+      </div>
+    );
+  }
+
+  return <>{render(data)}</>;
+}
+
 function PerfilPage() {
   const { user, updateUser } = useAuth();
   const [name, setName] = useState(user?.name ?? "");
@@ -292,6 +352,24 @@ function PerfilPage() {
   const reputationErrorMessage =
     reputationErrorObj instanceof Error
       ? reputationErrorObj.message
+      : "Tente novamente em instantes.";
+
+  // ETAPA 11 — portfólio verificável (GET /usuarios/me/portfolio): evidências
+  // GitHub por projeto (tarefas verificadas, commits, PRs mergeados).
+  const {
+    data: portfolio,
+    isLoading: loadingPortfolio,
+    isError: portfolioError,
+    error: portfolioErrorObj,
+    refetch: refetchPortfolio,
+  } = useQuery({
+    queryKey: ["portfolio", user?.id ?? user?.email],
+    queryFn: () => getPortfolio(user?.id),
+  });
+
+  const portfolioErrorMessage =
+    portfolioErrorObj instanceof Error
+      ? portfolioErrorObj.message
       : "Tente novamente em instantes.";
 
   const initials =
@@ -553,6 +631,12 @@ function PerfilPage() {
                 className="rounded-xl px-4 py-2 text-xs font-semibold cursor-pointer"
               >
                 Histórico
+              </TabsTrigger>
+              <TabsTrigger
+                value="portfolio"
+                className="rounded-xl px-4 py-2 text-xs font-semibold cursor-pointer"
+              >
+                Contribuições
               </TabsTrigger>
               <TabsTrigger
                 value="avaliacoes"
@@ -960,6 +1044,18 @@ function PerfilPage() {
                 onRetry={() => refetchReputation()}
                 skeletonClass="h-48 w-full rounded-2xl"
                 render={(rep) => <ProjectHistory items={rep.history} />}
+              />
+            </TabsContent>
+
+            <TabsContent value="portfolio">
+              <PortfolioState
+                data={portfolio}
+                isLoading={loadingPortfolio}
+                isError={portfolioError}
+                errorMessage={portfolioErrorMessage}
+                onRetry={() => refetchPortfolio()}
+                skeletonClass="h-48 w-full rounded-2xl"
+                render={(pf) => <VerifiedContributions projetos={pf.projetos} />}
               />
             </TabsContent>
 

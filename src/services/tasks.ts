@@ -98,12 +98,7 @@ export async function fetchProjectTasks(projectId: string): Promise<KanbanTask[]
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Ações registradas no histórico de responsáveis (ENUM do backend). */
-export type HistoricoAcao =
-  | "assumiu"
-  | "abandonou"
-  | "removido"
-  | "reatribuido"
-  | "concluiu";
+export type HistoricoAcao = "assumiu" | "abandonou" | "removido" | "reatribuido" | "concluiu";
 
 /** Registro normalizado do GET /historico-responsaveis (camelCase p/ a UI). */
 export type HistoricoResponsavel = {

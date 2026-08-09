@@ -210,11 +210,11 @@ export function KanbanBoard({
             .filter((id): id is number => id != null),
     );
     setModalMode("edit");
-        // ETAPA 9: carrega o histórico de responsáveis ao abrir o modal de edição.
-        loadHistorico(task.id);
-      }
+    // ETAPA 9: carrega o histórico de responsáveis ao abrir o modal de edição.
+    loadHistorico(task.id);
+  }
 
-      async function move(id: string, status: KanbanStatus) {
+  async function move(id: string, status: KanbanStatus) {
     if (readOnly) return;
     const task = tasks.find((t) => t.id === id);
     if (!task) return;
@@ -315,9 +315,7 @@ export function KanbanBoard({
       const updated = await abandonarTarefa(projectId, taskId);
       setTasks((prev) =>
         prev.map((t) =>
-          t.id === taskId
-            ? { ...t, assignee: undefined, status: updated.status || "todo" }
-            : t,
+          t.id === taskId ? { ...t, assignee: undefined, status: updated.status || "todo" } : t,
         ),
       );
       toast.success("Tarefa abandonada! Ela voltou para 'A fazer'.");

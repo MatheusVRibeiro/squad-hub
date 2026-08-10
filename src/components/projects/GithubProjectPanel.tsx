@@ -32,7 +32,13 @@ type Props = {
  */
 export function GithubProjectPanel({ projectId, isOwner }: Props) {
   const queryClient = useQueryClient();
-  const [installationId, setInstallationId] = useState<number | null>(null);
+  const [installationId, setInstallationId] = useState<number | null>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("montesquad_installation_id");
+      return saved ? Number(saved) : null;
+    }
+    return null;
+  });
   const [repoId, setRepoId] = useState<string>("");
   const [listing, setListing] = useState(false);
   const [repos, setRepos] = useState<InstallationRepository[]>([]);
@@ -89,7 +95,12 @@ export function GithubProjectPanel({ projectId, isOwner }: Props) {
   }
 
   useEffect(() => {
-    if (installationId !== null) carregarRepos();
+    if (installationId !== null) {
+      localStorage.setItem("montesquad_installation_id", String(installationId));
+      carregarRepos();
+    } else {
+      localStorage.removeItem("montesquad_installation_id");
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [installationId]);
 
@@ -201,9 +212,19 @@ export function GithubProjectPanel({ projectId, isOwner }: Props) {
         </div>
 
         <div className="space-y-2">
-          <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Installation ID (da GitHub App)
-          </label>
+          <div className="flex justify-between items-center">
+            <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Installation ID (da GitHub App)
+            </label>
+            <a
+              href="https://github.com/apps/montessquad/installations/new"
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs font-semibold text-primary hover:underline"
+            >
+              Autorizar no GitHub ↗
+            </a>
+          </div>
           <input
             type="number"
             value={installationId ?? ""}
@@ -211,6 +232,9 @@ export function GithubProjectPanel({ projectId, isOwner }: Props) {
             placeholder="Ex: 51234567"
             className="h-10 w-full rounded-xl border border-border/60 bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
+          <p className="text-[10px] text-muted-foreground leading-snug">
+            Caso já tenha autorizado, o ID é preenchido automaticamente de forma segura via cache local.
+          </p>
         </div>
 
         <div className="space-y-2">

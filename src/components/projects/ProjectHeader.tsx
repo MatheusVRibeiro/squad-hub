@@ -91,12 +91,9 @@ export function ProjectHeader({
   return (
     <Card className="overflow-hidden rounded-3xl border-border/60 bg-gradient-to-br from-card to-card/98 shadow-md dark:to-card/95">
       <div className="h-2 bg-gradient-to-r from-primary via-primary/80 to-primary/30" />
-      <CardContent className="space-y-3 p-5 sm:p-6">
+      <CardContent className="space-y-2 p-4 sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0 space-y-1">
-            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Projeto</p>
-            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">{data.name}</h1>
-          </div>
+          <h1 className="min-w-0 text-xl font-semibold tracking-tight sm:text-2xl">{data.name}</h1>
 
           <div className="flex flex-wrap items-center gap-2">
             <Badge

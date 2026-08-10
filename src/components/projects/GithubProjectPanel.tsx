@@ -196,6 +196,38 @@ export function GithubProjectPanel({ projectId, isOwner }: Props) {
     );
   }
 
+  if (!installationId) {
+    return (
+      <Card className="rounded-2xl border-border/60">
+        <CardContent className="space-y-4 py-5">
+          <div className="flex items-center gap-3">
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary">
+              <Github className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-foreground">Conectar repositório GitHub</p>
+              <p className="text-xs text-muted-foreground">
+                Vincule um repositório para rastrear branches, commits e Pull Requests nas tarefas.
+              </p>
+            </div>
+          </div>
+
+          <Button
+            size="sm"
+            onClick={() => {
+              localStorage.setItem("montesquad_auth_redirect", window.location.pathname);
+              window.location.href = "https://github.com/apps/montessquad/installations/new";
+            }}
+            className="w-full cursor-pointer flex items-center justify-center gap-2"
+          >
+            <Github className="h-4 w-4" />
+            Autorizar Acesso ao GitHub
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="rounded-2xl border-border/60">
       <CardContent className="space-y-4 py-5">
@@ -206,35 +238,9 @@ export function GithubProjectPanel({ projectId, isOwner }: Props) {
           <div>
             <p className="text-sm font-bold text-foreground">Conectar repositório GitHub</p>
             <p className="text-xs text-muted-foreground">
-              Vincule um repositório para rastrear branches, commits e Pull Requests nas tarefas.
+              Selecione um dos repositórios autorizados do seu GitHub.
             </p>
           </div>
-        </div>
-
-        <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Installation ID (da GitHub App)
-            </label>
-            <a
-              href="https://github.com/apps/montessquad/installations/new"
-              target="_blank"
-              rel="noreferrer"
-              className="text-xs font-semibold text-primary hover:underline"
-            >
-              Autorizar no GitHub ↗
-            </a>
-          </div>
-          <input
-            type="number"
-            value={installationId ?? ""}
-            onChange={(e) => setInstallationId(e.target.value ? Number(e.target.value) : null)}
-            placeholder="Ex: 51234567"
-            className="h-10 w-full rounded-xl border border-border/60 bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-          />
-          <p className="text-[10px] text-muted-foreground leading-snug">
-            Caso já tenha autorizado, o ID é preenchido automaticamente de forma segura via cache local.
-          </p>
         </div>
 
         <div className="space-y-2">
@@ -243,13 +249,7 @@ export function GithubProjectPanel({ projectId, isOwner }: Props) {
           </label>
           <Select value={repoId} onValueChange={setRepoId}>
             <SelectTrigger className="w-full cursor-pointer">
-              <SelectValue
-                placeholder={
-                  installationId !== null
-                    ? "Carregue os repositórios"
-                    : "Informe o Installation ID primeiro"
-                }
-              />
+              <SelectValue placeholder="Selecione um repositório..." />
             </SelectTrigger>
             <SelectContent>
               {repos.map((r) => (
@@ -262,34 +262,47 @@ export function GithubProjectPanel({ projectId, isOwner }: Props) {
           {repoError && <p className="text-xs text-destructive">{repoError}</p>}
         </div>
 
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={installationId === null || listing}
-            onClick={carregarRepos}
-            className="cursor-pointer"
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+          <button
+            type="button"
+            onClick={() => {
+              localStorage.setItem("montesquad_auth_redirect", window.location.pathname);
+              window.location.href = "https://github.com/apps/montessquad/installations/new";
+            }}
+            className="text-xs font-semibold text-primary hover:underline cursor-pointer"
           >
-            {listing ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <RefreshCw className="h-3.5 w-3.5" />
-            )}
-            Carregar repositórios
-          </Button>
-          <Button
-            size="sm"
-            disabled={!installationId || !repoId || connect.isPending}
-            onClick={() => connect.mutate()}
-            className="cursor-pointer"
-          >
-            {connect.isPending ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Link2 className="h-3.5 w-3.5" />
-            )}
-            Conectar
-          </Button>
+            Gerenciar permissões do GitHub ↗
+          </button>
+
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={listing}
+              onClick={carregarRepos}
+              className="cursor-pointer"
+            >
+              {listing ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <RefreshCw className="h-3.5 w-3.5" />
+              )}
+              Recarregar
+            </Button>
+            <Button
+              size="sm"
+              disabled={!repoId || connect.isPending}
+              onClick={() => connect.mutate()}
+              className="cursor-pointer"
+            >
+              {connect.isPending ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Link2 className="h-3.5 w-3.5" />
+              )}
+              Conectar
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

@@ -33,6 +33,16 @@ export function GitHubConnectionCard() {
   const [estado, setEstado] = useState<GithubConnectionState>("carregando");
   const [busy, setBusy] = useState(false);
   const [pedeSenha, setPedeSenha] = useState(false);
+  const [installationIdFromUrl, setInstallationIdFromUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const id = new URLSearchParams(window.location.search).get("installation_id");
+      if (id) {
+        setInstallationIdFromUrl(id);
+      }
+    }
+  }, []);
 
   const carregar = useCallback(() => {
     setEstado("carregando");
@@ -116,6 +126,17 @@ export function GitHubConnectionCard() {
       </CardHeader>
 
       <CardContent className="space-y-3 border-t border-border/20 px-6 py-5">
+        {installationIdFromUrl && (
+          <Alert className="rounded-xl border-emerald-500/40 bg-emerald-500/5">
+            <AlertDescription className="text-xs text-muted-foreground">
+              🚀 <strong>Instalação concluída com sucesso!</strong>
+              <br />
+              Seu ID de Instalação é: <strong className="text-foreground text-sm font-mono">{installationIdFromUrl}</strong>
+              <br />
+              Copie e guarde este número para conectar os repositórios nos seus projetos.
+            </AlertDescription>
+          </Alert>
+        )}
         {estado === "carregando" && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" /> Verificando vínculo...

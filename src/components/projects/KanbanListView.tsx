@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Calendar, CheckCircle2, Github, User } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -52,6 +53,11 @@ export function KanbanListView({
   onClaim: (taskId: string) => void;
   claimingId: string | null;
 }) {
+  // ETAPA perf: lista com carregamento progressivo — mostra 50 linhas e
+  // expande com "Ver mais N" (mesma filosofia do board, que limita a 20/coluna).
+  const [showAll, setShowAll] = useState(false);
+  const LIMIT = 50;
+
   if (tasks.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-border/40 p-8 text-center text-sm text-muted-foreground">
@@ -59,6 +65,9 @@ export function KanbanListView({
       </div>
     );
   }
+
+  const visible = showAll ? tasks : tasks.slice(0, LIMIT);
+  const hidden = tasks.length - visible.length;
 
   return (
     <div className="overflow-x-auto rounded-2xl border border-border/50">
@@ -76,7 +85,7 @@ export function KanbanListView({
           </tr>
         </thead>
         <tbody>
-          {tasks.map((t) => (
+          {visible.map((t) => (
             <tr
               key={t.id}
               className="border-b border-border/30 transition-colors last:border-0 hover:bg-muted/20"
@@ -167,6 +176,19 @@ export function KanbanListView({
           ))}
         </tbody>
       </table>
+
+      {/* ETAPA perf: footer de carregamento progressivo da lista. */}
+      {hidden > 0 && (
+        <div className="flex items-center justify-center border-t border-border/40 px-3 py-2.5">
+          <button
+            type="button"
+            onClick={() => setShowAll(true)}
+            className="cursor-pointer rounded-lg px-3 py-1.5 text-[11px] font-medium text-primary transition-colors hover:bg-primary/5"
+          >
+            Ver mais {hidden} {hidden === 1 ? "tarefa" : "tarefas"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

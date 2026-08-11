@@ -683,13 +683,6 @@ export function KanbanBoard({
         />
       ) : (
         <>
-          // ETAPA 16: abaixo de xl o Kanban rola horizontalmente com largura fixa // por coluna
-          (não comprime cards em tablet/mobile); em xl+ vira grid de // 4 colunas distribuídas.
-          Drag-and-drop (HTML5) funciona nos dois modos. // ETAPA 3 (Kanban escalável): altura
-          operacional controlada pela viewport // (header global h-14 + banner + tabs + toolbar) —
-          colunas rolam // internamente em vez de crescer a página indefinidamente. // ETAPA 16:
-          seletor de status no mobile — uma coluna por vez (não // comprime 4 colunas). Em sm+ o
-          board rola horizontalmente.
           <div className="flex gap-1.5 overflow-x-auto pb-1 sm:hidden">
             {COLUMNS.map((col) => {
               const total = tasks.filter((t) => t.status === col.key).length;

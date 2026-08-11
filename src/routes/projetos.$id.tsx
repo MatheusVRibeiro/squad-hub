@@ -48,7 +48,7 @@ function ProjectDetailPage() {
   const [activitySubTab, setActivitySubTab] = useState("timeline");
   const [teamSubTab, setTeamSubTab] = useState("membros");
 
-  const { data, isLoading, isError, error, refetch } = useQuery({
+  const { data, isLoading, isError, error, refetch, dataUpdatedAt } = useQuery({
     queryKey: ["project", id],
     queryFn: () => fetchProjectDetail(id),
   });
@@ -360,6 +360,8 @@ function ProjectDetailPage() {
                       projectName={data.name}
                       readOnly={!isMember}
                       members={data.members}
+                      onRefresh={() => refetch()}
+                      updatedAt={dataUpdatedAt}
                     />
                   </motion.div>
                   {isMember && (

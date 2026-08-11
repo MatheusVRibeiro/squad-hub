@@ -17,6 +17,7 @@ import {
   UserMinus,
   ArrowLeftRight,
   Inbox,
+  RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -117,6 +118,20 @@ function normalizeText(text: string): string {
     .trim();
 }
 
+/** ETAPA 12: formata "há Xs/m/h/d" a partir de um timestamp (dataUpdatedAt). */
+function formatAgo(timestamp: number): string {
+  const diff = Math.max(0, Date.now() - timestamp);
+  const s = Math.floor(diff / 1000);
+  if (s < 5) return "agora";
+  if (s < 60) return `há ${s}s`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `há ${m}min`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `há ${h}h`;
+  const d = Math.floor(h / 24);
+  return `há ${d}d`;
+}
+
 /** ETAPA 7: rótulos e tons da prioridade (badge do card). */
 const PRIORITY_LABEL: Record<string, string> = {
   low: "Baixa",
@@ -161,6 +176,8 @@ export function KanbanBoard({
   readOnly,
   members = [],
   isOwner = false,
+  onRefresh,
+  updatedAt,
 }: {
   initial: KanbanTask[];
   projectId: string;
@@ -169,6 +186,10 @@ export function KanbanBoard({
   members?: Member[];
   /** ETAPA 9: usuário logado é o dono do projeto (libera remover/reatribuir). */
   isOwner?: boolean;
+  /** ETAPA 12: refetch/invalidate existente da rota — o footer usa o ↻. */
+  onRefresh?: () => void;
+  /** ETAPA 12: timestamp da query TanStack (dataUpdatedAt) para "Atualizado há X". */
+  updatedAt?: number;
 }) {
   const { user: currentUser } = useAuth();
   const [tasks, setTasks] = useState<KanbanTask[]>(initial);
@@ -1133,6 +1154,33 @@ export function KanbanBoard({
           })}
         </div>
       )}
+
+      {/* ETAPA 12: footer do Kanban — total, atualização e volume renderizado. */}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/40 pt-3 text-[11px] text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <span className="font-medium text-foreground/80">
+            {tasks.length} {tasks.length === 1 ? "tarefa" : "tarefas"}
+          </span>
+          {updatedAt && (
+            <span className="inline-flex items-center gap-1">
+              Atualizado {formatAgo(updatedAt)}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {onRefresh && (
+            <button
+              type="button"
+              onClick={onRefresh}
+              aria-label="Atualizar quadro"
+              className="grid h-6 w-6 cursor-pointer place-items-center rounded-lg text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+            </button>
+          )}
+          <span>20 por página (visual)</span>
+        </div>
+      </div>
 
       {/* Modal Dialog de Detalhes / Criação de Tarefa */}
       <Dialog open={modalMode !== null} onOpenChange={(open) => !open && setModalMode(null)}>

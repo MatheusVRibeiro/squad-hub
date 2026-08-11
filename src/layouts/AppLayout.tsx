@@ -71,7 +71,15 @@ function ConfettiEffect() {
   );
 }
 
-export function AppLayout({ children }: { children: React.ReactNode }) {
+export function AppLayout({
+  children,
+  contentClassName,
+}: {
+  children: React.ReactNode;
+  /** ETAPA 14 (Kanban escalável): permite rotas amplas (ex.: projeto) sem
+   *  degradar dashboard/perfil — o main usa max-w-7xl só onde pedido. */
+  contentClassName?: string;
+}) {
   const { user, signOut } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -179,7 +187,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </DropdownMenu>
           </header>
 
-          <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+          <main className={cn("flex-1 px-4 py-6 sm:px-6 lg:px-8", contentClassName)}>
+            {children}
+          </main>
         </div>
       </div>
 

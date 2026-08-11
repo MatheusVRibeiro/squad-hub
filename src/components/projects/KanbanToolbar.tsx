@@ -9,10 +9,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import type { KanbanFilterState } from "@/types/kanbanFilters";
 
 /**
- * ETAPA 5 (Kanban escalável) — Toolbar de filtros do Kanban.
+ * ETAPA 5-6 (Kanban escalável) — Toolbar de filtros do Kanban.
  * Consome a fonte única de verdade (`KanbanFilterState`) via `filters`/
  * `onFiltersChange`. Filtros 100% visuais (estado local do KanbanBoard);
  * não alteram persistência nem chamam o backend.
@@ -36,6 +37,16 @@ export function KanbanToolbar({
 }) {
   const set = (patch: Partial<KanbanFilterState>) => onFiltersChange({ ...filters, ...patch });
 
+  const quickFilters: {
+    key: "onlyMine" | "unassigned" | "overdue";
+    label: string;
+    active: boolean;
+  }[] = [
+    { key: "onlyMine", label: "Minhas tarefas", active: filters.onlyMine },
+    { key: "unassigned", label: "Sem responsável", active: filters.unassigned },
+    { key: "overdue", label: "Atrasadas", active: filters.overdue },
+  ];
+
   return (
     <div className="flex flex-wrap items-center gap-2">
       <div className="relative min-w-[180px] flex-1 sm:max-w-xs">
@@ -58,6 +69,40 @@ export function KanbanToolbar({
             <X className="h-3 w-3" />
           </button>
         )}
+      </div>
+
+      {/* Quick filters (ETAPA 6) — um clique, combináveis entre si e com os
+          filtros avançados. */}
+      <div className="flex flex-wrap items-center gap-1.5">
+        {quickFilters.map((qf) => (
+          <button
+            key={qf.key}
+            type="button"
+            onClick={() => set({ [qf.key]: !qf.active })}
+            aria-pressed={qf.active}
+            className={cn(
+              "h-8 cursor-pointer rounded-full border px-3 text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
+              qf.active
+                ? "border-primary/40 bg-primary/10 text-primary"
+                : "border-border/60 bg-background/40 text-muted-foreground hover:border-primary/30 hover:text-foreground",
+            )}
+          >
+            {qf.label}
+          </button>
+        ))}
+        <button
+          type="button"
+          onClick={() => set({ priorities: filters.priorities.includes("high") ? [] : ["high"] })}
+          aria-pressed={filters.priorities.includes("high")}
+          className={cn(
+            "h-8 cursor-pointer rounded-full border px-3 text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
+            filters.priorities.includes("high")
+              ? "border-primary/40 bg-primary/10 text-primary"
+              : "border-border/60 bg-background/40 text-muted-foreground hover:border-primary/30 hover:text-foreground",
+          )}
+        >
+          Alta prioridade
+        </button>
       </div>
 
       <Select

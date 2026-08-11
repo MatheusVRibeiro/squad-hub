@@ -131,7 +131,8 @@ export function GitHubConnectionCard() {
             <AlertDescription className="text-xs text-muted-foreground">
               🚀 <strong>Instalação concluída com sucesso!</strong>
               <br />
-              Seu ID de Instalação é: <strong className="text-foreground text-sm font-mono">{installationIdFromUrl}</strong>
+              Seu ID de Instalação é:{" "}
+              <strong className="text-foreground text-sm font-mono">{installationIdFromUrl}</strong>
               <br />
               Copie e guarde este número para conectar os repositórios nos seus projetos.
             </AlertDescription>

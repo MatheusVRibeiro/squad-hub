@@ -4,7 +4,10 @@ import {
   AlertTriangle,
   BookOpen,
   Calendar,
+  CheckCircle2,
   Figma,
+  FolderGit2,
+  GitBranch,
   Github,
   Link2,
   Lock,
@@ -16,6 +19,7 @@ import {
   UserPlus,
   Users,
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -37,6 +41,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ApplicationForm } from "@/components/projects/ApplicationForm";
 import { cn } from "@/lib/utils";
+import { getProjectGithubStatus } from "@/services/github";
 import type { Application, ProjectDetail } from "@/services/projectDetail";
 
 /** Extrai "owner/repo" de uma URL do GitHub para o resumo compacto do header. */
@@ -127,12 +132,29 @@ export function ProjectHeader({
 }: ProjectHeaderProps) {
   const finalizado = data.status === "Finalizado";
 
+  // Resumo GitHub do banner (ETAPA 1 do plano Kanban escalável) — reutiliza a
+  // MESMA query do GithubProjectPanel (query key compartilhada → TanStack deduplica).
+  const githubQuery = useQuery({
+    queryKey: ["project-github-status", String(data.id)],
+    queryFn: () => getProjectGithubStatus(data.id),
+    enabled: isMember,
+    staleTime: 60_000,
+  });
+  const github = githubQuery.data;
+
   return (
     <Card className="overflow-hidden rounded-3xl border-border/60 bg-gradient-to-br from-card to-card/98 shadow-md dark:to-card/95">
       <div className="h-2 bg-gradient-to-r from-primary via-primary/80 to-primary/30" />
       <CardContent className="space-y-2 p-4 sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <h1 className="min-w-0 text-xl font-semibold tracking-tight sm:text-2xl">{data.name}</h1>
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+              <FolderGit2 className="h-5 w-5" />
+            </span>
+            <h1 className="min-w-0 text-xl font-semibold tracking-tight sm:text-2xl">
+              {data.name}
+            </h1>
+          </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <Badge
@@ -285,11 +307,16 @@ export function ProjectHeader({
         <p className="line-clamp-2 text-sm text-muted-foreground">{data.longDescription}</p>
 
         <div className="flex flex-wrap gap-1.5">
-          {data.technologies.map((t) => (
+          {data.technologies.slice(0, 5).map((t) => (
             <Badge key={t} variant="secondary" className="rounded-full text-[11px]">
               {t}
             </Badge>
           ))}
+          {data.technologies.length > 5 && (
+            <Badge variant="outline" className="rounded-full text-[11px] text-muted-foreground">
+              +{data.technologies.length - 5}
+            </Badge>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
@@ -301,6 +328,36 @@ export function ProjectHeader({
             {new Date(data.createdAt).toLocaleDateString("pt-BR")}
           </span>
         </div>
+
+        {/* Resumo GitHub do banner (ETAPA 1) — compacto, nunca o painel inteiro.
+            Reutiliza a query de status existente; mostra repo + branch + estado. */}
+        {isMember && (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl border border-border/40 bg-muted/30 px-3 py-1.5 text-xs">
+            <span className="inline-flex items-center gap-1.5 font-medium text-foreground/80">
+              <Github className="h-3.5 w-3.5" />
+              {github?.conectado && github.github_repository_full_name
+                ? github.github_repository_full_name
+                : data.repositorioUrl
+                  ? githubRepoLabel(data.repositorioUrl)
+                  : "GitHub não conectado"}
+            </span>
+            {github?.conectado && github.github_default_branch && (
+              <span className="inline-flex items-center gap-1 text-muted-foreground">
+                <GitBranch className="h-3 w-3" />
+                {github.github_default_branch}
+              </span>
+            )}
+            {github?.conectado ? (
+              <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                <CheckCircle2 className="h-3.5 w-3.5" /> Conectado
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-muted-foreground">
+                <Link2 className="h-3 w-3" /> Sem repositório
+              </span>
+            )}
+          </div>
+        )}
 
         {/* ETAPA 14: links de trabalho do squad — apenas os configurados, em
             formato compacto; membros/donos abrem em nova aba, visitantes não veem. */}

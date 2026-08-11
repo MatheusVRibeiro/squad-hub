@@ -110,6 +110,43 @@ function normalizeText(text: string): string {
     .trim();
 }
 
+/** ETAPA 7: rótulos e tons da prioridade (badge do card). */
+const PRIORITY_LABEL: Record<string, string> = {
+  low: "Baixa",
+  medium: "Média",
+  high: "Alta",
+};
+const PRIORITY_TONE: Record<string, string> = {
+  high: "bg-rose-500/10 text-rose-700 border-rose-500/20 dark:text-rose-400",
+  medium: "bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400",
+  low: "bg-blue-500/10 text-blue-700 border-blue-500/20 dark:text-blue-400",
+};
+
+/** ETAPA 7: rótulos e tons da dificuldade (detalhe secundário do card). */
+const DIFICULDADE_LABEL: Record<string, string> = {
+  avancada: "Avançada",
+  intermediaria: "Intermediária",
+  iniciante: "Iniciante",
+};
+const DIFICULDADE_TONE: Record<string, string> = {
+  avancada: "bg-rose-500/10 text-rose-700 border-rose-500/20 dark:text-rose-400",
+  intermediaria: "bg-violet-500/10 text-violet-700 border-violet-500/20 dark:text-violet-400",
+  iniciante: "bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-400",
+};
+
+/** ETAPA 7: formata o prazo no padrão do card — "12/out" (pt-BR, sem "de").
+ *  Datas puras "YYYY-MM-DD" são tratadas como hora local para não deslocar o dia. */
+function formatDueDate(iso?: string): string {
+  if (!iso) return "";
+  const raw = /^\d{4}-\d{2}-\d{2}$/.test(iso) ? `${iso}T00:00:00` : iso;
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d
+    .toLocaleDateString("pt-BR", { day: "numeric", month: "short" })
+    .replace(" de ", "/")
+    .replace(".", "");
+}
+
 export function KanbanBoard({
   initial,
   projectId,
@@ -617,6 +654,16 @@ export function KanbanBoard({
                     (t.assignee === "Você" && (currentUser?.name === "Você" || !currentUser?.name));
                   const completedSubtasks = t.subtasks?.filter((s) => s.done).length || 0;
                   const totalSubtasks = t.subtasks?.length || 0;
+                  // ETAPA 7: linha de evidência (subtarefas + GitHub) só aparece com conteúdo.
+                  const hasEvidence =
+                    totalSubtasks > 0 ||
+                    Boolean(
+                      t.githubBranch ||
+                      t.githubCommitsCount ||
+                      t.githubPrNumber ||
+                      t.githubPrStatus ||
+                      t.completionSource,
+                    );
 
                   return (
                     <motion.div
@@ -629,22 +676,30 @@ export function KanbanBoard({
                         draggable={!readOnly}
                         onDragStart={() => !readOnly && setDragId(t.id)}
                         onDragEnd={() => !readOnly && setDragId(null)}
+                        onClick={() => !readOnly && openEditModal(t)}
                         className={cn(
                           "group relative overflow-hidden border-l-4 border-y border-r border-border/60 bg-card/90 p-4 text-sm shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md",
                           col.borderTone,
                           !readOnly ? "cursor-grab active:cursor-grabbing" : "cursor-default",
                         )}
                       >
-                        <div className="flex items-start justify-between gap-1.5">
-                          <p
-                            onClick={() => !readOnly && setEditingTask(t)}
-                            className={cn(
-                              "font-medium leading-snug text-foreground/90 group-hover:text-foreground flex-1",
-                              !readOnly ? "cursor-pointer hover:text-primary" : "",
-                            )}
-                          >
+                        {/* ETAPA 7 — prioridade visual: 1. título · 2. prioridade */}
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="min-w-0 flex-1 font-medium leading-snug text-foreground/90 transition-colors group-hover:text-primary">
                             {t.title}
                           </p>
+
+                          {t.priority && (
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                "shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide",
+                                PRIORITY_TONE[t.priority],
+                              )}
+                            >
+                              {PRIORITY_LABEL[t.priority]}
+                            </Badge>
+                          )}
 
                           {/* Ação rápida para mobile */}
                           {!readOnly && (
@@ -652,7 +707,8 @@ export function KanbanBoard({
                               <DropdownMenuTrigger asChild>
                                 <button
                                   type="button"
-                                  className="h-6 w-6 grid place-items-center rounded-lg text-muted-foreground hover:bg-muted md:hidden cursor-pointer outline-none shrink-0"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="grid h-6 w-6 shrink-0 cursor-pointer place-items-center rounded-lg text-muted-foreground outline-none hover:bg-muted md:hidden"
                                   aria-label="Mover tarefa"
                                 >
                                   <MoreVertical className="h-3.5 w-3.5" />
@@ -662,35 +718,35 @@ export function KanbanBoard({
                                 align="end"
                                 className="w-40 rounded-xl shadow-md"
                               >
-                                <DropdownMenuLabel className="text-[9px] uppercase tracking-wider text-muted-foreground px-2 py-1">
+                                <DropdownMenuLabel className="px-2 py-1 text-[9px] uppercase tracking-wider text-muted-foreground">
                                   Mover para
                                 </DropdownMenuLabel>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   onClick={() => move(t.id, "todo")}
                                   disabled={t.status === "todo"}
-                                  className="cursor-pointer text-xs py-1.5 px-2"
+                                  className="cursor-pointer px-2 py-1.5 text-xs"
                                 >
                                   A fazer
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => move(t.id, "doing")}
                                   disabled={t.status === "doing"}
-                                  className="cursor-pointer text-xs py-1.5 px-2"
+                                  className="cursor-pointer px-2 py-1.5 text-xs"
                                 >
                                   Em progresso
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => move(t.id, "review")}
                                   disabled={t.status === "review"}
-                                  className="cursor-pointer text-xs py-1.5 px-2"
+                                  className="cursor-pointer px-2 py-1.5 text-xs"
                                 >
                                   Em revisão
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => move(t.id, "done")}
                                   disabled={t.status === "done"}
-                                  className="cursor-pointer text-xs py-1.5 px-2"
+                                  className="cursor-pointer px-2 py-1.5 text-xs"
                                 >
                                   Concluído
                                 </DropdownMenuItem>
@@ -699,214 +755,219 @@ export function KanbanBoard({
                           )}
                         </div>
 
-                        {/* Badges de prioridade, prazo e subtarefas */}
-                        <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                          {t.priority && (
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                "rounded-full text-[9px] font-bold py-0.5 px-2 tracking-wide uppercase border",
-                                t.priority === "high"
-                                  ? "bg-rose-500/10 text-rose-700 border-rose-500/20 dark:text-rose-400"
-                                  : t.priority === "medium"
-                                    ? "bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400"
-                                    : "bg-blue-500/10 text-blue-700 border-blue-500/20 dark:text-blue-400",
-                              )}
-                            >
-                              {t.priority === "low"
-                                ? "Baixa"
-                                : t.priority === "medium"
-                                  ? "Média"
-                                  : "Alta"}
-                            </Badge>
-                          )}
+                        {/* Resumo (descrição) — apenas se houver */}
+                        {t.description && (
+                          <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-muted-foreground/85">
+                            {t.description}
+                          </p>
+                        )}
 
-                          {t.dificuldade && (
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                "rounded-full text-[9px] font-bold py-0.5 px-2 tracking-wide uppercase border",
-                                t.dificuldade === "avancada"
-                                  ? "bg-rose-500/10 text-rose-700 border-rose-500/20 dark:text-rose-400"
-                                  : t.dificuldade === "intermediaria"
-                                    ? "bg-violet-500/10 text-violet-700 border-violet-500/20 dark:text-violet-400"
-                                    : "bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-400",
-                              )}
-                            >
-                              {t.dificuldade === "avancada"
-                                ? "Avançada"
-                                : t.dificuldade === "intermediaria"
-                                  ? "Intermediária"
-                                  : "Iniciante"}
-                            </Badge>
-                          )}
-
-                          {t.habilidades && t.habilidades.length > 0 && (
-                            <span className="inline-flex flex-wrap items-center gap-1">
-                              <GraduationCap className="h-3 w-3 text-muted-foreground/85 shrink-0" />
-                              {t.habilidades.slice(0, 3).map((h) => (
-                                <span
-                                  key={h}
-                                  className="text-[9px] text-muted-foreground bg-muted/30 px-2 py-0.5 rounded-full border border-border/10 font-medium"
-                                >
-                                  {h}
-                                </span>
-                              ))}
-                              {t.habilidades.length > 3 && (
-                                <span className="text-[9px] text-muted-foreground font-medium">
-                                  +{t.habilidades.length - 3}
-                                </span>
-                              )}
-                            </span>
-                          )}
-
-                          {t.dueDate && (
-                            <span className="inline-flex items-center gap-1 text-[9px] text-muted-foreground bg-muted/30 px-2 py-0.5 rounded-full border border-border/10 font-medium">
-                              <Calendar className="h-3 w-3 text-muted-foreground/85" />
-                              {new Date(t.dueDate).toLocaleDateString("pt-BR", {
-                                day: "numeric",
-                                month: "short",
-                              })}
-                            </span>
-                          )}
-
-                          {totalSubtasks > 0 && (
-                            <span className="inline-flex items-center gap-1 text-[9px] text-muted-foreground bg-muted/30 px-2 py-0.5 rounded-full border border-border/10 font-medium">
-                              <CheckSquare className="h-3 w-3 text-muted-foreground/85" />
-                              {completedSubtasks}/{totalSubtasks}
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border/20 pt-3">
-                          {!t.assignee && !readOnly && (
-                            <button
-                              onClick={() => handleClaim(t.id)}
-                              disabled={claimingId === t.id}
-                              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-medium tracking-wide border transition-all outline-none bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20 cursor-pointer disabled:opacity-60"
-                            >
-                              {claimingId === t.id ? (
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                              ) : (
-                                <Hand className="h-3 w-3 shrink-0" />
-                              )}
-                              <span>Assumir tarefa</span>
-                            </button>
-                          )}
-                          <GithubTaskBadge
-                            branch={t.githubBranch}
-                            commitsCount={t.githubCommitsCount}
-                            lastActivityAt={t.githubLastActivityAt}
-                            prNumber={t.githubPrNumber}
-                            prStatus={t.githubPrStatus}
-                            completionSource={t.completionSource}
-                          />
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <button
-                                disabled={readOnly}
+                        {/* ETAPA 7 — 3. prazo · 4. responsável */}
+                        {(t.dueDate || t.assignee) && (
+                          <div className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground">
+                            {t.dueDate && (
+                              <span className="inline-flex items-center gap-1 font-medium text-foreground/80">
+                                <Calendar className="h-3.5 w-3.5 text-muted-foreground/85" />
+                                {formatDueDate(t.dueDate)}
+                              </span>
+                            )}
+                            {t.dueDate && <span className="text-muted-foreground/30">·</span>}
+                            <span className="inline-flex min-w-0 items-center gap-1">
+                              <User className="h-3.5 w-3.5 shrink-0 text-muted-foreground/85" />
+                              <span
                                 className={cn(
-                                  "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-medium tracking-wide border transition-all text-left outline-none",
+                                  "truncate",
                                   t.assignee
-                                    ? "bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 cursor-pointer"
-                                    : readOnly
-                                      ? "bg-muted text-muted-foreground border-border cursor-default"
-                                      : "bg-muted text-muted-foreground border-border hover:bg-muted/80 cursor-pointer",
+                                    ? "font-medium text-foreground/80"
+                                    : "text-muted-foreground/70",
                                 )}
                               >
-                                <User className="h-3 w-3 shrink-0" />
-                                <span className="truncate max-w-[80px]">
-                                  {t.assignee || "Sem responsável"}
-                                </span>
-                              </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent
-                              align="start"
-                              className="w-48 rounded-xl shadow-lg border border-border/80 bg-card/95 backdrop-blur"
-                            >
-                              <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-1.5">
-                                Responsável
-                              </DropdownMenuLabel>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() => handleAssign(t.id, undefined)}
-                                className="cursor-pointer text-xs focus:bg-destructive/10 focus:text-destructive py-1.5 px-2"
+                                {t.assignee || "Sem responsável"}
+                              </span>
+                            </span>
+                          </div>
+                        )}
+
+                        {/* ETAPA 7 — única ação de assumir (task livre) */}
+                        {!t.assignee && !readOnly && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleClaim(t.id);
+                            }}
+                            disabled={claimingId === t.id}
+                            className="mt-2.5 inline-flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1.5 text-[11px] font-semibold tracking-wide text-emerald-600 outline-none transition-all hover:bg-emerald-500/20 disabled:opacity-60 dark:text-emerald-400"
+                          >
+                            {claimingId === t.id ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Hand className="h-3.5 w-3.5 shrink-0" />
+                            )}
+                            <span>Assumir tarefa</span>
+                          </button>
+                        )}
+
+                        {/* ETAPA 7 — 5. subtarefas · 6. evidência GitHub */}
+                        {hasEvidence && (
+                          <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+                            {totalSubtasks > 0 && (
+                              <span className="inline-flex items-center gap-1 rounded-full border border-border/10 bg-muted/30 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                <CheckSquare className="h-3 w-3 text-muted-foreground/85" />
+                                {completedSubtasks}/{totalSubtasks}
+                              </span>
+                            )}
+                            <GithubTaskBadge
+                              branch={t.githubBranch}
+                              commitsCount={t.githubCommitsCount}
+                              lastActivityAt={t.githubLastActivityAt}
+                              prNumber={t.githubPrNumber}
+                              prStatus={t.githubPrStatus}
+                              completionSource={t.completionSource}
+                            />
+                          </div>
+                        )}
+
+                        {/* ETAPA 7 — 7. detalhes secundários (dificuldade + habilidades) */}
+                        {(t.dificuldade || (t.habilidades?.length ?? 0) > 0) && (
+                          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                            {t.dificuldade && (
+                              <span
+                                className={cn(
+                                  "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide",
+                                  DIFICULDADE_TONE[t.dificuldade],
+                                )}
                               >
-                                Remover responsável
-                              </DropdownMenuItem>
-                              {members.map((m) => (
-                                <DropdownMenuItem
-                                  key={m.id}
-                                  onClick={() => handleAssign(t.id, m.name)}
-                                  className="cursor-pointer text-xs flex items-center justify-between py-1.5 px-2"
-                                >
-                                  <span>{m.name}</span>
-                                  {(t.assignee === m.name ||
-                                    (t.assignee === "Você" && m.name === "Você")) && (
-                                    <Check className="h-3 w-3 text-primary" />
+                                <GraduationCap className="h-3 w-3" />
+                                {DIFICULDADE_LABEL[t.dificuldade]}
+                              </span>
+                            )}
+                            {t.habilidades?.slice(0, 2).map((h) => (
+                              <span
+                                key={h}
+                                className="rounded-full border border-border/10 bg-muted/20 px-2 py-0.5 text-[9px] font-medium text-muted-foreground/80"
+                              >
+                                {h}
+                              </span>
+                            ))}
+                            {(t.habilidades?.length ?? 0) > 2 && (
+                              <span className="text-[9px] font-medium text-muted-foreground/70">
+                                +{(t.habilidades?.length ?? 0) - 2}
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        {/* ETAPA 7 — ações funcionais: responsável, abandonar, owner */}
+                        {!readOnly && (
+                          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border/20 pt-2.5">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button
+                                  type="button"
+                                  onClick={(e) => e.stopPropagation()}
+                                  title={t.assignee || "Sem responsável"}
+                                  aria-label="Alterar responsável"
+                                  className={cn(
+                                    "inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border transition-all outline-none",
+                                    t.assignee
+                                      ? "border-primary/20 bg-primary/10 text-primary hover:bg-primary/20"
+                                      : "border-border/60 bg-muted text-muted-foreground hover:bg-muted/80",
                                   )}
+                                >
+                                  <User className="h-3.5 w-3.5 shrink-0" />
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent
+                                align="start"
+                                className="w-48 rounded-xl border border-border/80 bg-card/95 shadow-lg backdrop-blur"
+                              >
+                                <DropdownMenuLabel className="px-2 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+                                  Responsável
+                                </DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => handleAssign(t.id, undefined)}
+                                  className="cursor-pointer px-2 py-1.5 text-xs focus:bg-destructive/10 focus:text-destructive"
+                                >
+                                  Remover responsável
                                 </DropdownMenuItem>
-                              ))}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                                {members.map((m) => (
+                                  <DropdownMenuItem
+                                    key={m.id}
+                                    onClick={() => handleAssign(t.id, m.name)}
+                                    className="flex cursor-pointer items-center justify-between px-2 py-1.5 text-xs"
+                                  >
+                                    <span>{m.name}</span>
+                                    {(t.assignee === m.name ||
+                                      (t.assignee === "Você" && m.name === "Você")) && (
+                                      <Check className="h-3 w-3 text-primary" />
+                                    )}
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
 
-                          {!readOnly && !isAssignedToMe && (
-                            <button
-                              type="button"
-                              onClick={() => handleAssign(t.id, currentUser?.name || "Você")}
-                              className="text-[10px] font-bold text-primary hover:text-primary/80 transition-colors uppercase tracking-wider outline-none cursor-pointer"
-                            >
-                              Pegar tarefa
-                            </button>
-                          )}
-
-                          {/* ETAPA 9: responsável atual pode abandonar a task */}
-                          {!readOnly && isAssignedToMe && t.assignee && (
-                            <button
-                              type="button"
-                              onClick={() => handleAbandon(t.id)}
-                              disabled={abandoningId === t.id}
-                              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-medium tracking-wide border transition-all outline-none bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20 hover:bg-amber-500/20 cursor-pointer disabled:opacity-60"
-                            >
-                              {abandoningId === t.id ? (
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                              ) : (
-                                <Hand className="h-3 w-3 shrink-0" />
-                              )}
-                              <span>Abandonar tarefa</span>
-                            </button>
-                          )}
-
-                          {/* ETAPA 9: owner remove responsável ou reatribui a outro membro */}
-                          {!readOnly && isOwner && t.assignee && (
                             <div className="flex items-center gap-1.5">
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveAssignee(t.id)}
-                                disabled={removingId === t.id}
-                                className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-medium tracking-wide border transition-all outline-none bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20 hover:bg-rose-500/20 cursor-pointer disabled:opacity-60"
-                              >
-                                {removingId === t.id ? (
-                                  <Loader2 className="h-3 w-3 animate-spin" />
-                                ) : (
-                                  <UserMinus className="h-3 w-3 shrink-0" />
-                                )}
-                                <span>Remover resp.</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setReassignTask(t);
-                                  setReassignUserId("");
-                                }}
-                                className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-medium tracking-wide border transition-all outline-none bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 cursor-pointer"
-                              >
-                                <ArrowLeftRight className="h-3 w-3 shrink-0" />
-                                <span>Reatribuir</span>
-                              </button>
+                              {/* ETAPA 9: responsável atual pode abandonar a task */}
+                              {isAssignedToMe && t.assignee && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleAbandon(t.id);
+                                  }}
+                                  disabled={abandoningId === t.id}
+                                  title="Abandonar tarefa"
+                                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[10px] font-medium tracking-wide text-amber-700 outline-none transition-all hover:bg-amber-500/20 disabled:opacity-60 dark:text-amber-400"
+                                >
+                                  {abandoningId === t.id ? (
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                  ) : (
+                                    <Hand className="h-3 w-3 shrink-0" />
+                                  )}
+                                  <span>Abandonar</span>
+                                </button>
+                              )}
+
+                              {/* ETAPA 9: owner remove responsável ou reatribui a outro membro */}
+                              {isOwner && t.assignee && (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleRemoveAssignee(t.id);
+                                    }}
+                                    disabled={removingId === t.id}
+                                    title="Remover responsável"
+                                    className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-[10px] font-medium tracking-wide text-rose-700 outline-none transition-all hover:bg-rose-500/20 disabled:opacity-60 dark:text-rose-400"
+                                  >
+                                    {removingId === t.id ? (
+                                      <Loader2 className="h-3 w-3 animate-spin" />
+                                    ) : (
+                                      <UserMinus className="h-3 w-3 shrink-0" />
+                                    )}
+                                    <span className="hidden sm:inline">Remover</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setReassignTask(t);
+                                      setReassignUserId("");
+                                    }}
+                                    title="Reatribuir a outro membro"
+                                    className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[10px] font-medium tracking-wide text-primary outline-none transition-all hover:bg-primary/20"
+                                  >
+                                    <ArrowLeftRight className="h-3 w-3 shrink-0" />
+                                    <span className="hidden sm:inline">Reatribuir</span>
+                                  </button>
+                                </>
+                              )}
                             </div>
-                          )}
-                        </div>
+                          </div>
+                        )}
                       </Card>
                     </motion.div>
                   );

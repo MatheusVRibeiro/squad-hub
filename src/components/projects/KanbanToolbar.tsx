@@ -1,4 +1,4 @@
-import { Search, X } from "lucide-react";
+import { LayoutGrid, List, Search, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,8 @@ export function KanbanToolbar({
   totalCount,
   hasActiveFilters,
   onClearFilters,
+  viewMode,
+  onViewModeChange,
 }: {
   filters: KanbanFilterState;
   onFiltersChange: (next: KanbanFilterState) => void;
@@ -35,6 +37,8 @@ export function KanbanToolbar({
   totalCount: number;
   hasActiveFilters: boolean;
   onClearFilters: () => void;
+  viewMode: "board" | "list";
+  onViewModeChange: (mode: "board" | "list") => void;
 }) {
   const set = (patch: Partial<KanbanFilterState>) => onFiltersChange({ ...filters, ...patch });
 
@@ -152,6 +156,42 @@ export function KanbanToolbar({
         onFiltersChange={onFiltersChange}
         assigneeOptions={assigneeOptions}
       />
+
+      {/* Toggle Quadro/Lista (ETAPA 11). */}
+      <div
+        role="group"
+        aria-label="Modo de exibição"
+        className="flex items-center rounded-xl border border-border/60 bg-background/40 p-0.5"
+      >
+        <button
+          type="button"
+          onClick={() => onViewModeChange("board")}
+          aria-pressed={viewMode === "board"}
+          aria-label="Modo quadro"
+          className={cn(
+            "grid h-7 w-8 cursor-pointer place-items-center rounded-lg transition-colors",
+            viewMode === "board"
+              ? "bg-primary/10 text-primary"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          <LayoutGrid className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => onViewModeChange("list")}
+          aria-pressed={viewMode === "list"}
+          aria-label="Modo lista"
+          className={cn(
+            "grid h-7 w-8 cursor-pointer place-items-center rounded-lg transition-colors",
+            viewMode === "list"
+              ? "bg-primary/10 text-primary"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          <List className="h-3.5 w-3.5" />
+        </button>
+      </div>
 
       <span className="whitespace-nowrap text-[11px] font-medium text-muted-foreground">
         {resultCount} de {totalCount} tarefas

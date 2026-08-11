@@ -610,6 +610,7 @@ export function KanbanBoard({
       <div className="flex gap-6 overflow-x-auto pb-2 xl:grid xl:grid-cols-4 xl:overflow-x-visible xl:max-h-[calc(100vh-240px)]">
         {COLUMNS.map((col) => {
           const list = filteredTasks.filter((t) => t.status === col.key);
+          const totalInCol = tasks.filter((t) => t.status === col.key).length;
           return (
             <div
               key={col.key}
@@ -637,7 +638,9 @@ export function KanbanBoard({
                     {col.label}
                   </span>
                   <span className="grid h-5 min-w-[20px] place-items-center rounded-full bg-muted/40 px-1 text-[10px] font-medium text-muted-foreground">
-                    {list.length}
+                    {hasActiveFilters && totalInCol !== list.length
+                      ? `${list.length} de ${totalInCol}`
+                      : totalInCol}
                   </span>
                 </div>
                 {!readOnly && (

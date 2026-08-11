@@ -45,7 +45,7 @@ export function GithubTaskBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-medium tracking-wide border",
+        "inline-flex min-w-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-medium tracking-wide border",
         branch
           ? "bg-neutral-900/5 text-neutral-700 dark:bg-neutral-100/10 dark:text-neutral-200 border-border/60"
           : "bg-muted text-muted-foreground border-border/40",
@@ -57,7 +57,10 @@ export function GithubTaskBadge({
         <span className="text-muted-foreground">GitHub…</span>
       ) : (
         <>
-          <span>GitHub ✓</span>
+          {/* ETAPA 7: mostra a branch no card quando houver ("GitHub: task/21-api-publica"). */}
+          <span className={cn("min-w-0 truncate", branch ? "max-w-[120px]" : "")}>
+            {branch ? `GitHub: ${branch}` : "GitHub ✓"}
+          </span>
           {prNumber && (
             <span
               className={cn(

@@ -56,8 +56,13 @@ import {
 } from "@/services/tasks";
 import { GithubTaskBadge } from "@/components/projects/GithubTaskBadge";
 import { GithubTaskActivity } from "@/components/projects/GithubTaskActivity";
-import { KanbanToolbar, type PriorityFilterValue } from "@/components/projects/KanbanToolbar";
+import { KanbanToolbar } from "@/components/projects/KanbanToolbar";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  DEFAULT_KANBAN_FILTERS,
+  kanbanFiltersAtivos,
+  type KanbanFilterState,
+} from "@/types/kanbanFilters";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -165,10 +170,8 @@ export function KanbanBoard({
 }) {
   const { user: currentUser } = useAuth();
   const [tasks, setTasks] = useState<KanbanTask[]>(initial);
-  // ETAPA 6: filtros visuais do Kanban (só frontend — não alteram persistência).
-  const [searchTerm, setSearchTerm] = useState("");
-  const [assigneeFilter, setAssigneeFilter] = useState("all");
-  const [priorityFilter, setPriorityFilter] = useState<PriorityFilterValue>("all");
+  // ETAPA 5 (Kanban escalável): fonte única de verdade para filtros.
+  const [filters, setFilters] = useState<KanbanFilterState>(DEFAULT_KANBAN_FILTERS);
   const [modalMode, setModalMode] = useState<"create" | "edit" | null>(null);
   const [modalCol, setModalCol] = useState<KanbanStatus>("todo");
   const [editingTask, setEditingTask] = useState<KanbanTask | null>(null);
@@ -222,17 +225,48 @@ export function KanbanBoard({
 
   // ETAPA 6: filtro combinado (título + responsável + prioridade) — apenas visual.
   const filteredTasks = useMemo(() => {
-    const q = normalizeText(searchTerm);
+    const q = normalizeText(filters.search);
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
     return tasks.filter((t) => {
-      if (q && !normalizeText(t.title).includes(q)) return false;
-      if (assigneeFilter !== "all" && t.assignee !== assigneeFilter) return false;
-      if (priorityFilter !== "all" && t.priority !== priorityFilter) return false;
+      // Busca: título, descrição e ID da tarefa (ETAPA 5).
+      if (q) {
+        const idMatch = String(t.id).includes(filters.search.trim());
+        const titleMatch = normalizeText(t.title).includes(q);
+        const descMatch = t.description ? normalizeText(t.description).includes(q) : false;
+        if (!idMatch && !titleMatch && !descMatch) return false;
+      }
+      // Status (colunas visíveis).
+      if (filters.statuses.length > 0 && !filters.statuses.includes(t.status)) return false;
+      // Prioridades.
+      if (
+        filters.priorities.length > 0 &&
+        (t.priority == null || !filters.priorities.includes(t.priority))
+      ) {
+        return false;
+      }
+      // Responsáveis.
+      if (filters.assignees.length > 0 && !filters.assignees.includes(t.assignee ?? "")) {
+        return false;
+      }
+      // Minhas tarefas.
+      if (filters.onlyMine && t.assignee !== currentUser?.name) return false;
+      // Sem responsável.
+      if (filters.unassigned && t.assignee) return false;
+      // Atrasadas: dueDate < hoje AND status != done.
+      if (filters.overdue) {
+        if (t.status === "done" || !t.dueDate) return false;
+        const due = new Date(t.dueDate);
+        due.setHours(0, 0, 0, 0);
+        if (due >= hoje) return false;
+      }
+      // Com prazo.
+      if (filters.hasDueDate && !t.dueDate) return false;
       return true;
     });
-  }, [tasks, searchTerm, assigneeFilter, priorityFilter]);
+  }, [tasks, filters, currentUser?.name]);
 
-  const hasActiveFilters =
-    searchTerm.trim() !== "" || assigneeFilter !== "all" || priorityFilter !== "all";
+  const hasActiveFilters = kanbanFiltersAtivos(filters);
 
   function openCreateModal(colKey: KanbanStatus) {
     setModalCol(colKey);
@@ -582,23 +616,15 @@ export function KanbanBoard({
 
   return (
     <div className="space-y-4">
-      {/* ETAPA 6: toolbar de filtros (busca por título, responsável, prioridade). */}
+      {/* ETAPA 5-6 (Kanban escalável): toolbar com estado centralizado de filtros. */}
       <KanbanToolbar
-        search={searchTerm}
-        onSearchChange={setSearchTerm}
+        filters={filters}
+        onFiltersChange={setFilters}
         assigneeOptions={assigneeOptions}
-        assigneeFilter={assigneeFilter}
-        onAssigneeChange={setAssigneeFilter}
-        priorityFilter={priorityFilter}
-        onPriorityChange={setPriorityFilter}
         resultCount={filteredTasks.length}
         totalCount={tasks.length}
         hasActiveFilters={hasActiveFilters}
-        onClearFilters={() => {
-          setSearchTerm("");
-          setAssigneeFilter("all");
-          setPriorityFilter("all");
-        }}
+        onClearFilters={() => setFilters(DEFAULT_KANBAN_FILTERS)}
       />
 
       {/* ETAPA 16: abaixo de xl o Kanban rola horizontalmente com largura fixa

@@ -602,9 +602,12 @@ export function KanbanBoard({
       />
 
       {/* ETAPA 16: abaixo de xl o Kanban rola horizontalmente com largura fixa
-          por coluna (não comprime cards em tablet/mobile); em xl+ vira grid de
-          4 colunas distribuídas. Drag-and-drop (HTML5) funciona nos dois modos. */}
-      <div className="flex gap-6 overflow-x-auto pb-2 xl:grid xl:grid-cols-4 xl:overflow-x-visible">
+                por coluna (não comprime cards em tablet/mobile); em xl+ vira grid de
+                4 colunas distribuídas. Drag-and-drop (HTML5) funciona nos dois modos.
+                ETAPA 3 (Kanban escalável): altura operacional controlada pela viewport
+                (header global h-14 + banner + tabs + toolbar) — colunas rolam
+                internamente em vez de crescer a página indefinidamente. */}
+      <div className="flex gap-6 overflow-x-auto pb-2 xl:grid xl:grid-cols-4 xl:overflow-x-visible xl:max-h-[calc(100vh-240px)]">
         {COLUMNS.map((col) => {
           const list = filteredTasks.filter((t) => t.status === col.key);
           return (
@@ -619,11 +622,11 @@ export function KanbanBoard({
                 setDragId(null);
               }}
               className={cn(
-                "flex min-h-[450px] w-[280px] shrink-0 flex-col gap-4 rounded-2xl border border-border/50 bg-card/45 p-4 backdrop-blur-sm transition-all duration-300 xl:w-auto xl:min-w-0",
+                "flex min-h-[450px] w-[280px] shrink-0 flex-col gap-4 rounded-2xl border border-border/50 bg-card/45 p-4 backdrop-blur-sm transition-all duration-300 xl:w-auto xl:min-w-0 xl:max-h-full xl:min-h-0",
                 dragId ? "border-primary/20 bg-primary/5/10 shadow-sm" : "",
               )}
             >
-              <div className="flex items-center justify-between">
+              <div className="flex shrink-0 items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span
                     className={cn(
@@ -650,7 +653,7 @@ export function KanbanBoard({
                 )}
               </div>
 
-              <div className="flex flex-1 flex-col gap-2.5">
+              <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pr-1">
                 {list.map((t) => {
                   const isAssignedToMe =
                     t.assignee === currentUser?.name ||

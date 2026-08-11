@@ -176,6 +176,9 @@ export function KanbanBoard({
   // ETAPA 9 (Kanban escalável): coluna Concluído limitada/recolhível.
   const [showAllDone, setShowAllDone] = useState(false);
   const [collapsedDone, setCollapsedDone] = useState(false);
+  // ETAPA 10 (Kanban escalável): carregamento progressivo — colunas não-done
+  // renderizam até 20 cards; clicar em "+ N tarefas" expande.
+  const [expandedCols, setExpandedCols] = useState<Set<string>>(new Set());
   const [modalMode, setModalMode] = useState<"create" | "edit" | null>(null);
   const [modalCol, setModalCol] = useState<KanbanStatus>("todo");
   const [editingTask, setEditingTask] = useState<KanbanTask | null>(null);
@@ -698,7 +701,12 @@ export function KanbanBoard({
                   </div>
                 ) : (
                   <>
-                    {(col.key === "done" && !showAllDone ? list.slice(0, 8) : list).map((t) => {
+                    {(col.key === "done" && !showAllDone
+                      ? list.slice(0, 8)
+                      : col.key !== "done" && !expandedCols.has(col.key)
+                        ? list.slice(0, 20)
+                        : list
+                    ).map((t) => {
                       const isAssignedToMe =
                         t.assignee === currentUser?.name ||
                         (t.assignee === "Você" &&
@@ -1084,6 +1092,23 @@ export function KanbanBoard({
                           {collapsedDone ? "Expandir concluídas" : "Recolher concluídas"}
                         </button>
                       </div>
+                    )}
+                    {/* ETAPA 10: footer de carregamento progressivo — colunas não-done
+                                                                                        com mais de 20 cards mostram "+ N tarefas". */}
+                    {col.key !== "done" && !expandedCols.has(col.key) && list.length > 20 && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExpandedCols((prev) => {
+                            const next = new Set(prev);
+                            next.add(col.key);
+                            return next;
+                          })
+                        }
+                        className="cursor-pointer rounded-lg px-2 py-1 text-[11px] font-medium text-primary hover:bg-primary/5"
+                      >
+                        + {list.length - 20} tarefas
+                      </button>
                     )}
                   </>
                 )}

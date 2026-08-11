@@ -161,7 +161,7 @@ export function ProjectHeader({
             {isMember && !finalizado && (
               <Button
                 size="sm"
-                className="rounded-xl bg-gradient-to-r from-primary to-primary/80"
+                className="rounded-xl bg-gradient-to-r from-primary to-primary/90"
                 onClick={onNovaTarefa}
               >
                 <Plus className="mr-1 h-4 w-4" /> Nova tarefa
@@ -255,7 +255,7 @@ export function ProjectHeader({
                     <DialogTrigger asChild>
                       <Button
                         size="sm"
-                        className="rounded-xl bg-gradient-to-r from-primary to-primary/80"
+                        className="rounded-xl bg-gradient-to-r from-primary to-primary/90"
                       >
                         Candidatar-se ao Squad
                       </Button>

@@ -66,8 +66,8 @@ export function GithubTaskBadge({
               className={cn(
                 "inline-flex items-center gap-0.5",
                 mergeado
-                  ? "text-emerald-600 dark:text-emerald-400"
-                  : "text-sky-600 dark:text-sky-400",
+                  ? "text-emerald-700 dark:text-emerald-400"
+                  : "text-sky-700 dark:text-sky-400",
               )}
             >
               <GitPullRequest className="h-3 w-3" />
@@ -82,7 +82,7 @@ export function GithubTaskBadge({
             </span>
           )}
           {mergeado && (
-            <span className="inline-flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400">
+            <span className="inline-flex items-center gap-0.5 text-emerald-700 dark:text-emerald-400">
               <CheckCircle2 className="h-3 w-3" />
               Concluído via GitHub
             </span>

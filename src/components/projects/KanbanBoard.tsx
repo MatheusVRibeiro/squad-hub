@@ -680,6 +680,14 @@ export function KanbanBoard({
                         onDragStart={() => !readOnly && setDragId(t.id)}
                         onDragEnd={() => !readOnly && setDragId(null)}
                         onClick={() => !readOnly && openEditModal(t)}
+                        tabIndex={readOnly ? undefined : 0}
+                        role={readOnly ? undefined : "button"}
+                        onKeyDown={(e) => {
+                          if (!readOnly && (e.key === "Enter" || e.key === " ")) {
+                            e.preventDefault();
+                            openEditModal(t);
+                          }
+                        }}
                         className={cn(
                           "group relative overflow-hidden border-l-4 border-y border-r border-border/60 bg-card/90 p-4 text-sm shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md",
                           col.borderTone,
@@ -711,7 +719,7 @@ export function KanbanBoard({
                                 <button
                                   type="button"
                                   onClick={(e) => e.stopPropagation()}
-                                  className="grid h-6 w-6 shrink-0 cursor-pointer place-items-center rounded-lg text-muted-foreground outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 md:hidden"
+                                  className="grid h-6 w-6 shrink-0 cursor-pointer place-items-center rounded-lg text-muted-foreground outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                                   aria-label="Mover tarefa"
                                 >
                                   <MoreVertical className="h-3.5 w-3.5" />
@@ -760,7 +768,7 @@ export function KanbanBoard({
 
                         {/* Resumo (descrição) — apenas se houver */}
                         {t.description && (
-                          <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-muted-foreground/85">
+                          <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
                             {t.description}
                           </p>
                         )}
@@ -770,19 +778,19 @@ export function KanbanBoard({
                           <div className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground">
                             {t.dueDate && (
                               <span className="inline-flex items-center gap-1 font-medium text-foreground/80">
-                                <Calendar className="h-3.5 w-3.5 text-muted-foreground/85" />
+                                <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
                                 {formatDueDate(t.dueDate)}
                               </span>
                             )}
                             {t.dueDate && <span className="text-muted-foreground/30">·</span>}
                             <span className="inline-flex min-w-0 items-center gap-1">
-                              <User className="h-3.5 w-3.5 shrink-0 text-muted-foreground/85" />
+                              <User className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                               <span
                                 className={cn(
                                   "truncate",
                                   t.assignee
                                     ? "font-medium text-foreground/80"
-                                    : "text-muted-foreground/70",
+                                    : "text-muted-foreground",
                                 )}
                               >
                                 {t.assignee || "Sem responsável"}
@@ -800,7 +808,7 @@ export function KanbanBoard({
                               handleClaim(t.id);
                             }}
                             disabled={claimingId === t.id}
-                            className="mt-2.5 inline-flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1.5 text-[11px] font-semibold tracking-wide text-emerald-600 outline-none transition-all hover:bg-emerald-500/20 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 disabled:opacity-60 dark:text-emerald-400"
+                            className="mt-2.5 inline-flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1.5 text-[11px] font-semibold tracking-wide text-emerald-700 outline-none transition-all hover:bg-emerald-500/20 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-60 dark:text-emerald-400"
                           >
                             {claimingId === t.id ? (
                               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -816,7 +824,7 @@ export function KanbanBoard({
                           <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
                             {totalSubtasks > 0 && (
                               <span className="inline-flex items-center gap-1 rounded-full border border-border/10 bg-muted/30 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                                <CheckSquare className="h-3 w-3 text-muted-foreground/85" />
+                                <CheckSquare className="h-3 w-3 text-muted-foreground" />
                                 {completedSubtasks}/{totalSubtasks}
                               </span>
                             )}
@@ -848,13 +856,13 @@ export function KanbanBoard({
                             {t.habilidades?.slice(0, 2).map((h) => (
                               <span
                                 key={h}
-                                className="rounded-full border border-border/10 bg-muted/20 px-2 py-0.5 text-[9px] font-medium text-muted-foreground/80"
+                                className="rounded-full border border-border/10 bg-muted/20 px-2 py-0.5 text-[9px] font-medium text-muted-foreground"
                               >
                                 {h}
                               </span>
                             ))}
                             {(t.habilidades?.length ?? 0) > 2 && (
-                              <span className="text-[9px] font-medium text-muted-foreground/70">
+                              <span className="text-[9px] font-medium text-muted-foreground">
                                 +{(t.habilidades?.length ?? 0) - 2}
                               </span>
                             )}
@@ -872,7 +880,7 @@ export function KanbanBoard({
                                   title={t.assignee || "Sem responsável"}
                                   aria-label="Alterar responsável"
                                   className={cn(
-                                    "inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border outline-none transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
+                                    "inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border outline-none transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                                     t.assignee
                                       ? "border-primary/20 bg-primary/10 text-primary hover:bg-primary/20"
                                       : "border-border/60 bg-muted text-muted-foreground hover:bg-muted/80",
@@ -922,7 +930,7 @@ export function KanbanBoard({
                                   }}
                                   disabled={abandoningId === t.id}
                                   title="Abandonar tarefa"
-                                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[10px] font-medium tracking-wide text-amber-700 outline-none transition-all hover:bg-amber-500/20 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 disabled:opacity-60 dark:text-amber-400"
+                                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[10px] font-medium tracking-wide text-amber-700 outline-none transition-all hover:bg-amber-500/20 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-60 dark:text-amber-400"
                                 >
                                   {abandoningId === t.id ? (
                                     <Loader2 className="h-3 w-3 animate-spin" />
@@ -945,7 +953,7 @@ export function KanbanBoard({
                                     disabled={removingId === t.id}
                                     title="Remover responsável"
                                     aria-label="Remover responsável da tarefa"
-                                    className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-[10px] font-medium tracking-wide text-rose-700 outline-none transition-all hover:bg-rose-500/20 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 disabled:opacity-60 dark:text-rose-400"
+                                    className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-[10px] font-medium tracking-wide text-rose-700 outline-none transition-all hover:bg-rose-500/20 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-60 dark:text-rose-400"
                                   >
                                     {removingId === t.id ? (
                                       <Loader2 className="h-3 w-3 animate-spin" />
@@ -963,7 +971,7 @@ export function KanbanBoard({
                                     }}
                                     title="Reatribuir a outro membro"
                                     aria-label="Reatribuir tarefa a outro membro"
-                                    className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[10px] font-medium tracking-wide text-primary outline-none transition-all hover:bg-primary/20 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+                                    className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-primary/20 bg-primary/15 px-2.5 py-1 text-[10px] font-medium tracking-wide text-primary outline-none transition-all hover:bg-primary/20 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                                   >
                                     <ArrowLeftRight className="h-3 w-3 shrink-0" />
                                     <span className="hidden sm:inline">Reatribuir</span>
@@ -980,7 +988,7 @@ export function KanbanBoard({
                 {list.length === 0 && (
                   <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border/40 p-6 text-center">
                     <Inbox className="h-5 w-5 text-muted-foreground/50" />
-                    <p className="text-xs font-medium text-muted-foreground/70">
+                    <p className="text-xs font-medium text-muted-foreground">
                       {hasActiveFilters
                         ? "Nenhuma tarefa corresponde aos filtros"
                         : readOnly
@@ -1021,7 +1029,7 @@ export function KanbanBoard({
                     placeholder="Título da tarefa..."
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    className="h-11 rounded-xl border-border/60 bg-background/40 px-4 focus-visible:ring-primary/20 text-sm font-semibold"
+                    className="h-11 rounded-xl border-border/60 bg-background/40 px-4 text-sm font-semibold"
                   />
                 ) : (
                   <div className="p-3 bg-muted/30 border border-border/40 rounded-xl font-semibold text-sm">
@@ -1068,7 +1076,7 @@ export function KanbanBoard({
                     type="date"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
-                    className="h-10 rounded-xl bg-background/40 text-xs focus-visible:ring-primary/20"
+                    className="h-10 rounded-xl bg-background/40 text-xs"
                   />
                 </div>
 
@@ -1145,7 +1153,7 @@ export function KanbanBoard({
                             key={h.id}
                             type="button"
                             onClick={() => toggleHabilidade(h.id)}
-                            className="cursor-pointer rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+                            className="cursor-pointer rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                             aria-pressed={ativa}
                           >
                             <Badge
@@ -1182,7 +1190,7 @@ export function KanbanBoard({
                 <Textarea
                   id="task-desc"
                   placeholder="Escreva detalhes sobre o escopo, link de mocks ou critérios de aceitação..."
-                  className="rounded-xl border-border/60 bg-background/40 p-3 text-xs leading-relaxed resize-none focus-visible:ring-primary/20"
+                  className="rounded-xl border-border/60 bg-background/40 p-3 text-xs leading-relaxed resize-none"
                   rows={3}
                   value={desc}
                   onChange={(e) => setDesc(e.target.value)}
@@ -1210,6 +1218,7 @@ export function KanbanBoard({
                             type="checkbox"
                             checked={s.done}
                             onChange={() => handleToggleSubtask(s.id)}
+                            aria-label={s.title}
                             className="h-4.5 w-4.5 rounded border-gray-300 text-primary focus:ring-primary/30 cursor-pointer"
                           />
                           <span
@@ -1225,7 +1234,7 @@ export function KanbanBoard({
                           type="button"
                           onClick={() => handleDeleteSubtask(s.id)}
                           aria-label="Remover subtarefa"
-                          className="cursor-pointer text-muted-foreground outline-none transition-colors hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+                          className="cursor-pointer text-muted-foreground outline-none transition-colors hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                         >
                           <Trash className="h-3.5 w-3.5" />
                         </button>
@@ -1238,7 +1247,7 @@ export function KanbanBoard({
                 <div className="flex gap-2">
                   <Input
                     placeholder="Adicionar subtarefa..."
-                    className="h-10 rounded-xl bg-background/40 text-xs focus-visible:ring-primary/20 flex-1"
+                    className="h-10 rounded-xl bg-background/40 text-xs flex-1"
                     value={newSubtask}
                     onChange={(e) => setNewSubtask(e.target.value)}
                     onKeyDown={(e) => {

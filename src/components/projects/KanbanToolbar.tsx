@@ -53,14 +53,14 @@ export function KanbanToolbar({
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           aria-label="Buscar tarefas por título"
-          className="h-9 rounded-xl border-border/60 bg-background/40 pl-9 pr-8 text-xs focus-visible:ring-primary/20"
+          className="h-9 rounded-xl border-border/60 bg-background/40 pl-9 pr-8 text-xs focus-visible:ring-ring"
         />
         {search && (
           <button
             type="button"
             onClick={() => onSearchChange("")}
             aria-label="Limpar busca"
-            className="absolute right-2 top-1/2 grid h-5 w-5 -translate-y-1/2 cursor-pointer place-items-center rounded-full text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+            className="absolute right-2 top-1/2 grid h-5 w-5 -translate-y-1/2 cursor-pointer place-items-center rounded-full text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
             <X className="h-3 w-3" />
           </button>

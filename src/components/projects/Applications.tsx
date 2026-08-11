@@ -104,7 +104,7 @@ export function Applications({
                   <div className="flex gap-2 sm:flex-col sm:w-32">
                     <Button
                       size="sm"
-                      className="rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 font-medium text-xs h-9"
+                      className="rounded-xl bg-emerald-700 text-white hover:bg-emerald-800 font-medium text-xs h-9"
                       onClick={() => decide(a.id, "approved")}
                     >
                       <Check className="mr-1.5 h-3.5 w-3.5" /> Aceitar
@@ -149,7 +149,7 @@ export function Applications({
                   className={
                     a.status === "approved"
                       ? "rounded-full border-emerald-500/30 bg-emerald-500/5 text-emerald-700 dark:text-emerald-400 font-semibold text-[10px]"
-                      : "rounded-full border-destructive/30 bg-destructive/5 text-destructive font-semibold text-[10px]"
+                      : "rounded-full border-destructive/30 bg-destructive/10 text-destructive font-semibold text-[10px]"
                   }
                 >
                   {a.status === "approved" ? "Aprovado" : "Recusado"}

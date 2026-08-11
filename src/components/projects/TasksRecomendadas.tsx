@@ -31,7 +31,7 @@ function TaskRecomendadaCard({
     <article className="flex flex-col gap-3 rounded-2xl border border-border/60 bg-card p-4 shadow-sm sm:p-5">
       <div className="flex items-start justify-between gap-2">
         <h3 className="line-clamp-2 min-w-0 text-sm font-bold text-foreground/90">{task.titulo}</h3>
-        <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-bold text-primary">
+        <span className="shrink-0 rounded-full bg-primary/15 px-2 py-0.5 text-[11px] font-bold text-primary">
           {Math.round(score)}%
         </span>
       </div>

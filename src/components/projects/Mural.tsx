@@ -92,7 +92,7 @@ export function Mural({
       </div>
 
       {!readOnly ? (
-        <div className="flex flex-col gap-3 rounded-2xl border border-border/70 bg-card/75 p-4 shadow-sm transition-all focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/10">
+        <div className="flex flex-col gap-3 rounded-2xl border border-border/70 bg-card/75 p-4 shadow-sm transition-all focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/40">
           <Textarea
             value={draft}
             onChange={(e) => setDraft(e.target.value)}

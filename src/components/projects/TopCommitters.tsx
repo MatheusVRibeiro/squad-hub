@@ -82,7 +82,7 @@ export function TopCommitters({
         <ul className="mt-3 space-y-2">
           {query.data.map((c, i) => (
             <li key={c.userId ?? `anon-${i}`} className="flex items-center gap-3">
-              <div className="w-5 text-center text-sm font-bold text-muted-foreground/70">
+              <div className="w-5 text-center text-sm font-bold text-muted-foreground">
                 {i + 1}.
               </div>
               {c.avatarUrl ? (

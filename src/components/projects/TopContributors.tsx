@@ -91,7 +91,7 @@ export function TopContributors({
         <ul className="mt-3 space-y-2.5">
           {query.data.map((c, i) => (
             <li key={c.userId ?? `anon-${i}`} className="flex items-center gap-3">
-              <div className="w-6 text-center text-base font-extrabold text-muted-foreground/70">
+              <div className="w-6 text-center text-base font-extrabold text-muted-foreground">
                 {i + 1}
               </div>
               {c.avatarUrl ? (
@@ -108,7 +108,7 @@ export function TopContributors({
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline gap-2">
                   <p className="truncate text-xs font-bold text-foreground/90">{c.name}</p>
-                  <span className="text-xs font-extrabold text-amber-600 dark:text-amber-400">
+                  <span className="text-xs font-extrabold text-amber-700 dark:text-amber-400">
                     {c.score} pts
                   </span>
                 </div>

@@ -1,10 +1,15 @@
+import type { ReactNode } from "react";
+
 import {
   AlertTriangle,
+  BookOpen,
   Calendar,
+  Figma,
   Github,
   Link2,
   Lock,
   LogOut,
+  MessageSquare,
   MoreHorizontal,
   Plus,
   Settings,
@@ -41,6 +46,40 @@ function githubRepoLabel(url: string): string {
   } catch {
     return url;
   }
+}
+
+/** Pílula compacta de link de trabalho (ETAPA 14) — ícone + rótulo, abre em nova aba. */
+function LinkPill({
+  href,
+  label,
+  title,
+  ariaLabel,
+  icon,
+  hoverClass,
+}: {
+  href: string;
+  label: string;
+  title?: string;
+  ariaLabel: string;
+  icon: ReactNode;
+  hoverClass?: string;
+}) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      title={title}
+      aria-label={ariaLabel}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-muted/40 px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary",
+        hoverClass,
+      )}
+    >
+      {icon}
+      {label}
+    </a>
+  );
 }
 
 type ProjectHeaderProps = {
@@ -261,17 +300,51 @@ export function ProjectHeader({
             <Calendar className="h-3.5 w-3.5" /> Criado por {data.createdBy} ·{" "}
             {new Date(data.createdAt).toLocaleDateString("pt-BR")}
           </span>
-          {data.repositorioUrl && (
-            <a
-              href={data.repositorioUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1.5 text-primary hover:underline"
-            >
-              <Github className="h-3.5 w-3.5" /> GitHub: {githubRepoLabel(data.repositorioUrl)} ✓
-            </a>
-          )}
         </div>
+
+        {/* ETAPA 14: links de trabalho do squad — apenas os configurados, em
+            formato compacto; membros/donos abrem em nova aba, visitantes não veem. */}
+        {isMember &&
+          (data.repositorioUrl || data.figmaUrl || data.discordUrl || data.documentacaoUrl) && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              {data.repositorioUrl && (
+                <LinkPill
+                  href={data.repositorioUrl}
+                  label="GitHub"
+                  title={githubRepoLabel(data.repositorioUrl)}
+                  ariaLabel="Abrir repositório do projeto no GitHub"
+                  icon={<Github className="h-3.5 w-3.5" />}
+                />
+              )}
+              {data.figmaUrl && (
+                <LinkPill
+                  href={data.figmaUrl}
+                  label="Figma"
+                  ariaLabel="Abrir protótipo do projeto no Figma"
+                  icon={<Figma className="h-3.5 w-3.5" />}
+                  hoverClass="hover:border-rose-500/30 hover:bg-rose-500/5 hover:text-rose-600"
+                />
+              )}
+              {data.discordUrl && (
+                <LinkPill
+                  href={data.discordUrl}
+                  label="Discord"
+                  ariaLabel="Entrar no canal de comunicação do squad"
+                  icon={<MessageSquare className="h-3.5 w-3.5" />}
+                  hoverClass="hover:border-indigo-500/30 hover:bg-indigo-500/5 hover:text-indigo-600"
+                />
+              )}
+              {data.documentacaoUrl && (
+                <LinkPill
+                  href={data.documentacaoUrl}
+                  label="Docs"
+                  ariaLabel="Abrir documentação do projeto"
+                  icon={<BookOpen className="h-3.5 w-3.5" />}
+                  hoverClass="hover:border-amber-500/30 hover:bg-amber-500/5 hover:text-amber-600"
+                />
+              )}
+            </div>
+          )}
       </CardContent>
     </Card>
   );

@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { KanbanFiltersDrawer } from "@/components/projects/KanbanFiltersDrawer";
 import { cn } from "@/lib/utils";
 import type { KanbanFilterState } from "@/types/kanbanFilters";
 
@@ -144,6 +145,13 @@ export function KanbanToolbar({
           <SelectItem value="high">Alta</SelectItem>
         </SelectContent>
       </Select>
+
+      {/* Drawer de filtros avançados (ETAPA 7) — mesma fonte de estado. */}
+      <KanbanFiltersDrawer
+        filters={filters}
+        onFiltersChange={onFiltersChange}
+        assigneeOptions={assigneeOptions}
+      />
 
       <span className="whitespace-nowrap text-[11px] font-medium text-muted-foreground">
         {resultCount} de {totalCount} tarefas

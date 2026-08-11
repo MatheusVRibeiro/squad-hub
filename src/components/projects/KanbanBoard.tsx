@@ -711,7 +711,7 @@ export function KanbanBoard({
                                 <button
                                   type="button"
                                   onClick={(e) => e.stopPropagation()}
-                                  className="grid h-6 w-6 shrink-0 cursor-pointer place-items-center rounded-lg text-muted-foreground outline-none hover:bg-muted md:hidden"
+                                  className="grid h-6 w-6 shrink-0 cursor-pointer place-items-center rounded-lg text-muted-foreground outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 md:hidden"
                                   aria-label="Mover tarefa"
                                 >
                                   <MoreVertical className="h-3.5 w-3.5" />
@@ -800,7 +800,7 @@ export function KanbanBoard({
                               handleClaim(t.id);
                             }}
                             disabled={claimingId === t.id}
-                            className="mt-2.5 inline-flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1.5 text-[11px] font-semibold tracking-wide text-emerald-600 outline-none transition-all hover:bg-emerald-500/20 disabled:opacity-60 dark:text-emerald-400"
+                            className="mt-2.5 inline-flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1.5 text-[11px] font-semibold tracking-wide text-emerald-600 outline-none transition-all hover:bg-emerald-500/20 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 disabled:opacity-60 dark:text-emerald-400"
                           >
                             {claimingId === t.id ? (
                               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -872,7 +872,7 @@ export function KanbanBoard({
                                   title={t.assignee || "Sem responsável"}
                                   aria-label="Alterar responsável"
                                   className={cn(
-                                    "inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border transition-all outline-none",
+                                    "inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border outline-none transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
                                     t.assignee
                                       ? "border-primary/20 bg-primary/10 text-primary hover:bg-primary/20"
                                       : "border-border/60 bg-muted text-muted-foreground hover:bg-muted/80",
@@ -922,7 +922,7 @@ export function KanbanBoard({
                                   }}
                                   disabled={abandoningId === t.id}
                                   title="Abandonar tarefa"
-                                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[10px] font-medium tracking-wide text-amber-700 outline-none transition-all hover:bg-amber-500/20 disabled:opacity-60 dark:text-amber-400"
+                                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[10px] font-medium tracking-wide text-amber-700 outline-none transition-all hover:bg-amber-500/20 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 disabled:opacity-60 dark:text-amber-400"
                                 >
                                   {abandoningId === t.id ? (
                                     <Loader2 className="h-3 w-3 animate-spin" />
@@ -944,7 +944,8 @@ export function KanbanBoard({
                                     }}
                                     disabled={removingId === t.id}
                                     title="Remover responsável"
-                                    className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-[10px] font-medium tracking-wide text-rose-700 outline-none transition-all hover:bg-rose-500/20 disabled:opacity-60 dark:text-rose-400"
+                                    aria-label="Remover responsável da tarefa"
+                                    className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-[10px] font-medium tracking-wide text-rose-700 outline-none transition-all hover:bg-rose-500/20 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 disabled:opacity-60 dark:text-rose-400"
                                   >
                                     {removingId === t.id ? (
                                       <Loader2 className="h-3 w-3 animate-spin" />
@@ -961,7 +962,8 @@ export function KanbanBoard({
                                       setReassignUserId("");
                                     }}
                                     title="Reatribuir a outro membro"
-                                    className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[10px] font-medium tracking-wide text-primary outline-none transition-all hover:bg-primary/20"
+                                    aria-label="Reatribuir tarefa a outro membro"
+                                    className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[10px] font-medium tracking-wide text-primary outline-none transition-all hover:bg-primary/20 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
                                   >
                                     <ArrowLeftRight className="h-3 w-3 shrink-0" />
                                     <span className="hidden sm:inline">Reatribuir</span>
@@ -1143,7 +1145,7 @@ export function KanbanBoard({
                             key={h.id}
                             type="button"
                             onClick={() => toggleHabilidade(h.id)}
-                            className="outline-none cursor-pointer"
+                            className="cursor-pointer rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
                             aria-pressed={ativa}
                           >
                             <Badge
@@ -1222,7 +1224,8 @@ export function KanbanBoard({
                         <button
                           type="button"
                           onClick={() => handleDeleteSubtask(s.id)}
-                          className="text-muted-foreground hover:text-destructive transition-colors outline-none cursor-pointer"
+                          aria-label="Remover subtarefa"
+                          className="cursor-pointer text-muted-foreground outline-none transition-colors hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
                         >
                           <Trash className="h-3.5 w-3.5" />
                         </button>

@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
 import { NotificationsMenu } from "@/components/NotificationsMenu";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
@@ -198,14 +198,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </motion.div>
 
             <div className="space-y-2">
-              <h2 className="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 bg-clip-text text-transparent">
+              <DialogTitle className="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 bg-clip-text text-transparent">
                 LEVEL UP!
-              </h2>
+              </DialogTitle>
               <p className="text-3xl font-black text-foreground">Nível {levelUpData?.level}</p>
-              <p className="text-xs text-muted-foreground max-w-xs px-2 leading-relaxed">
+              <DialogDescription className="text-xs text-muted-foreground max-w-xs px-2 leading-relaxed">
                 Parabéns! Você concluiu tarefas com sucesso e subiu de nível. Continue assim para
                 conquistar ainda mais espaço e reputação na comunidade!
-              </p>
+              </DialogDescription>
             </div>
 
             <Button

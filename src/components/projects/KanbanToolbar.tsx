@@ -60,7 +60,7 @@ export function KanbanToolbar({
             type="button"
             onClick={() => onSearchChange("")}
             aria-label="Limpar busca"
-            className="absolute right-2 top-1/2 grid h-5 w-5 -translate-y-1/2 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer outline-none"
+            className="absolute right-2 top-1/2 grid h-5 w-5 -translate-y-1/2 cursor-pointer place-items-center rounded-full text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
           >
             <X className="h-3 w-3" />
           </button>

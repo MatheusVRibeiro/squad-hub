@@ -206,12 +206,14 @@ export function ProjectCard({ project, index = 0 }: { project: Project; index?: 
                 <Check className="h-8 w-8 stroke-[3]" />
               </motion.div>
               <div className="space-y-1.5">
-                <h3 className="text-lg font-bold text-foreground">Solicitação Enviada!</h3>
-                <p className="text-xs text-muted-foreground max-w-sm px-4 leading-relaxed">
+                <DialogTitle className="text-lg font-bold text-foreground">
+                  Solicitação Enviada!
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground max-w-sm px-4 leading-relaxed">
                   Sua apresentação e habilidades foram enviadas para o criador do projeto{" "}
                   <strong>{project.name}</strong>. Você será avisado no painel quando seu pedido for
                   avaliado.
-                </p>
+                </DialogDescription>
               </div>
               <Button
                 onClick={() => setOpen(false)}

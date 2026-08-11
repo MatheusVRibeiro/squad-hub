@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ResetarSenhaRouteImport } from './routes/resetar-senha'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as RecuperarSenhaRouteImport } from './routes/recuperar-senha'
+import { Route as RankingRouteImport } from './routes/ranking'
 import { Route as ProjetosRouteImport } from './routes/projetos'
 import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as NotificacoesRouteImport } from './routes/notificacoes'
@@ -40,6 +41,11 @@ const RegisterRoute = RegisterRouteImport.update({
 const RecuperarSenhaRoute = RecuperarSenhaRouteImport.update({
   id: '/recuperar-senha',
   path: '/recuperar-senha',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RankingRoute = RankingRouteImport.update({
+  id: '/ranking',
+  path: '/ranking',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProjetosRoute = ProjetosRouteImport.update({
@@ -123,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/notificacoes': typeof NotificacoesRoute
   '/perfil': typeof PerfilRoute
   '/projetos': typeof ProjetosRouteWithChildren
+  '/ranking': typeof RankingRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/register': typeof RegisterRoute
   '/resetar-senha': typeof ResetarSenhaRoute
@@ -141,6 +148,7 @@ export interface FileRoutesByTo {
   '/meus-projetos': typeof MeusProjetosRoute
   '/notificacoes': typeof NotificacoesRoute
   '/perfil': typeof PerfilRoute
+  '/ranking': typeof RankingRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/register': typeof RegisterRoute
   '/resetar-senha': typeof ResetarSenhaRoute
@@ -161,6 +169,7 @@ export interface FileRoutesById {
   '/notificacoes': typeof NotificacoesRoute
   '/perfil': typeof PerfilRoute
   '/projetos': typeof ProjetosRouteWithChildren
+  '/ranking': typeof RankingRoute
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/register': typeof RegisterRoute
   '/resetar-senha': typeof ResetarSenhaRoute
@@ -182,6 +191,7 @@ export interface FileRouteTypes {
     | '/notificacoes'
     | '/perfil'
     | '/projetos'
+    | '/ranking'
     | '/recuperar-senha'
     | '/register'
     | '/resetar-senha'
@@ -200,6 +210,7 @@ export interface FileRouteTypes {
     | '/meus-projetos'
     | '/notificacoes'
     | '/perfil'
+    | '/ranking'
     | '/recuperar-senha'
     | '/register'
     | '/resetar-senha'
@@ -219,6 +230,7 @@ export interface FileRouteTypes {
     | '/notificacoes'
     | '/perfil'
     | '/projetos'
+    | '/ranking'
     | '/recuperar-senha'
     | '/register'
     | '/resetar-senha'
@@ -239,6 +251,7 @@ export interface RootRouteChildren {
   NotificacoesRoute: typeof NotificacoesRoute
   PerfilRoute: typeof PerfilRoute
   ProjetosRoute: typeof ProjetosRouteWithChildren
+  RankingRoute: typeof RankingRoute
   RecuperarSenhaRoute: typeof RecuperarSenhaRoute
   RegisterRoute: typeof RegisterRoute
   ResetarSenhaRoute: typeof ResetarSenhaRoute
@@ -268,6 +281,13 @@ declare module '@tanstack/react-router' {
       path: '/recuperar-senha'
       fullPath: '/recuperar-senha'
       preLoaderRoute: typeof RecuperarSenhaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ranking': {
+      id: '/ranking'
+      path: '/ranking'
+      fullPath: '/ranking'
+      preLoaderRoute: typeof RankingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/projetos': {
@@ -396,6 +416,7 @@ const rootRouteChildren: RootRouteChildren = {
   NotificacoesRoute: NotificacoesRoute,
   PerfilRoute: PerfilRoute,
   ProjetosRoute: ProjetosRouteWithChildren,
+  RankingRoute: RankingRoute,
   RecuperarSenhaRoute: RecuperarSenhaRoute,
   RegisterRoute: RegisterRoute,
   ResetarSenhaRoute: ResetarSenhaRoute,

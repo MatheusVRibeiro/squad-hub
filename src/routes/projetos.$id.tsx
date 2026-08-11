@@ -342,6 +342,7 @@ function ProjectDetailPage() {
                     <TabsTrigger value="equipe">Equipe</TabsTrigger>
                     <TabsTrigger value="github">GitHub</TabsTrigger>
                     <TabsTrigger value="insights">Insights</TabsTrigger>
+                    {isOwner && <TabsTrigger value="configuracoes">Configurações</TabsTrigger>}
                   </TabsList>
                 </div>
 
@@ -471,17 +472,22 @@ function ProjectDetailPage() {
                     <TopCommitters projectId={data.id} scope="project" limit={5} />
                   </motion.div>
                 </TabsContent>
-              </Tabs>
 
-              {/* ProjectSettings (ETAPA 18) — Privacidade + Links + Encerrar (somente dono). */}
-              <ProjectSettings
-                data={data}
-                isOwner={isOwner}
-                updatePrivacy={updatePrivacy}
-                updateLinks={updateLinks}
-                closing={closing}
-                onCloseProject={handleCloseProject}
-              />
+                {/* SettingsSection (ETAPA 2 do plano Kanban escalável) — Privacidade +
+                                    Links + Encerrar (somente dono), agora DENTRO da tab Configurações. */}
+                {isOwner && (
+                  <TabsContent value="configuracoes" className="scroll-mt-16 space-y-4">
+                    <ProjectSettings
+                      data={data}
+                      isOwner={isOwner}
+                      updatePrivacy={updatePrivacy}
+                      updateLinks={updateLinks}
+                      closing={closing}
+                      onCloseProject={handleCloseProject}
+                    />
+                  </TabsContent>
+                )}
+              </Tabs>
             </>
           )}
         </div>

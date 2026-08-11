@@ -208,6 +208,7 @@ describe("ETAPA 20 — acessibilidade da tela de projeto", () => {
       "Equipe",
       "GitHub",
       "Insights",
+      "Configurações",
     ]);
 
     const kanban = screen.getByRole("tab", { name: "Kanban" });
@@ -295,6 +296,8 @@ describe("ETAPA 20 — acessibilidade da tela de projeto", () => {
     renderRota();
     await screen.findByText("KanbanBoard");
 
+    // ProjectSettings agora vive na tab Configurações (ETAPA 2 Kanban escalável).
+    await user.click(screen.getByRole("tab", { name: "Configurações" }));
     await user.click(screen.getByRole("button", { name: /editar links/i }));
 
     const dialog = screen.getByRole("dialog", { name: "Links de trabalho do squad" });
@@ -327,7 +330,8 @@ describe("ETAPA 20 — acessibilidade da tela de projeto", () => {
     renderRota();
     await screen.findByText("KanbanBoard");
 
-    // Seção Encerrar (ProjectSettings): botão com classe text-destructive.
+    // Seção Encerrar (ProjectSettings) agora vive na tab Configurações.
+    await user.click(screen.getByRole("tab", { name: "Configurações" }));
     const encerrar = screen.getByRole("button", { name: "Encerrar Projeto" });
     expect(encerrar).toHaveClass("text-destructive");
     expect(encerrar).not.toBeDisabled();

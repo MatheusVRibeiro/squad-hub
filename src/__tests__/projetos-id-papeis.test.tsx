@@ -357,6 +357,8 @@ describe("ETAPA 21 — testes funcionais por papel", () => {
       renderRota();
       await screen.findByTestId("kanban-board");
 
+      // ProjectSettings agora vive na tab Configurações (ETAPA 2 Kanban escalável).
+      await user.click(screen.getByRole("tab", { name: "Configurações" }));
       await user.click(screen.getByRole("combobox", { name: "Visibilidade" }));
       await user.click(screen.getByRole("option", { name: "Privado" }));
 

@@ -234,10 +234,66 @@ function ProjectDetailPage() {
           </Button>
 
           {isLoading ? (
-            <div className="space-y-4">
-              <Skeleton className="h-32 w-full rounded-2xl" />
-              <Skeleton className="h-9 w-72 rounded-xl" />
-              <Skeleton className="h-64 w-full rounded-2xl" />
+            /* ETAPA 17: skeletons do novo layout — header compacto + tabs + kanban.
+               Insights (TopContributors/TopCommitters) têm queries próprias dentro da
+               aba e nunca bloqueiam o Kanban (dados independentes). */
+            <div className="space-y-4" aria-busy="true" aria-label="Carregando projeto">
+              {/* Header skeleton (compacto, espelha o ProjectHeader) */}
+              <div className="overflow-hidden rounded-3xl border border-border/60 bg-card shadow-md">
+                <div className="h-2 bg-primary/20" />
+                <div className="space-y-3 p-4 sm:p-5">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <Skeleton className="h-7 w-56 rounded-lg sm:w-72" />
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Skeleton className="h-6 w-24 rounded-full" />
+                      <Skeleton className="h-9 w-28 rounded-xl" />
+                      <Skeleton className="h-9 w-9 rounded-xl" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-4 w-full max-w-xl rounded-md" />
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Skeleton className="h-5 w-16 rounded-full" />
+                    <Skeleton className="h-5 w-20 rounded-full" />
+                    <Skeleton className="h-5 w-14 rounded-full" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Tabs skeleton — mesma barra sticky do layout real */}
+              <div className="sticky top-14 z-20 -mx-1 rounded-xl bg-background/85 px-1 py-2 backdrop-blur">
+                <div className="flex w-full justify-start gap-1.5 overflow-x-auto rounded-lg bg-muted p-1">
+                  <Skeleton className="h-9 w-24 shrink-0 rounded-lg" />
+                  <Skeleton className="h-9 w-24 shrink-0 rounded-lg" />
+                  <Skeleton className="h-9 w-24 shrink-0 rounded-lg" />
+                  <Skeleton className="h-9 w-24 shrink-0 rounded-lg" />
+                  <Skeleton className="h-9 w-24 shrink-0 rounded-lg" />
+                </div>
+              </div>
+
+              {/* Kanban skeleton — 4 colunas com 2-3 cards (mesmo grid do KanbanBoard) */}
+              <div className="flex gap-6 overflow-x-auto pb-2 xl:grid xl:grid-cols-4 xl:overflow-x-visible">
+                {[3, 2, 3, 2].map((cards, col) => (
+                  <div
+                    key={col}
+                    className="flex min-h-[450px] w-[280px] shrink-0 flex-col gap-4 rounded-2xl border border-border/50 bg-card/45 p-4 backdrop-blur-sm xl:w-auto xl:min-w-0"
+                  >
+                    <div className="flex items-center justify-between">
+                      <Skeleton className="h-5 w-24 rounded-md" />
+                      <Skeleton className="h-5 w-8 rounded-full" />
+                    </div>
+                    {Array.from({ length: cards }, (_, card) => (
+                      <div
+                        key={card}
+                        className="rounded-2xl border border-border/50 bg-card p-4 shadow-sm"
+                      >
+                        <Skeleton className="h-4 w-4/5 rounded-md" />
+                        <Skeleton className="mt-2 h-3 w-3/5 rounded-md" />
+                        <Skeleton className="mt-3 h-3 w-1/2 rounded-md" />
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
             </div>
           ) : isError || !data ? (
             /* A1: falha na API nunca deixa skeleton infinito — card de erro com retry. */

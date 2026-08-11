@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Plus,
@@ -56,6 +56,7 @@ import {
 } from "@/services/tasks";
 import { GithubTaskBadge } from "@/components/projects/GithubTaskBadge";
 import { GithubTaskActivity } from "@/components/projects/GithubTaskActivity";
+import { KanbanToolbar, type PriorityFilterValue } from "@/components/projects/KanbanToolbar";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   DropdownMenu,
@@ -127,6 +128,10 @@ export function KanbanBoard({
 }) {
   const { user: currentUser } = useAuth();
   const [tasks, setTasks] = useState<KanbanTask[]>(initial);
+  // ETAPA 6: filtros visuais do Kanban (só frontend — não alteram persistência).
+  const [searchTerm, setSearchTerm] = useState("");
+  const [assigneeFilter, setAssigneeFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState<PriorityFilterValue>("all");
   const [modalMode, setModalMode] = useState<"create" | "edit" | null>(null);
   const [modalCol, setModalCol] = useState<KanbanStatus>("todo");
   const [editingTask, setEditingTask] = useState<KanbanTask | null>(null);
@@ -168,6 +173,29 @@ export function KanbanBoard({
       ativo = false;
     };
   }, []);
+
+  // ETAPA 6: opções do filtro de responsável — nomes presentes nas tasks.
+  const assigneeOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(tasks.map((t) => t.assignee).filter((a): a is string => Boolean(a && a.trim()))),
+      ).sort((a, b) => a.localeCompare(b, "pt-BR")),
+    [tasks],
+  );
+
+  // ETAPA 6: filtro combinado (título + responsável + prioridade) — apenas visual.
+  const filteredTasks = useMemo(() => {
+    const q = normalizeText(searchTerm);
+    return tasks.filter((t) => {
+      if (q && !normalizeText(t.title).includes(q)) return false;
+      if (assigneeFilter !== "all" && t.assignee !== assigneeFilter) return false;
+      if (priorityFilter !== "all" && t.priority !== priorityFilter) return false;
+      return true;
+    });
+  }, [tasks, searchTerm, assigneeFilter, priorityFilter]);
+
+  const hasActiveFilters =
+    searchTerm.trim() !== "" || assigneeFilter !== "all" || priorityFilter !== "all";
 
   function openCreateModal(colKey: KanbanStatus) {
     setModalCol(colKey);
@@ -516,362 +544,390 @@ export function KanbanBoard({
   }
 
   return (
-    <div className="grid gap-6 overflow-x-auto pb-2 md:grid-cols-4 md:overflow-x-visible">
-      {COLUMNS.map((col) => {
-        const list = tasks.filter((t) => t.status === col.key);
-        return (
-          <div
-            key={col.key}
-            onDragOver={(e) => {
-              if (!readOnly) e.preventDefault();
-            }}
-            onDrop={() => {
-              if (readOnly) return;
-              if (dragId) move(dragId, col.key);
-              setDragId(null);
-            }}
-            className={cn(
-              "flex min-h-[450px] min-w-[260px] flex-col gap-4 rounded-2xl border border-border/50 bg-card/45 p-4 backdrop-blur-sm transition-all duration-300 md:min-w-0",
-              dragId ? "border-primary/20 bg-primary/5/10 shadow-sm" : "",
-            )}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span
-                  className={cn(
-                    "rounded-full px-2.5 py-0.5 text-xs font-semibold tracking-wide shadow-sm",
-                    col.tone,
-                  )}
-                >
-                  {col.label}
-                </span>
-                <span className="grid h-5 min-w-[20px] place-items-center rounded-full bg-muted/40 px-1 text-[10px] font-medium text-muted-foreground">
-                  {list.length}
-                </span>
-              </div>
-              {!readOnly && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
-                  onClick={() => openCreateModal(col.key)}
-                  aria-label={`Adicionar em ${col.label}`}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
+    <div className="space-y-4">
+      {/* ETAPA 6: toolbar de filtros (busca por título, responsável, prioridade). */}
+      <KanbanToolbar
+        search={searchTerm}
+        onSearchChange={setSearchTerm}
+        assigneeOptions={assigneeOptions}
+        assigneeFilter={assigneeFilter}
+        onAssigneeChange={setAssigneeFilter}
+        priorityFilter={priorityFilter}
+        onPriorityChange={setPriorityFilter}
+        resultCount={filteredTasks.length}
+        totalCount={tasks.length}
+        hasActiveFilters={hasActiveFilters}
+        onClearFilters={() => {
+          setSearchTerm("");
+          setAssigneeFilter("all");
+          setPriorityFilter("all");
+        }}
+      />
+
+      <div className="grid gap-6 overflow-x-auto pb-2 md:grid-cols-4 md:overflow-x-visible">
+        {COLUMNS.map((col) => {
+          const list = filteredTasks.filter((t) => t.status === col.key);
+          return (
+            <div
+              key={col.key}
+              onDragOver={(e) => {
+                if (!readOnly) e.preventDefault();
+              }}
+              onDrop={() => {
+                if (readOnly) return;
+                if (dragId) move(dragId, col.key);
+                setDragId(null);
+              }}
+              className={cn(
+                "flex min-h-[450px] min-w-[260px] flex-col gap-4 rounded-2xl border border-border/50 bg-card/45 p-4 backdrop-blur-sm transition-all duration-300 md:min-w-0",
+                dragId ? "border-primary/20 bg-primary/5/10 shadow-sm" : "",
               )}
-            </div>
-
-            <div className="flex flex-1 flex-col gap-2.5">
-              {list.map((t) => {
-                const isAssignedToMe =
-                  t.assignee === currentUser?.name ||
-                  (t.assignee === "Você" && (currentUser?.name === "Você" || !currentUser?.name));
-                const completedSubtasks = t.subtasks?.filter((s) => s.done).length || 0;
-                const totalSubtasks = t.subtasks?.length || 0;
-
-                return (
-                  <motion.div
-                    key={t.id}
-                    layout
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={cn(
+                      "rounded-full px-2.5 py-0.5 text-xs font-semibold tracking-wide shadow-sm",
+                      col.tone,
+                    )}
                   >
-                    <Card
-                      draggable={!readOnly}
-                      onDragStart={() => !readOnly && setDragId(t.id)}
-                      onDragEnd={() => !readOnly && setDragId(null)}
-                      className={cn(
-                        "group relative overflow-hidden border-l-4 border-y border-r border-border/60 bg-card/90 p-4 text-sm shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md",
-                        col.borderTone,
-                        !readOnly ? "cursor-grab active:cursor-grabbing" : "cursor-default",
-                      )}
-                    >
-                      <div className="flex items-start justify-between gap-1.5">
-                        <p
-                          onClick={() => !readOnly && setEditingTask(t)}
-                          className={cn(
-                            "font-medium leading-snug text-foreground/90 group-hover:text-foreground flex-1",
-                            !readOnly ? "cursor-pointer hover:text-primary" : "",
-                          )}
-                        >
-                          {t.title}
-                        </p>
+                    {col.label}
+                  </span>
+                  <span className="grid h-5 min-w-[20px] place-items-center rounded-full bg-muted/40 px-1 text-[10px] font-medium text-muted-foreground">
+                    {list.length}
+                  </span>
+                </div>
+                {!readOnly && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                    onClick={() => openCreateModal(col.key)}
+                    aria-label={`Adicionar em ${col.label}`}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
 
-                        {/* Ação rápida para mobile */}
-                        {!readOnly && (
+              <div className="flex flex-1 flex-col gap-2.5">
+                {list.map((t) => {
+                  const isAssignedToMe =
+                    t.assignee === currentUser?.name ||
+                    (t.assignee === "Você" && (currentUser?.name === "Você" || !currentUser?.name));
+                  const completedSubtasks = t.subtasks?.filter((s) => s.done).length || 0;
+                  const totalSubtasks = t.subtasks?.length || 0;
+
+                  return (
+                    <motion.div
+                      key={t.id}
+                      layout
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                    >
+                      <Card
+                        draggable={!readOnly}
+                        onDragStart={() => !readOnly && setDragId(t.id)}
+                        onDragEnd={() => !readOnly && setDragId(null)}
+                        className={cn(
+                          "group relative overflow-hidden border-l-4 border-y border-r border-border/60 bg-card/90 p-4 text-sm shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md",
+                          col.borderTone,
+                          !readOnly ? "cursor-grab active:cursor-grabbing" : "cursor-default",
+                        )}
+                      >
+                        <div className="flex items-start justify-between gap-1.5">
+                          <p
+                            onClick={() => !readOnly && setEditingTask(t)}
+                            className={cn(
+                              "font-medium leading-snug text-foreground/90 group-hover:text-foreground flex-1",
+                              !readOnly ? "cursor-pointer hover:text-primary" : "",
+                            )}
+                          >
+                            {t.title}
+                          </p>
+
+                          {/* Ação rápida para mobile */}
+                          {!readOnly && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button
+                                  type="button"
+                                  className="h-6 w-6 grid place-items-center rounded-lg text-muted-foreground hover:bg-muted md:hidden cursor-pointer outline-none shrink-0"
+                                  aria-label="Mover tarefa"
+                                >
+                                  <MoreVertical className="h-3.5 w-3.5" />
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent
+                                align="end"
+                                className="w-40 rounded-xl shadow-md"
+                              >
+                                <DropdownMenuLabel className="text-[9px] uppercase tracking-wider text-muted-foreground px-2 py-1">
+                                  Mover para
+                                </DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => move(t.id, "todo")}
+                                  disabled={t.status === "todo"}
+                                  className="cursor-pointer text-xs py-1.5 px-2"
+                                >
+                                  A fazer
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => move(t.id, "doing")}
+                                  disabled={t.status === "doing"}
+                                  className="cursor-pointer text-xs py-1.5 px-2"
+                                >
+                                  Em progresso
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => move(t.id, "review")}
+                                  disabled={t.status === "review"}
+                                  className="cursor-pointer text-xs py-1.5 px-2"
+                                >
+                                  Em revisão
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => move(t.id, "done")}
+                                  disabled={t.status === "done"}
+                                  className="cursor-pointer text-xs py-1.5 px-2"
+                                >
+                                  Concluído
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                        </div>
+
+                        {/* Badges de prioridade, prazo e subtarefas */}
+                        <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                          {t.priority && (
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                "rounded-full text-[9px] font-bold py-0.5 px-2 tracking-wide uppercase border",
+                                t.priority === "high"
+                                  ? "bg-rose-500/10 text-rose-700 border-rose-500/20 dark:text-rose-400"
+                                  : t.priority === "medium"
+                                    ? "bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400"
+                                    : "bg-blue-500/10 text-blue-700 border-blue-500/20 dark:text-blue-400",
+                              )}
+                            >
+                              {t.priority === "low"
+                                ? "Baixa"
+                                : t.priority === "medium"
+                                  ? "Média"
+                                  : "Alta"}
+                            </Badge>
+                          )}
+
+                          {t.dificuldade && (
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                "rounded-full text-[9px] font-bold py-0.5 px-2 tracking-wide uppercase border",
+                                t.dificuldade === "avancada"
+                                  ? "bg-rose-500/10 text-rose-700 border-rose-500/20 dark:text-rose-400"
+                                  : t.dificuldade === "intermediaria"
+                                    ? "bg-violet-500/10 text-violet-700 border-violet-500/20 dark:text-violet-400"
+                                    : "bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-400",
+                              )}
+                            >
+                              {t.dificuldade === "avancada"
+                                ? "Avançada"
+                                : t.dificuldade === "intermediaria"
+                                  ? "Intermediária"
+                                  : "Iniciante"}
+                            </Badge>
+                          )}
+
+                          {t.habilidades && t.habilidades.length > 0 && (
+                            <span className="inline-flex flex-wrap items-center gap-1">
+                              <GraduationCap className="h-3 w-3 text-muted-foreground/85 shrink-0" />
+                              {t.habilidades.slice(0, 3).map((h) => (
+                                <span
+                                  key={h}
+                                  className="text-[9px] text-muted-foreground bg-muted/30 px-2 py-0.5 rounded-full border border-border/10 font-medium"
+                                >
+                                  {h}
+                                </span>
+                              ))}
+                              {t.habilidades.length > 3 && (
+                                <span className="text-[9px] text-muted-foreground font-medium">
+                                  +{t.habilidades.length - 3}
+                                </span>
+                              )}
+                            </span>
+                          )}
+
+                          {t.dueDate && (
+                            <span className="inline-flex items-center gap-1 text-[9px] text-muted-foreground bg-muted/30 px-2 py-0.5 rounded-full border border-border/10 font-medium">
+                              <Calendar className="h-3 w-3 text-muted-foreground/85" />
+                              {new Date(t.dueDate).toLocaleDateString("pt-BR", {
+                                day: "numeric",
+                                month: "short",
+                              })}
+                            </span>
+                          )}
+
+                          {totalSubtasks > 0 && (
+                            <span className="inline-flex items-center gap-1 text-[9px] text-muted-foreground bg-muted/30 px-2 py-0.5 rounded-full border border-border/10 font-medium">
+                              <CheckSquare className="h-3 w-3 text-muted-foreground/85" />
+                              {completedSubtasks}/{totalSubtasks}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border/20 pt-3">
+                          {!t.assignee && !readOnly && (
+                            <button
+                              onClick={() => handleClaim(t.id)}
+                              disabled={claimingId === t.id}
+                              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-medium tracking-wide border transition-all outline-none bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20 cursor-pointer disabled:opacity-60"
+                            >
+                              {claimingId === t.id ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <Hand className="h-3 w-3 shrink-0" />
+                              )}
+                              <span>Assumir tarefa</span>
+                            </button>
+                          )}
+                          <GithubTaskBadge
+                            branch={t.githubBranch}
+                            commitsCount={t.githubCommitsCount}
+                            lastActivityAt={t.githubLastActivityAt}
+                            prNumber={t.githubPrNumber}
+                            prStatus={t.githubPrStatus}
+                            completionSource={t.completionSource}
+                          />
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <button
-                                type="button"
-                                className="h-6 w-6 grid place-items-center rounded-lg text-muted-foreground hover:bg-muted md:hidden cursor-pointer outline-none shrink-0"
-                                aria-label="Mover tarefa"
+                                disabled={readOnly}
+                                className={cn(
+                                  "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-medium tracking-wide border transition-all text-left outline-none",
+                                  t.assignee
+                                    ? "bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 cursor-pointer"
+                                    : readOnly
+                                      ? "bg-muted text-muted-foreground border-border cursor-default"
+                                      : "bg-muted text-muted-foreground border-border hover:bg-muted/80 cursor-pointer",
+                                )}
                               >
-                                <MoreVertical className="h-3.5 w-3.5" />
+                                <User className="h-3 w-3 shrink-0" />
+                                <span className="truncate max-w-[80px]">
+                                  {t.assignee || "Sem responsável"}
+                                </span>
                               </button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-40 rounded-xl shadow-md">
-                              <DropdownMenuLabel className="text-[9px] uppercase tracking-wider text-muted-foreground px-2 py-1">
-                                Mover para
+                            <DropdownMenuContent
+                              align="start"
+                              className="w-48 rounded-xl shadow-lg border border-border/80 bg-card/95 backdrop-blur"
+                            >
+                              <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-1.5">
+                                Responsável
                               </DropdownMenuLabel>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
-                                onClick={() => move(t.id, "todo")}
-                                disabled={t.status === "todo"}
-                                className="cursor-pointer text-xs py-1.5 px-2"
+                                onClick={() => handleAssign(t.id, undefined)}
+                                className="cursor-pointer text-xs focus:bg-destructive/10 focus:text-destructive py-1.5 px-2"
                               >
-                                A fazer
+                                Remover responsável
                               </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => move(t.id, "doing")}
-                                disabled={t.status === "doing"}
-                                className="cursor-pointer text-xs py-1.5 px-2"
-                              >
-                                Em progresso
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => move(t.id, "review")}
-                                disabled={t.status === "review"}
-                                className="cursor-pointer text-xs py-1.5 px-2"
-                              >
-                                Em revisão
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => move(t.id, "done")}
-                                disabled={t.status === "done"}
-                                className="cursor-pointer text-xs py-1.5 px-2"
-                              >
-                                Concluído
-                              </DropdownMenuItem>
+                              {members.map((m) => (
+                                <DropdownMenuItem
+                                  key={m.id}
+                                  onClick={() => handleAssign(t.id, m.name)}
+                                  className="cursor-pointer text-xs flex items-center justify-between py-1.5 px-2"
+                                >
+                                  <span>{m.name}</span>
+                                  {(t.assignee === m.name ||
+                                    (t.assignee === "Você" && m.name === "Você")) && (
+                                    <Check className="h-3 w-3 text-primary" />
+                                  )}
+                                </DropdownMenuItem>
+                              ))}
                             </DropdownMenuContent>
                           </DropdownMenu>
-                        )}
-                      </div>
 
-                      {/* Badges de prioridade, prazo e subtarefas */}
-                      <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                        {t.priority && (
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              "rounded-full text-[9px] font-bold py-0.5 px-2 tracking-wide uppercase border",
-                              t.priority === "high"
-                                ? "bg-rose-500/10 text-rose-700 border-rose-500/20 dark:text-rose-400"
-                                : t.priority === "medium"
-                                  ? "bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400"
-                                  : "bg-blue-500/10 text-blue-700 border-blue-500/20 dark:text-blue-400",
-                            )}
-                          >
-                            {t.priority === "low"
-                              ? "Baixa"
-                              : t.priority === "medium"
-                                ? "Média"
-                                : "Alta"}
-                          </Badge>
-                        )}
-
-                        {t.dificuldade && (
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              "rounded-full text-[9px] font-bold py-0.5 px-2 tracking-wide uppercase border",
-                              t.dificuldade === "avancada"
-                                ? "bg-rose-500/10 text-rose-700 border-rose-500/20 dark:text-rose-400"
-                                : t.dificuldade === "intermediaria"
-                                  ? "bg-violet-500/10 text-violet-700 border-violet-500/20 dark:text-violet-400"
-                                  : "bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-400",
-                            )}
-                          >
-                            {t.dificuldade === "avancada"
-                              ? "Avançada"
-                              : t.dificuldade === "intermediaria"
-                                ? "Intermediária"
-                                : "Iniciante"}
-                          </Badge>
-                        )}
-
-                        {t.habilidades && t.habilidades.length > 0 && (
-                          <span className="inline-flex flex-wrap items-center gap-1">
-                            <GraduationCap className="h-3 w-3 text-muted-foreground/85 shrink-0" />
-                            {t.habilidades.slice(0, 3).map((h) => (
-                              <span
-                                key={h}
-                                className="text-[9px] text-muted-foreground bg-muted/30 px-2 py-0.5 rounded-full border border-border/10 font-medium"
-                              >
-                                {h}
-                              </span>
-                            ))}
-                            {t.habilidades.length > 3 && (
-                              <span className="text-[9px] text-muted-foreground font-medium">
-                                +{t.habilidades.length - 3}
-                              </span>
-                            )}
-                          </span>
-                        )}
-
-                        {t.dueDate && (
-                          <span className="inline-flex items-center gap-1 text-[9px] text-muted-foreground bg-muted/30 px-2 py-0.5 rounded-full border border-border/10 font-medium">
-                            <Calendar className="h-3 w-3 text-muted-foreground/85" />
-                            {new Date(t.dueDate).toLocaleDateString("pt-BR", {
-                              day: "numeric",
-                              month: "short",
-                            })}
-                          </span>
-                        )}
-
-                        {totalSubtasks > 0 && (
-                          <span className="inline-flex items-center gap-1 text-[9px] text-muted-foreground bg-muted/30 px-2 py-0.5 rounded-full border border-border/10 font-medium">
-                            <CheckSquare className="h-3 w-3 text-muted-foreground/85" />
-                            {completedSubtasks}/{totalSubtasks}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border/20 pt-3">
-                        {!t.assignee && !readOnly && (
-                          <button
-                            onClick={() => handleClaim(t.id)}
-                            disabled={claimingId === t.id}
-                            className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-medium tracking-wide border transition-all outline-none bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20 cursor-pointer disabled:opacity-60"
-                          >
-                            {claimingId === t.id ? (
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                            ) : (
-                              <Hand className="h-3 w-3 shrink-0" />
-                            )}
-                            <span>Assumir tarefa</span>
-                          </button>
-                        )}
-                        <GithubTaskBadge
-                          branch={t.githubBranch}
-                          commitsCount={t.githubCommitsCount}
-                          lastActivityAt={t.githubLastActivityAt}
-                          prNumber={t.githubPrNumber}
-                          prStatus={t.githubPrStatus}
-                          completionSource={t.completionSource}
-                        />
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button
-                              disabled={readOnly}
-                              className={cn(
-                                "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-medium tracking-wide border transition-all text-left outline-none",
-                                t.assignee
-                                  ? "bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 cursor-pointer"
-                                  : readOnly
-                                    ? "bg-muted text-muted-foreground border-border cursor-default"
-                                    : "bg-muted text-muted-foreground border-border hover:bg-muted/80 cursor-pointer",
-                              )}
-                            >
-                              <User className="h-3 w-3 shrink-0" />
-                              <span className="truncate max-w-[80px]">
-                                {t.assignee || "Sem responsável"}
-                              </span>
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent
-                            align="start"
-                            className="w-48 rounded-xl shadow-lg border border-border/80 bg-card/95 backdrop-blur"
-                          >
-                            <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-1.5">
-                              Responsável
-                            </DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => handleAssign(t.id, undefined)}
-                              className="cursor-pointer text-xs focus:bg-destructive/10 focus:text-destructive py-1.5 px-2"
-                            >
-                              Remover responsável
-                            </DropdownMenuItem>
-                            {members.map((m) => (
-                              <DropdownMenuItem
-                                key={m.id}
-                                onClick={() => handleAssign(t.id, m.name)}
-                                className="cursor-pointer text-xs flex items-center justify-between py-1.5 px-2"
-                              >
-                                <span>{m.name}</span>
-                                {(t.assignee === m.name ||
-                                  (t.assignee === "Você" && m.name === "Você")) && (
-                                  <Check className="h-3 w-3 text-primary" />
-                                )}
-                              </DropdownMenuItem>
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-
-                        {!readOnly && !isAssignedToMe && (
-                          <button
-                            type="button"
-                            onClick={() => handleAssign(t.id, currentUser?.name || "Você")}
-                            className="text-[10px] font-bold text-primary hover:text-primary/80 transition-colors uppercase tracking-wider outline-none cursor-pointer"
-                          >
-                            Pegar tarefa
-                          </button>
-                        )}
-
-                        {/* ETAPA 9: responsável atual pode abandonar a task */}
-                        {!readOnly && isAssignedToMe && t.assignee && (
-                          <button
-                            type="button"
-                            onClick={() => handleAbandon(t.id)}
-                            disabled={abandoningId === t.id}
-                            className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-medium tracking-wide border transition-all outline-none bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20 hover:bg-amber-500/20 cursor-pointer disabled:opacity-60"
-                          >
-                            {abandoningId === t.id ? (
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                            ) : (
-                              <Hand className="h-3 w-3 shrink-0" />
-                            )}
-                            <span>Abandonar tarefa</span>
-                          </button>
-                        )}
-
-                        {/* ETAPA 9: owner remove responsável ou reatribui a outro membro */}
-                        {!readOnly && isOwner && t.assignee && (
-                          <div className="flex items-center gap-1.5">
+                          {!readOnly && !isAssignedToMe && (
                             <button
                               type="button"
-                              onClick={() => handleRemoveAssignee(t.id)}
-                              disabled={removingId === t.id}
-                              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-medium tracking-wide border transition-all outline-none bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20 hover:bg-rose-500/20 cursor-pointer disabled:opacity-60"
+                              onClick={() => handleAssign(t.id, currentUser?.name || "Você")}
+                              className="text-[10px] font-bold text-primary hover:text-primary/80 transition-colors uppercase tracking-wider outline-none cursor-pointer"
                             >
-                              {removingId === t.id ? (
+                              Pegar tarefa
+                            </button>
+                          )}
+
+                          {/* ETAPA 9: responsável atual pode abandonar a task */}
+                          {!readOnly && isAssignedToMe && t.assignee && (
+                            <button
+                              type="button"
+                              onClick={() => handleAbandon(t.id)}
+                              disabled={abandoningId === t.id}
+                              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-medium tracking-wide border transition-all outline-none bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20 hover:bg-amber-500/20 cursor-pointer disabled:opacity-60"
+                            >
+                              {abandoningId === t.id ? (
                                 <Loader2 className="h-3 w-3 animate-spin" />
                               ) : (
-                                <UserMinus className="h-3 w-3 shrink-0" />
+                                <Hand className="h-3 w-3 shrink-0" />
                               )}
-                              <span>Remover resp.</span>
+                              <span>Abandonar tarefa</span>
                             </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setReassignTask(t);
-                                setReassignUserId("");
-                              }}
-                              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-medium tracking-wide border transition-all outline-none bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 cursor-pointer"
-                            >
-                              <ArrowLeftRight className="h-3 w-3 shrink-0" />
-                              <span>Reatribuir</span>
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </Card>
-                  </motion.div>
-                );
-              })}
-              {list.length === 0 && (
-                <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border/40 p-6 text-center">
-                  <Inbox className="h-5 w-5 text-muted-foreground/50" />
-                  <p className="text-xs font-medium text-muted-foreground/70">
-                    {readOnly ? "Nenhuma tarefa aqui" : "Arraste tasks para cá"}
-                  </p>
-                </div>
-              )}
+                          )}
+
+                          {/* ETAPA 9: owner remove responsável ou reatribui a outro membro */}
+                          {!readOnly && isOwner && t.assignee && (
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveAssignee(t.id)}
+                                disabled={removingId === t.id}
+                                className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-medium tracking-wide border transition-all outline-none bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20 hover:bg-rose-500/20 cursor-pointer disabled:opacity-60"
+                              >
+                                {removingId === t.id ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <UserMinus className="h-3 w-3 shrink-0" />
+                                )}
+                                <span>Remover resp.</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setReassignTask(t);
+                                  setReassignUserId("");
+                                }}
+                                className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-medium tracking-wide border transition-all outline-none bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 cursor-pointer"
+                              >
+                                <ArrowLeftRight className="h-3 w-3 shrink-0" />
+                                <span>Reatribuir</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </Card>
+                    </motion.div>
+                  );
+                })}
+                {list.length === 0 && (
+                  <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border/40 p-6 text-center">
+                    <Inbox className="h-5 w-5 text-muted-foreground/50" />
+                    <p className="text-xs font-medium text-muted-foreground/70">
+                      {hasActiveFilters
+                        ? "Nenhuma tarefa corresponde aos filtros"
+                        : readOnly
+                          ? "Nenhuma tarefa aqui"
+                          : "Arraste tasks para cá"}
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
 
       {/* Modal Dialog de Detalhes / Criação de Tarefa */}
       <Dialog open={modalMode !== null} onOpenChange={(open) => !open && setModalMode(null)}>

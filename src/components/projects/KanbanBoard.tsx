@@ -601,7 +601,10 @@ export function KanbanBoard({
         }}
       />
 
-      <div className="grid gap-6 overflow-x-auto pb-2 md:grid-cols-4 md:overflow-x-visible">
+      {/* ETAPA 16: abaixo de xl o Kanban rola horizontalmente com largura fixa
+          por coluna (não comprime cards em tablet/mobile); em xl+ vira grid de
+          4 colunas distribuídas. Drag-and-drop (HTML5) funciona nos dois modos. */}
+      <div className="flex gap-6 overflow-x-auto pb-2 xl:grid xl:grid-cols-4 xl:overflow-x-visible">
         {COLUMNS.map((col) => {
           const list = filteredTasks.filter((t) => t.status === col.key);
           return (
@@ -616,7 +619,7 @@ export function KanbanBoard({
                 setDragId(null);
               }}
               className={cn(
-                "flex min-h-[450px] min-w-[260px] flex-col gap-4 rounded-2xl border border-border/50 bg-card/45 p-4 backdrop-blur-sm transition-all duration-300 md:min-w-0",
+                "flex min-h-[450px] w-[280px] shrink-0 flex-col gap-4 rounded-2xl border border-border/50 bg-card/45 p-4 backdrop-blur-sm transition-all duration-300 xl:w-auto xl:min-w-0",
                 dragId ? "border-primary/20 bg-primary/5/10 shadow-sm" : "",
               )}
             >

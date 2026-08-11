@@ -226,7 +226,7 @@ function ProjectDetailPage() {
   return (
     <ProtectedRoute>
       <AppLayout>
-        <div className="mx-auto w-full max-w-6xl space-y-6">
+        <div className="mx-auto w-full max-w-7xl space-y-6">
           <Button asChild variant="ghost" size="sm" className="-ml-2 w-fit rounded-xl">
             <Link to="/projetos">
               <ArrowLeft className="mr-1.5 h-4 w-4" /> Voltar para projetos

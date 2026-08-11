@@ -4,6 +4,7 @@ import {
   Plus,
   User,
   Check,
+  CheckCircle2,
   MoreVertical,
   Calendar,
   CheckSquare,
@@ -731,6 +732,9 @@ export function KanbanBoard({
                           <p className="min-w-0 flex-1 font-medium leading-snug text-foreground/90 transition-colors group-hover:text-primary">
                             {t.title}
                           </p>
+                          <span className="shrink-0 text-[10px] font-semibold text-muted-foreground/70">
+                            #{t.id}
+                          </span>
 
                           {t.priority && (
                             <Badge
@@ -896,6 +900,22 @@ export function KanbanBoard({
                             {(t.habilidades?.length ?? 0) > 2 && (
                               <span className="text-[9px] font-medium text-muted-foreground">
                                 +{(t.habilidades?.length ?? 0) - 2}
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        {/* ETAPA 8 (Kanban escalável) — rodapé contextual por status:
+                            concluído mostra "✓ concluído · responsável" para não
+                            dominar o quadro com cards antigos. */}
+                        {t.status === "done" && (
+                          <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+                            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400">
+                              <CheckCircle2 className="h-3 w-3" /> concluído
+                            </span>
+                            {t.assignee && (
+                              <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                                <User className="h-3 w-3" /> {t.assignee}
                               </span>
                             )}
                           </div>

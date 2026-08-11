@@ -1,17 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  AlertTriangle,
-  ArrowLeft,
-  BookOpen,
-  Github,
-  Lock,
-  MessageSquare,
-  Pencil,
-  RefreshCcw,
-  Settings,
-} from "lucide-react";
+import { AlertTriangle, ArrowLeft, Link2, Lock, Pencil, RefreshCcw, Settings } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
@@ -44,6 +34,7 @@ import { TasksRecomendadas } from "@/components/projects/TasksRecomendadas";
 import { GithubProjectPanel } from "@/components/projects/GithubProjectPanel";
 import { TopCommitters } from "@/components/projects/TopCommitters";
 import { TopContributors } from "@/components/projects/TopContributors";
+import { InsightsResumo } from "@/components/projects/InsightsResumo";
 import { Mural } from "@/components/projects/Mural";
 import { MembersList } from "@/components/projects/MembersList";
 import { Applications } from "@/components/projects/Applications";
@@ -60,7 +51,6 @@ import {
 } from "@/services/projectDetail";
 import { sairDoProjeto } from "@/services/membros";
 import { useAuth } from "@/contexts/AuthContext";
-import { cn } from "@/lib/utils";
 
 function ProjectDetailPage() {
   const { id } = useParams({ from: "/projetos/$id" });
@@ -415,12 +405,21 @@ function ProjectDetailPage() {
                   <GithubProjectPanel projectId={data.id} isOwner={isOwner} />
                 </TabsContent>
 
-                {/* InsightsSection — rankings fora do fluxo vertical principal. */}
+                {/* InsightsSection (ETAPA 12) — resumo + rankings fora do fluxo vertical. */}
                 <TabsContent value="insights" className="scroll-mt-16 space-y-6">
                   <motion.div
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3 }}
+                  >
+                    {/* Resumo do projeto (ETAPA 12) — métricas derivadas de data.tasks
+                        (zero queries novas); empty state compacto. */}
+                    <InsightsResumo tasks={data.tasks} />
+                  </motion.div>
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.1 }}
                   >
                     {/* Top Contributors do projeto (ETAPA 13) — ranking principal */}
                     <TopContributors projectId={data.id} scope="project" limit={5} />
@@ -428,7 +427,7 @@ function ProjectDetailPage() {
                   <motion.div
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: 0.1 }}
+                    transition={{ duration: 0.3, delay: 0.2 }}
                   >
                     {/* Top Committers do projeto (ETAPA 11) — métrica secundária */}
                     <TopCommitters projectId={data.id} scope="project" limit={5} />

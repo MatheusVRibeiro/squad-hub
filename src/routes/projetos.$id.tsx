@@ -257,7 +257,7 @@ function ProjectDetailPage() {
                 {[3, 2, 3, 2].map((cards, col) => (
                   <div
                     key={col}
-                    className="flex min-h-[450px] w-[280px] shrink-0 flex-col gap-4 rounded-2xl border border-border/50 bg-card/45 p-4 backdrop-blur-sm xl:w-auto xl:min-w-0"
+                    className="flex min-h-[450px] w-[280px] shrink-0 flex-col gap-4 rounded-2xl border border-border/60 bg-card p-4 xl:w-auto xl:min-w-0"
                   >
                     <div className="flex items-center justify-between">
                       <Skeleton className="h-5 w-24 rounded-md" />

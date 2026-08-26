@@ -222,7 +222,7 @@ function RankingPage() {
   );
 }
 
-export const Route = createFileRoute("/ranking")({
+export const Route = createFileRoute("/ranking/")({
   validateSearch: (search: Record<string, unknown>): RankingSearch => ({
     tab: search.tab === "committers" ? "committers" : "contributors",
   }),

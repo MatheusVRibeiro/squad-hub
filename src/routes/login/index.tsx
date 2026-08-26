@@ -161,6 +161,6 @@ function LoginPage() {
   );
 }
 
-export const Route = createFileRoute("/login")({
+export const Route = createFileRoute("/login/")({
   component: LoginPage,
 });

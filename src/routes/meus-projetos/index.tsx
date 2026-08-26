@@ -69,6 +69,6 @@ function MeusProjetosPage() {
   );
 }
 
-export const Route = createFileRoute("/meus-projetos")({
+export const Route = createFileRoute("/meus-projetos/")({
   component: MeusProjetosPage,
 });

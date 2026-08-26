@@ -161,6 +161,6 @@ function NotificacoesPage() {
   );
 }
 
-export const Route = createFileRoute("/notificacoes")({
+export const Route = createFileRoute("/notificacoes/")({
   component: NotificacoesPage,
 });

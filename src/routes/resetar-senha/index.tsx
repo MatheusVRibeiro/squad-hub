@@ -188,6 +188,6 @@ function ResetarSenhaPage() {
   );
 }
 
-export const Route = createFileRoute("/resetar-senha")({
+export const Route = createFileRoute("/resetar-senha/")({
   component: ResetarSenhaPage,
 });

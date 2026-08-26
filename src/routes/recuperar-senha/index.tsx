@@ -84,6 +84,6 @@ function RecuperarSenhaPage() {
   );
 }
 
-export const Route = createFileRoute("/recuperar-senha")({
+export const Route = createFileRoute("/recuperar-senha/")({
   component: RecuperarSenhaPage,
 });

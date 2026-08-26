@@ -420,6 +420,6 @@ function DashboardPage() {
   );
 }
 
-export const Route = createFileRoute("/dashboard")({
+export const Route = createFileRoute("/dashboard/")({
   component: DashboardPage,
 });

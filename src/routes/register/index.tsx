@@ -390,6 +390,6 @@ function RegisterPage() {
   );
 }
 
-export const Route = createFileRoute("/register")({
+export const Route = createFileRoute("/register/")({
   component: RegisterPage,
 });

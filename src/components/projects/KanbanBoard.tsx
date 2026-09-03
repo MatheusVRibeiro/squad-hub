@@ -926,8 +926,8 @@ export function KanbanBoard({
                                   </div>
                                 )}
 
-                                {/* ETAPA 7 — única ação de assumir (task livre) */}
-                                {!t.assignee && !readOnly && (
+                                {/* ETAPA 7 — única ação de assumir (task livre não-concluída) */}
+                                {!t.assignee && !readOnly && t.status !== "done" && (
                                   <button
                                     type="button"
                                     onClick={(e) => {
@@ -1012,8 +1012,8 @@ export function KanbanBoard({
                                   </div>
                                 )}
 
-                                {/* ETAPA 7 — ações funcionais: responsável, abandonar, owner */}
-                                {!readOnly && (
+                                {/* ETAPA 7 — ações funcionais: responsável, abandonar, owner (apenas para tarefas não-concluídas) */}
+                                {!readOnly && t.status !== "done" && (
                                   <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border/20 pt-2.5">
                                     <DropdownMenu>
                                       <DropdownMenuTrigger asChild>

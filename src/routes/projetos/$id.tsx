@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, ArrowLeft, Lock, RefreshCcw } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CheckCircle2, Lock, RefreshCcw } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
@@ -349,6 +349,14 @@ function ProjectDetailPage() {
                 {/* KanbanSection (ETAPA 5+8) — o quadro aparece imediatamente após
                     header+navegação; TasksRecomendadas logo abaixo (só membros). */}
                 <TabsContent value="kanban" className="scroll-mt-16 space-y-6">
+                  {data.status === "Finalizado" && (
+                    <div className="flex items-center gap-3 rounded-2xl border border-blue-500/20 bg-blue-500/5 px-4 py-3 text-sm text-blue-800 shadow-sm backdrop-blur-sm dark:text-blue-300">
+                      <CheckCircle2 className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0" />
+                      <span>
+                        Este projeto foi finalizado. O quadro Kanban está em modo somente leitura para preservação do histórico de entregas.
+                      </span>
+                    </div>
+                  )}
                   <motion.div
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -358,13 +366,13 @@ function ProjectDetailPage() {
                       initial={data.tasks}
                       projectId={data.id}
                       projectName={data.name}
-                      readOnly={!isMember}
+                      readOnly={!isMember || data.status === "Finalizado"}
                       members={data.members}
                       onRefresh={() => refetch()}
                       updatedAt={dataUpdatedAt}
                     />
                   </motion.div>
-                  {isMember && (
+                  {isMember && data.status !== "Finalizado" && (
                     <motion.div
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}

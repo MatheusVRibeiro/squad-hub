@@ -54,7 +54,7 @@ export function TopContributors({
     title ?? (scope === "project" ? "Top Contributors" : "Top Contributors da plataforma");
 
   return (
-    <div className="rounded-2xl border border-border/60 bg-gradient-to-br from-amber-500/5 via-card to-card p-4 sm:p-5 shadow-sm">
+    <div className="rounded-2xl border border-border/60 bg-linear-to-br from-amber-500/5 via-card to-card p-4 sm:p-5 shadow-sm">
       <div className="flex items-center gap-2">
         <div className="grid h-8 w-8 place-items-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
           <Trophy className="h-4 w-4" />

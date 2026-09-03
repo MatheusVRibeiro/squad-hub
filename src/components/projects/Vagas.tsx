@@ -304,7 +304,7 @@ export function Vagas({
           <Button
             size="sm"
             onClick={openCreate}
-            className="rounded-xl bg-gradient-to-r from-primary to-primary/90"
+            className="rounded-xl bg-linear-to-r from-primary to-primary/90"
           >
             <Plus className="mr-1.5 h-4 w-4" /> Nova Vaga
           </Button>

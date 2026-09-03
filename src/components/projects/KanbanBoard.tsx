@@ -720,7 +720,7 @@ export function KanbanBoard({
                     setDragId(null);
                   }}
                   className={cn(
-                    "flex min-h-[450px] w-[280px] shrink-0 flex-col gap-4 rounded-2xl border border-border/60 bg-card p-4 shadow-sm transition-all duration-300 xl:w-auto xl:min-w-0 xl:max-h-full xl:min-h-0",
+                    "flex min-h-112.5 w-70 shrink-0 flex-col gap-4 rounded-2xl border border-border/60 bg-card p-4 shadow-sm transition-all duration-300 xl:w-auto xl:min-w-0 xl:max-h-full xl:min-h-0",
                     dragId ? "border-primary/20 bg-primary/5/10 shadow-sm" : "",
                   )}
                 >

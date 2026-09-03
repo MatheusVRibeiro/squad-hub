@@ -175,7 +175,7 @@ function DashboardPage() {
             </div>
 
             {/* Card de Nível e XP */}
-            <Card className="w-full rounded-2xl border-border/60 bg-gradient-to-br from-primary/5 via-card to-card md:max-w-xs">
+            <Card className="w-full rounded-2xl border-border/60 bg-linear-to-br from-primary/5 via-card to-card md:max-w-xs">
               <CardContent className="flex flex-col gap-3 p-4">
                 {reputationError ? (
                   <div className="flex flex-col items-center justify-center gap-2 py-3 text-center">

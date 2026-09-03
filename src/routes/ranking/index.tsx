@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { GitCommitHorizontal, Trophy } from "lucide-react";
 import { useState } from "react";
@@ -137,8 +137,8 @@ function RankingList({
 }
 
 function RankingPage() {
-  const search = useSearch({ from: "/ranking" });
   const navigate = useNavigate();
+  const search = Route.useSearch();
   const [tab, setTab] = useState<"contributors" | "committers">(
     search.tab === "committers" ? "committers" : "contributors",
   );

@@ -242,7 +242,7 @@ export function ProjectCard({ project, index = 0 }: { project: Project; index?: 
                 </div>
                 <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-primary to-purple-600 transition-all duration-500"
+                    className="h-full rounded-full bg-linear-to-r from-primary to-purple-600 transition-all duration-500"
                     style={{ width: `${matchPercent}%` }}
                   />
                 </div>
@@ -336,7 +336,7 @@ export function ProjectCard({ project, index = 0 }: { project: Project; index?: 
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.04, duration: 0.3, ease: "easeOut" }}
     >
-      <Card className="group flex h-full flex-col rounded-3xl border-border/60 bg-gradient-to-b from-card to-card/98 transition-all duration-300 ease-out hover:-translate-y-1 hover:border-primary/50 hover:shadow-lg dark:to-card/95">
+      <Card className="group flex h-full flex-col rounded-3xl border-border/60 bg-linear-to-b from-card to-card/98 transition-all duration-300 ease-out hover:-translate-y-1 hover:border-primary/50 hover:shadow-lg dark:to-card/95">
         <CardHeader className="space-y-3">
           <div className="flex items-start justify-between gap-3">
             <Link

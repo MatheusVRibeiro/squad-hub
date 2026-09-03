@@ -266,7 +266,7 @@ function RegisterPage() {
                     </div>
                   </PopoverAnchor>
                   <PopoverContent
-                    className="w-[var(--radix-popover-trigger-width)] p-0 rounded-2xl border border-border/60 shadow-lg bg-card"
+                    className="w-(--radix-popover-trigger-width) p-0 rounded-2xl border border-border/60 shadow-lg bg-card"
                     align="start"
                     onOpenAutoFocus={(e) => e.preventDefault()}
                     onInteractOutside={(e) => {

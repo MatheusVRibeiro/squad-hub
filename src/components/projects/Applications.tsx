@@ -73,7 +73,7 @@ export function Applications({
                 <Card className="flex flex-col gap-4 rounded-2xl border border-border/50 bg-card/65 p-5 shadow-sm backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between transition-all duration-300 hover:border-primary/20 hover:shadow-md">
                   <div className="flex flex-1 items-start gap-4">
                     <Avatar className="h-11 w-11 border shadow-inner">
-                      <AvatarFallback className="bg-gradient-to-tr from-primary/10 to-primary/20 text-primary text-xs font-semibold">
+                      <AvatarFallback className="bg-linear-to-tr from-primary/10 to-primary/20 text-primary text-xs font-semibold">
                         {initials(a.name)}
                       </AvatarFallback>
                     </Avatar>

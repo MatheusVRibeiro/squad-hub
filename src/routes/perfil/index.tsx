@@ -626,7 +626,7 @@ function PerfilPage() {
           </div>
 
           <Card className="overflow-hidden rounded-3xl border border-border/60 bg-card shadow-sm">
-            <div className="h-32 bg-gradient-to-r from-primary/80 to-indigo-600/80" />
+            <div className="h-32 bg-linear-to-r from-primary/80 to-indigo-600/80" />
             <CardContent className="-mt-12 space-y-4 p-6 sm:px-8">
               <div className="flex flex-col sm:flex-row sm:items-end gap-4 text-center sm:text-left justify-between">
                 <div className="flex flex-col sm:flex-row sm:items-end gap-4">
@@ -634,7 +634,7 @@ function PerfilPage() {
                     {avatar ? (
                       <AvatarImage src={avatar} alt={name || "Avatar"} className="object-cover" />
                     ) : null}
-                    <AvatarFallback className="bg-gradient-to-tr from-primary to-indigo-600 text-xl font-semibold text-white">
+                    <AvatarFallback className="bg-linear-to-tr from-primary to-indigo-600 text-xl font-semibold text-white">
                       {initials}
                     </AvatarFallback>
                   </Avatar>
@@ -659,7 +659,7 @@ function PerfilPage() {
           </Card>
 
           {perfilTecnicoCarregado && perfilCompleto === false && (
-            <div className="rounded-3xl border border-primary/30 bg-gradient-to-r from-primary/10 via-indigo-500/10 to-primary/5 p-5 shadow-sm sm:p-6">
+            <div className="rounded-3xl border border-primary/30 bg-linear-to-r from-primary/10 via-indigo-500/10 to-primary/5 p-5 shadow-sm sm:p-6">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                 <div className="flex-1 space-y-2">
                   <div className="flex items-center gap-2">
@@ -802,7 +802,7 @@ function PerfilPage() {
                           </div>
                         </PopoverAnchor>
                         <PopoverContent
-                          className="w-[var(--radix-popover-trigger-width)] p-0 rounded-2xl border border-border/60 shadow-lg bg-card"
+                          className="w-(--radix-popover-trigger-width) p-0 rounded-2xl border border-border/60 shadow-lg bg-card"
                           align="start"
                           onOpenAutoFocus={(e) => e.preventDefault()}
                           onInteractOutside={(e) => {
@@ -972,7 +972,7 @@ function PerfilPage() {
                                     mudarNivelSkill(s.nome, v as NivelHabilidade)
                                   }
                                 >
-                                  <SelectTrigger className="h-8 w-[132px] rounded-lg text-xs cursor-pointer">
+                                  <SelectTrigger className="h-8 w-33 rounded-lg text-xs cursor-pointer">
                                     <SelectValue placeholder="Nível" />
                                   </SelectTrigger>
                                   <SelectContent>
@@ -1024,7 +1024,7 @@ function PerfilPage() {
                                   mudarNivelInteresse(f.nome, v as NivelInteresse)
                                 }
                               >
-                                <SelectTrigger className="h-6 w-[86px] cursor-pointer rounded-full border-0 bg-transparent px-1.5 text-[10px] [&>svg]:h-3 [&>svg]:w-3">
+                                <SelectTrigger className="h-6 w-21.5 cursor-pointer rounded-full border-0 bg-transparent px-1.5 text-[10px] [&>svg]:h-3 [&>svg]:w-3">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>

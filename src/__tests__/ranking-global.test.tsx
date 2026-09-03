@@ -9,6 +9,7 @@ import { Route } from "@/routes/ranking";
 vi.mock("@tanstack/react-router", () => ({
   createFileRoute: () => (options: { component?: React.ComponentType }) => ({
     options: { component: options?.component },
+    useSearch: () => ({ tab: "contributors" }),
   }),
   useNavigate: () => vi.fn(),
   useSearch: () => ({ tab: "contributors" }),

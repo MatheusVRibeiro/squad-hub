@@ -7,7 +7,6 @@ import {
   PlusCircle,
   Settings,
   Sparkles,
-  Trophy,
   User,
 } from "lucide-react";
 
@@ -34,9 +33,8 @@ const items = [
   { title: "Configurações", url: "/configuracoes", icon: Settings },
 ] as const;
 
-/** ETAPA 13 (Kanban escalável): ranking GLOBAL na sidebar (endpoints existentes). */
+/** Ranking GLOBAL na sidebar (Top Contributors removido da visualização para implementação futura). */
 const rankingItems = [
-  { title: "Top Contributors", url: "/ranking?tab=contributors", icon: Trophy },
   { title: "Top Committers", url: "/ranking?tab=committers", icon: GitCommitHorizontal },
 ] as const;
 
@@ -45,6 +43,9 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const { signOut } = useAuth();
   const currentPath = useRouterState({ select: (s) => s.location.pathname });
+  const currentTab = useRouterState({
+    select: (s) => (s.location.search as Record<string, unknown> | undefined)?.tab,
+  });
 
   return (
     <Sidebar collapsible="icon">
@@ -63,7 +64,14 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => {
-                const active = currentPath === item.url || currentPath.startsWith(`${item.url}/`);
+                const active =
+                  currentPath === item.url ||
+                  (currentPath.startsWith(`${item.url}/`) &&
+                    !items.some(
+                      (other) =>
+                        other.url !== item.url &&
+                        (currentPath === other.url || currentPath.startsWith(`${other.url}/`)),
+                    ));
                 return (
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton asChild isActive={active} tooltip={item.title}>
@@ -79,7 +87,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* ETAPA 13 (Kanban escalável): ranking global — endpoints existentes. */}
+        {/* Ranking global — endpoints existentes. */}
         <SidebarGroup>
           {!collapsed && <SidebarGroupLabel>Ranking</SidebarGroupLabel>}
           <SidebarGroupContent>
@@ -92,7 +100,7 @@ export function AppSidebar() {
                       <Link
                         to="/ranking"
                         search={{
-                          tab: item.title === "Top Contributors" ? "contributors" : "committers",
+                          tab: "committers",
                         }}
                         className="flex items-center gap-2"
                       >

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { Calendar, Check, Loader2, Users, User } from "lucide-react";
+import { Calendar, Check, Loader2, Users, User, Sparkles, Layers } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -25,6 +25,17 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 
+const ROLES = [
+  { id: "Full Stack", label: "Full Stack" },
+  { id: "Frontend", label: "Frontend" },
+  { id: "Backend", label: "Backend" },
+  { id: "Mobile", label: "Mobile" },
+  { id: "UI/UX", label: "UI/UX" },
+  { id: "DevOps", label: "DevOps" },
+] as const;
+
+const AVAILABILITY_OPTIONS = ["5h/sem", "10h/sem", "15h/sem", "20h+/sem"] as const;
+
 const statusStyles: Record<Project["status"], string> = {
   Aberto: "bg-primary/10 text-primary border-primary/20",
   "Em andamento": "bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400",
@@ -46,8 +57,9 @@ export function ProjectCard({ project, index = 0 }: { project: Project; index?: 
   const [open, setOpen] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
-  const [applyMessage, setApplyMessage] = useState(user?.bio || "");
-  const [applySkills, setApplySkills] = useState(user?.skills?.join(", ") || "");
+  const [applyMessage, setApplyMessage] = useState("");
+  const [selectedRole, setSelectedRole] = useState<string>("Full Stack");
+  const [availability, setAvailability] = useState<string>("10h/sem");
   const [localApplied, setLocalApplied] = useState(false);
 
   const closed = project.status === "Finalizado";
@@ -90,15 +102,12 @@ export function ProjectCard({ project, index = 0 }: { project: Project; index?: 
 
     setIsApplying(true);
     try {
-      const skillsArray = applySkills
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
+      const formattedMessage = `[Ramo: ${selectedRole} | Disponibilidade: ${availability}]\n\n${applyMessage.trim()}`;
 
       await applyToProjectLocal(project.id, {
         name: user?.name || "Usuário",
-        message: applyMessage.trim(),
-        skills: skillsArray,
+        message: formattedMessage,
+        skills: user?.skills || [],
       });
 
       // Dispara as notificações
@@ -234,36 +243,58 @@ export function ProjectCard({ project, index = 0 }: { project: Project; index?: 
                 </DialogDescription>
               </DialogHeader>
 
-              {/* Análise de compatibilidade de Stack */}
-              <div className="rounded-2xl border border-border/50 bg-muted/25 p-4 space-y-3">
-                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                  <span>Compatibilidade de Stack</span>
-                  <span className="text-primary">{matchPercent}%</span>
+              {/* Compatibilidade de Stack (Clean & Profissional) */}
+              <div className="rounded-xl border border-border/70 bg-muted/20 p-3.5 space-y-2.5">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-foreground/90">Compatibilidade da stack</span>
+                  <span className="font-medium text-foreground">
+                    <strong
+                      className={cn(
+                        matchPercent === 100
+                          ? "text-emerald-600 dark:text-emerald-400"
+                          : "text-primary",
+                      )}
+                    >
+                      {matchPercent}%
+                    </strong>
+                    <span className="text-muted-foreground ml-1">
+                      ({matchingSkills.length}/{project.technologies.length})
+                    </span>
+                  </span>
                 </div>
-                <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+
+                {/* Barra minimalista e sóbria */}
+                <div className="h-1.5 w-full rounded-full bg-muted/80 overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-linear-to-r from-primary to-purple-600 transition-all duration-500"
+                    className={cn(
+                      "h-full rounded-full transition-all duration-300",
+                      matchPercent === 100 ? "bg-emerald-600 dark:bg-emerald-500" : "bg-primary",
+                    )}
                     style={{ width: `${matchPercent}%` }}
                   />
                 </div>
-                <div className="flex flex-wrap gap-1">
+
+                {/* Tags de tecnologias limpas */}
+                <div className="flex flex-wrap gap-1.5 pt-0.5">
                   {project.technologies.map((tech) => {
                     const matched = user?.skills?.some(
                       (skill) => skill.toLowerCase() === tech.toLowerCase(),
                     );
                     return (
-                      <Badge
+                      <span
                         key={tech}
-                        variant="outline"
                         className={cn(
-                          "rounded-full text-[9px] font-bold tracking-wide py-0.5 px-2.5 flex items-center gap-1.5 border",
+                          "inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-0.5 rounded-md border transition-colors",
                           matched
-                            ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-400"
-                            : "bg-muted text-muted-foreground border-border",
+                            ? "bg-background border-border text-foreground shadow-2xs"
+                            : "bg-muted/40 border-dashed border-border/70 text-muted-foreground",
                         )}
                       >
-                        {matched ? "✓" : "○"} {tech}
-                      </Badge>
+                        {matched && (
+                          <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400 stroke-[2.5]" />
+                        )}
+                        {tech}
+                      </span>
                     );
                   })}
                 </div>
@@ -271,37 +302,90 @@ export function ProjectCard({ project, index = 0 }: { project: Project; index?: 
 
               {/* Formulário */}
               <form onSubmit={handleApplySubmit} className="space-y-4">
+                {/* Ramo de Atuação */}
                 <div className="space-y-1.5">
-                  <Label
-                    htmlFor="message"
-                    className="text-[10px] font-bold text-foreground/80 uppercase tracking-wide"
-                  >
-                    Mensagem de Apresentação
-                  </Label>
+                  <div className="flex items-center justify-between">
+                    <Label className="text-[10px] font-bold text-foreground/80 uppercase tracking-wide">
+                      Ramo de Atuação Desejado
+                    </Label>
+                    <span className="text-[11px] font-medium text-primary">{selectedRole}</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {ROLES.map((role) => {
+                      const isSelected = selectedRole === role.id;
+                      return (
+                        <button
+                          key={role.id}
+                          type="button"
+                          onClick={() => setSelectedRole(role.id)}
+                          className={cn(
+                            "h-9 rounded-xl border text-xs font-semibold transition-all flex items-center justify-center cursor-pointer",
+                            isSelected
+                              ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                              : "bg-background/50 border-border/70 text-muted-foreground hover:border-primary/50 hover:text-foreground",
+                          )}
+                        >
+                          {role.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Disponibilidade Semanal */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-[10px] font-bold text-foreground/80 uppercase tracking-wide">
+                      Disponibilidade Semanal
+                    </Label>
+                    <span className="text-[11px] font-medium text-muted-foreground">
+                      {availability}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {AVAILABILITY_OPTIONS.map((opt) => {
+                      const isSelected = availability === opt;
+                      return (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => setAvailability(opt)}
+                          className={cn(
+                            "h-8 rounded-xl border text-[11px] font-medium transition-all flex items-center justify-center cursor-pointer",
+                            isSelected
+                              ? "bg-primary/15 text-primary border-primary/40 font-semibold"
+                              : "bg-background/40 border-border/70 text-muted-foreground hover:border-primary/40 hover:text-foreground",
+                          )}
+                        >
+                          {opt}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Mensagem de Apresentação */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label
+                      htmlFor="message"
+                      className="text-[10px] font-bold text-foreground/80 uppercase tracking-wide"
+                    >
+                      Mensagem de Apresentação
+                    </Label>
+                    <span className="text-[10px] text-muted-foreground">
+                      {applyMessage.length}/500
+                    </span>
+                  </div>
                   <Textarea
                     id="message"
                     required
-                    placeholder="Olá! Sou desenvolvedor e posso ajudar..."
-                    className="rounded-xl border-border/60 bg-background/40 p-3 text-sm focus-visible:ring-primary/20 resize-none text-xs leading-relaxed"
-                    rows={3}
+                    maxLength={500}
+                    placeholder="Conte brevemente sua experiência e como pretende contribuir neste squad..."
+                    className="rounded-xl border-border/60 bg-background/40 p-3 text-xs focus-visible:ring-primary/20 resize-none leading-relaxed min-h-[90px]"
+                    rows={4}
                     value={applyMessage}
                     onChange={(e) => setApplyMessage(e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label
-                    htmlFor="skills"
-                    className="text-[10px] font-bold text-foreground/80 uppercase tracking-wide"
-                  >
-                    Habilidades (separadas por vírgula)
-                  </Label>
-                  <Input
-                    id="skills"
-                    placeholder="React, Node.js, Git..."
-                    className="h-10 rounded-xl border-border/60 bg-background/40 px-3 text-xs focus-visible:ring-primary/20"
-                    value={applySkills}
-                    onChange={(e) => setApplySkills(e.target.value)}
                   />
                 </div>
 
@@ -310,16 +394,23 @@ export function ProjectCard({ project, index = 0 }: { project: Project; index?: 
                     type="button"
                     variant="ghost"
                     onClick={() => setOpen(false)}
-                    className="rounded-xl h-10 px-4 text-xs font-medium"
+                    className="rounded-xl h-10 px-4 text-xs font-medium cursor-pointer"
                   >
                     Cancelar
                   </Button>
                   <Button
                     type="submit"
                     disabled={isApplying}
-                    className="rounded-xl h-10 px-5 text-xs font-semibold shadow-sm"
+                    className="rounded-xl h-10 px-5 text-xs font-semibold shadow-sm cursor-pointer"
                   >
-                    {isApplying ? "Enviando..." : "Confirmar e Enviar"}
+                    {isApplying ? (
+                      <>
+                        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                        Enviando...
+                      </>
+                    ) : (
+                      "Confirmar e Enviar"
+                    )}
                   </Button>
                 </div>
               </form>

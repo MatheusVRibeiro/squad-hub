@@ -21,8 +21,6 @@ import { DashboardCharts } from "@/components/dashboard/DashboardCharts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TopCommitters } from "@/components/projects/TopCommitters";
-import { TopContributors } from "@/components/projects/TopContributors";
 import { RecomendadosParaVoce } from "@/components/projects/RecomendadosParaVoce";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchProjects } from "@/services/projects";
@@ -330,57 +328,19 @@ function DashboardPage() {
           {/* Recomendados para você (ETAPA 16 — matching desenvolvedor ↔ projeto) */}
           <RecomendadosParaVoce />
 
-          {/* Seção de Gráficos Recharts */}
-          <div className="grid gap-6 md:grid-cols-3">
-            {/* Gráfico 1: Evolução Semanal de Atividade / XP — estado vazio (sem fonte real) */}
-            <Card className="rounded-2xl border-border/60 md:col-span-2">
-              <CardHeader>
-                <CardTitle className="text-lg">Progresso Semanal (XP)</CardTitle>
-                <CardDescription>Evolução do XP acumulado ao longo da semana.</CardDescription>
-              </CardHeader>
-              <CardContent className="flex h-72 flex-col items-center justify-center gap-3 text-center">
-                <span className="grid h-12 w-12 place-items-center rounded-xl bg-primary/10 text-primary">
-                  <Trophy className="h-6 w-6" />
-                </span>
-                <p className="text-sm font-medium">Sem dados semanais disponíveis</p>
-                <p className="max-w-xs text-xs text-muted-foreground">
-                  Ainda não há histórico diário de XP. Complete tarefas e participe de squads para
-                  acumular XP.
-                </p>
-                {reputation && (
-                  <p className="text-xs text-muted-foreground">
-                    XP atual:{" "}
-                    <span className="font-semibold text-foreground">
-                      {reputation.xp} / {reputation.xpToNext}
-                    </span>
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Gráficos com recharts — lazy-loaded (DashboardCharts + Suspense)
-                para não carregar ~400KB no bundle inicial após o login. */}
+          {/* Seção de Métricas e Gráficos dos Squads */}
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-lg font-semibold tracking-tight">Visão Geral dos Squads</h2>
+              <p className="text-sm text-muted-foreground">
+                Acompanhe o status dos projetos e a distribuição das tarefas nos Kanbans.
+              </p>
+            </div>
             <DashboardCharts
               projectStatusData={projectStatusData}
               taskStatusData={taskStatusData}
               tasksLoading={tasksLoading}
               totalTasksCount={totalTasksCount}
-            />
-          </div>
-
-          {/* Rankings da plataforma (ETAPAS 12 e 14) */}
-          <div className="grid gap-6 md:grid-cols-2">
-            <TopContributors
-              scope="global"
-              limit={5}
-              period="all"
-              title="Top Contributors da plataforma"
-            />
-            <TopCommitters
-              scope="global"
-              limit={5}
-              period="all"
-              title="Top Committers da plataforma"
             />
           </div>
 

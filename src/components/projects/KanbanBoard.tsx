@@ -18,6 +18,9 @@ import {
   ArrowLeftRight,
   Inbox,
   RefreshCw,
+  X,
+  Search,
+  ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -229,6 +232,21 @@ export function KanbanBoard({
   const [dificuldade, setDificuldade] = useState<TaskDificuldade>("intermediaria");
   const [habilidadeIds, setHabilidadeIds] = useState<number[]>([]);
   const [habilidadesDisponiveis, setHabilidadesDisponiveis] = useState<Habilidade[]>([]);
+  const [showSkillPicker, setShowSkillPicker] = useState(false);
+  const [habSearch, setHabSearch] = useState("");
+
+  const filteredHabilidades = useMemo(() => {
+    if (!habSearch.trim()) return habilidadesDisponiveis;
+    const q = normalizeText(habSearch);
+    return habilidadesDisponiveis.filter((h) => normalizeText(h.nome).includes(q));
+  }, [habilidadesDisponiveis, habSearch]);
+
+  const selectedHabilidades = useMemo(() => {
+    return habilidadeIds.map((id) => {
+      const found = habilidadesDisponiveis.find((h) => h.id === id);
+      return found || { id, nome: `Habilidade #${id}` };
+    });
+  }, [habilidadeIds, habilidadesDisponiveis]);
   const [dragId, setDragId] = useState<string | null>(null);
   const [claimingId, setClaimingId] = useState<string | null>(null);
   // ETAPA 9: abandonar / remover responsável / reatribuir + histórico.
@@ -322,6 +340,8 @@ export function KanbanBoard({
     setAssignee(undefined);
     setDificuldade("intermediaria");
     setHabilidadeIds([]);
+    setShowSkillPicker(false);
+    setHabSearch("");
     setEditingTask(null);
     setModalMode("create");
   }
@@ -340,6 +360,8 @@ export function KanbanBoard({
     setNewSubtask("");
     setAssignee(task.assignee);
     setDificuldade(task.dificuldade || "intermediaria");
+    setShowSkillPicker(false);
+    setHabSearch("");
     // Prefere os ids persistidos; caso contrário, casa nomes com a base global.
     const ids = task.habilidadeIds ?? [];
     setHabilidadeIds(
@@ -1217,8 +1239,8 @@ export function KanbanBoard({
 
       {/* Modal Dialog de Detalhes / Criação de Tarefa */}
       <Dialog open={modalMode !== null} onOpenChange={(open) => !open && setModalMode(null)}>
-        <DialogContent className="rounded-3xl max-w-lg border border-border/60 bg-card/98 backdrop-blur shadow-2xl p-6">
-          <DialogHeader>
+        <DialogContent className="rounded-3xl max-w-lg border border-border/60 bg-card/98 backdrop-blur shadow-2xl p-0 max-h-[88vh] flex flex-col overflow-hidden gap-0">
+          <DialogHeader className="p-6 pb-4 shrink-0 border-b border-border/20 text-left">
             <DialogTitle className="text-lg font-bold text-foreground">
               {modalMode === "create" ? "Criar Nova Tarefa" : "Editar Tarefa"}
             </DialogTitle>
@@ -1230,7 +1252,7 @@ export function KanbanBoard({
           </DialogHeader>
 
           {modalMode !== null && (
-            <div className="space-y-4 pt-2">
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
               <div className="space-y-1.5">
                 <Label className="text-[10px] font-bold text-foreground/80 uppercase tracking-wide">
                   Título da tarefa
@@ -1349,46 +1371,122 @@ export function KanbanBoard({
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] font-bold text-foreground/80 uppercase tracking-wide">
-                    Habilidades ({habilidadeIds.length} selecionadas)
-                  </Label>
-                  <div className="flex flex-wrap gap-1.5 pt-0.5">
-                    {habilidadesDisponiveis.length === 0 ? (
-                      <span className="text-[10px] text-muted-foreground">
-                        Nenhuma habilidade disponível no momento.
-                      </span>
-                    ) : (
-                      habilidadesDisponiveis.map((h) => {
-                        const ativa = habilidadeIds.includes(h.id);
-                        return (
-                          <button
-                            key={h.id}
-                            type="button"
-                            onClick={() => toggleHabilidade(h.id)}
-                            className="cursor-pointer rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                            aria-pressed={ativa}
-                          >
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                "rounded-full px-2.5 py-0.5 text-[10px] transition-all font-medium border",
-                                ativa
-                                  ? "bg-primary/15 text-primary border-primary/30 hover:bg-primary/20"
-                                  : "bg-background/20 border-border/80 text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5",
-                              )}
-                            >
-                              {ativa ? (
-                                <Check className="mr-1 inline h-3 w-3" />
-                              ) : (
-                                <Plus className="mr-1 inline h-3 w-3" />
-                              )}
-                              {h.nome}
-                            </Badge>
-                          </button>
-                        );
-                      })
+                  <div className="flex items-center justify-between">
+                    <Label className="text-[10px] font-bold text-foreground/80 uppercase tracking-wide">
+                      Habilidades {habilidadeIds.length > 0 && `(${habilidadeIds.length})`}
+                    </Label>
+                    {habilidadeIds.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setHabilidadeIds([])}
+                        className="text-[10px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                      >
+                        Limpar
+                      </button>
                     )}
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowSkillPicker((prev) => !prev)}
+                    className="flex h-10 w-full items-center justify-between rounded-xl border border-border/60 bg-background/40 px-3 text-xs transition-colors hover:bg-background/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
+                  >
+                    <span className="truncate text-foreground/80">
+                      {habilidadeIds.length === 0
+                        ? "Selecionar habilidades..."
+                        : `${habilidadeIds.length} selecionada${habilidadeIds.length > 1 ? "s" : ""}`}
+                    </span>
+                    <ChevronDown
+                      className={cn(
+                        "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                        showSkillPicker && "rotate-180",
+                      )}
+                    />
+                  </button>
+
+                  {/* Dropdown / Picker inline compacto com busca */}
+                  {showSkillPicker && (
+                    <div className="rounded-xl border border-border/60 bg-muted/25 p-2.5 space-y-2 mt-1 shadow-xs">
+                      <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                        <Input
+                          placeholder="Buscar habilidade..."
+                          value={habSearch}
+                          onChange={(e) => setHabSearch(e.target.value)}
+                          className="h-8 pl-8 pr-7 text-xs rounded-lg bg-background/60 border-border/50"
+                        />
+                        {habSearch && (
+                          <button
+                            type="button"
+                            onClick={() => setHabSearch("")}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        )}
+                      </div>
+                      <div className="max-h-32 overflow-y-auto pr-1 flex flex-wrap gap-1.5">
+                        {filteredHabilidades.length === 0 ? (
+                          <span className="text-[10px] text-muted-foreground py-2 text-center w-full">
+                            Nenhuma habilidade encontrada.
+                          </span>
+                        ) : (
+                          filteredHabilidades.map((h) => {
+                            const ativa = habilidadeIds.includes(h.id);
+                            return (
+                              <button
+                                key={h.id}
+                                type="button"
+                                onClick={() => toggleHabilidade(h.id)}
+                                className="cursor-pointer rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                aria-pressed={ativa}
+                              >
+                                <Badge
+                                  variant="outline"
+                                  className={cn(
+                                    "rounded-full px-2.5 py-0.5 text-[10px] transition-all font-medium border",
+                                    ativa
+                                      ? "bg-primary/20 text-primary border-primary/40 font-semibold shadow-xs"
+                                      : "bg-background/40 border-border/60 text-muted-foreground hover:border-primary/50 hover:text-primary hover:bg-primary/5",
+                                  )}
+                                >
+                                  {ativa ? (
+                                    <Check className="mr-1 inline h-3 w-3" />
+                                  ) : (
+                                    <Plus className="mr-1 inline h-3 w-3" />
+                                  )}
+                                  {h.nome}
+                                </Badge>
+                              </button>
+                            );
+                          })
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Chips das habilidades selecionadas */}
+                  {selectedHabilidades.length > 0 && (
+                    <div className="flex flex-wrap gap-1 pt-1 max-h-16 overflow-y-auto">
+                      {selectedHabilidades.map((h) => (
+                        <Badge
+                          key={h.id}
+                          variant="secondary"
+                          className="rounded-full pl-2.5 pr-1 py-0.5 text-[10px] font-medium bg-primary/15 text-primary border border-primary/25 flex items-center gap-1"
+                        >
+                          <span>{h.nome}</span>
+                          <button
+                            type="button"
+                            onClick={() => toggleHabilidade(h.id)}
+                            className="hover:bg-primary/20 rounded-full p-0.5 text-primary/70 hover:text-primary transition-colors cursor-pointer"
+                            aria-label={`Remover ${h.nome}`}
+                          >
+                            <X className="h-2.5 w-2.5" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1480,28 +1578,30 @@ export function KanbanBoard({
                 </div>
               </div>
 
-              {/* Botões de Ação */}
-              <div className="flex justify-end gap-2.5 pt-3 border-t border-border/20">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => setModalMode(null)}
-                  className="rounded-xl h-10 px-4 text-xs font-medium"
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  onClick={modalMode === "create" ? handleCreateTask : handleSaveDetails}
-                  className="rounded-xl h-10 px-5 text-xs font-semibold shadow-sm"
-                >
-                  {modalMode === "create" ? "Criar Tarefa" : "Salvar Alterações"}
-                </Button>
-              </div>
-
               {/* Atividade GitHub da tarefa (ETAPA 8) — apenas no modo edição */}
               {modalMode === "edit" && editingTask && (
                 <GithubTaskActivity projectId={projectId} taskId={editingTask.id} open />
               )}
+            </div>
+          )}
+
+          {/* Botões de Ação Fixos no Rodapé */}
+          {modalMode !== null && (
+            <div className="p-4 px-6 shrink-0 border-t border-border/20 flex justify-end gap-2.5 bg-card/95 backdrop-blur">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setModalMode(null)}
+                className="rounded-xl h-10 px-4 text-xs font-medium"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={modalMode === "create" ? handleCreateTask : handleSaveDetails}
+                className="rounded-xl h-10 px-5 text-xs font-semibold shadow-sm"
+              >
+                {modalMode === "create" ? "Criar Tarefa" : "Salvar Alterações"}
+              </Button>
             </div>
           )}
         </DialogContent>

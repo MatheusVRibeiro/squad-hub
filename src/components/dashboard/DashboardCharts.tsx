@@ -23,7 +23,7 @@ export function DashboardCharts({
   return (
     <Suspense
       fallback={
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-2">
           <Card className="rounded-2xl border-border/60">
             <CardHeader>
               <CardTitle className="text-lg">Status dos Squads</CardTitle>
@@ -33,7 +33,7 @@ export function DashboardCharts({
               <Skeleton className="h-48 w-full rounded-xl" />
             </CardContent>
           </Card>
-          <Card className="rounded-2xl border-border/60 md:col-span-2">
+          <Card className="rounded-2xl border-border/60">
             <CardHeader>
               <CardTitle className="text-lg">Métricas das Tarefas</CardTitle>
               <CardDescription>Relação de status dos cartões nos Kanbans.</CardDescription>

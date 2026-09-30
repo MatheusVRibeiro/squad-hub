@@ -263,10 +263,9 @@ describe("ETAPA 19 — lazy loading das abas secundárias", () => {
 
     await userEvent.click(screen.getByRole("tab", { name: "Insights" }));
 
-    await waitFor(() => expect(getProjectContributors).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(getProjectCommitters).toHaveBeenCalledTimes(1));
-    expect(getProjectContributors).toHaveBeenCalledWith("1", 5);
     expect(getProjectCommitters).toHaveBeenCalledWith("1", 5);
+    expect(getProjectContributors).not.toHaveBeenCalled();
 
     // Sem chamadas duplicadas na primeira abertura: cada query secundária 1x.
     expect(fetchEventosProjeto).not.toHaveBeenCalled();

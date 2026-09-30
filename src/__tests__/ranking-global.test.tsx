@@ -9,10 +9,10 @@ import { Route } from "@/routes/ranking";
 vi.mock("@tanstack/react-router", () => ({
   createFileRoute: () => (options: { component?: React.ComponentType }) => ({
     options: { component: options?.component },
-    useSearch: () => ({ tab: "contributors" }),
+    useSearch: () => ({ tab: "committers" }),
   }),
   useNavigate: () => vi.fn(),
-  useSearch: () => ({ tab: "contributors" }),
+  useSearch: () => ({ tab: "committers" }),
 }));
 vi.mock("@/layouts/AppLayout", () => ({
   AppLayout: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
@@ -82,28 +82,18 @@ describe("ETAPA 19 — Ranking global", () => {
     vi.clearAllMocks();
   });
 
-  it("renderiza titulo e tabs", async () => {
+  it("renderiza titulo e tab de top committers (sem top contributors)", async () => {
     renderRanking();
     expect(await screen.findByText("Ranking global")).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /top contributors/i })).toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: /top contributors/i })).not.toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /top committers/i })).toBeInTheDocument();
   });
 
-  it("mostra contributors com score", async () => {
+  it("mostra committers com quantidade de commits", async () => {
     renderRanking();
     expect(await screen.findByText("Lucas Mendes")).toBeInTheDocument();
-    expect(screen.getByText("Roberto Almeida")).toBeInTheDocument();
-    // Scores visíveis
-    expect(screen.getByText("120")).toBeInTheDocument();
-    expect(screen.getByText("90")).toBeInTheDocument();
-  });
-
-  it("alterna para committers", async () => {
-    const user = userEvent.setup();
-    renderRanking();
-    await screen.findByText("Lucas Mendes");
-    await user.click(screen.getByRole("tab", { name: /top committers/i }));
-    expect(await screen.findByText("Fernanda Souza")).toBeInTheDocument();
+    expect(screen.getByText("Fernanda Souza")).toBeInTheDocument();
     expect(screen.getByText("40")).toBeInTheDocument();
+    expect(screen.getByText("25")).toBeInTheDocument();
   });
 });

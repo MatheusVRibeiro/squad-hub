@@ -139,15 +139,8 @@ function RankingList({
 function RankingPage() {
   const navigate = useNavigate();
   const search = Route.useSearch();
-  const [tab, setTab] = useState<"contributors" | "committers">(
-    search.tab === "committers" ? "committers" : "contributors",
-  );
+  const [tab, setTab] = useState<"committers">("committers");
 
-  const contributorsQuery = useQuery({
-    queryKey: ["rankings", "contributors", "global", "all"],
-    queryFn: () => getGlobalContributors(10, "all"),
-    staleTime: 60_000,
-  });
   const committersQuery = useQuery({
     queryKey: ["rankings", "committers", "global", "all"],
     queryFn: () => getGlobalCommitters(10, "all"),
@@ -155,9 +148,8 @@ function RankingPage() {
   });
 
   const handleTabChange = (value: string) => {
-    const next = value as "contributors" | "committers";
-    setTab(next);
-    navigate({ to: "/ranking", search: { tab: next } });
+    setTab("committers");
+    navigate({ to: "/ranking", search: { tab: "committers" } });
   };
 
   return (
@@ -171,35 +163,17 @@ function RankingPage() {
             <div>
               <h1 className="text-2xl font-semibold tracking-tight">Ranking global</h1>
               <p className="text-sm text-muted-foreground">
-                Top contribuidores e committers da comunidade MonteSquad.
+                Top committers da comunidade MonteSquad.
               </p>
             </div>
           </div>
 
           <Tabs value={tab} onValueChange={handleTabChange} className="space-y-4">
             <TabsList className="flex w-full justify-start overflow-x-auto rounded-xl">
-              <TabsTrigger value="contributors">
-                <Trophy className="mr-1.5 h-3.5 w-3.5" /> Top Contributors
-              </TabsTrigger>
               <TabsTrigger value="committers">
                 <GitCommitHorizontal className="mr-1.5 h-3.5 w-3.5" /> Top Committers
               </TabsTrigger>
             </TabsList>
-            <TabsContent value="contributors" className="space-y-4">
-              <Card className="rounded-3xl border-border/60 bg-card shadow-sm">
-                <CardContent className="p-4 sm:p-5">
-                  <RankingList
-                    contributors={contributorsQuery.data ?? []}
-                    committers={[]}
-                    contributorsLoading={contributorsQuery.isLoading}
-                    committersLoading={false}
-                    contributorsError={contributorsQuery.isError}
-                    committersError={false}
-                    onRetry={() => contributorsQuery.refetch()}
-                  />
-                </CardContent>
-              </Card>
-            </TabsContent>
             <TabsContent value="committers" className="space-y-4">
               <Card className="rounded-3xl border-border/60 bg-card shadow-sm">
                 <CardContent className="p-4 sm:p-5">
@@ -224,7 +198,7 @@ function RankingPage() {
 
 export const Route = createFileRoute("/ranking/")({
   validateSearch: (search: Record<string, unknown>): RankingSearch => ({
-    tab: search.tab === "committers" ? "committers" : "contributors",
+    tab: "committers",
   }),
   component: RankingPage,
 });

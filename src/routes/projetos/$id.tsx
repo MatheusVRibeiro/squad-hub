@@ -15,7 +15,6 @@ import { KanbanBoard } from "@/components/projects/KanbanBoard";
 import { TasksRecomendadas } from "@/components/projects/TasksRecomendadas";
 import { GithubProjectPanel } from "@/components/projects/GithubProjectPanel";
 import { TopCommitters } from "@/components/projects/TopCommitters";
-import { TopContributors } from "@/components/projects/TopContributors";
 import { InsightsResumo } from "@/components/projects/InsightsResumo";
 import { Mural } from "@/components/projects/Mural";
 import { MembersList } from "@/components/projects/MembersList";
@@ -23,6 +22,14 @@ import { Applications } from "@/components/projects/Applications";
 import { Vagas } from "@/components/projects/Vagas";
 import { ProjectTimeline } from "@/components/projects/ProjectTimeline";
 import { ProjectHeader } from "@/components/projects/ProjectHeader";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { WorkspaceLinksForm } from "@/components/projects/WorkspaceLinksForm";
 import { ProjectSettings } from "@/components/projects/ProjectSettings";
 import {
   fetchProjectDetail,
@@ -45,6 +52,7 @@ function ProjectDetailPage() {
   // Kanban é a aba padrão; Mural/Membros/Vagas/Recomendadas/Candidaturas foram
   // agrupados nas áreas (Atividade/Equipe) e saíram do primeiro nível.
   const [activeTab, setActiveTab] = useState("kanban");
+  const [linksDialogOpen, setLinksDialogOpen] = useState(false);
   const [activitySubTab, setActivitySubTab] = useState("timeline");
   const [teamSubTab, setTeamSubTab] = useState("membros");
 
@@ -202,7 +210,12 @@ function ProjectDetailPage() {
   }
 
   function goToSettings(anchor?: "privacidade" | "links") {
-    scrollToSection(anchor === "links" ? "secao-settings-links" : "secao-settings-privacidade");
+    if (anchor === "links") {
+      setLinksDialogOpen(true);
+      return;
+    }
+    setActiveTab("configuracoes");
+    scrollToSection("secao-settings-privacidade");
   }
 
   return (
@@ -409,6 +422,7 @@ function ProjectDetailPage() {
                       />
                     </TabsContent>
                   </Tabs>
+              
                 </TabsContent>
 
                 {/* TeamSection (ETAPA 9) — Membros | Vagas | Candidaturas (owner). */}
@@ -470,15 +484,7 @@ function ProjectDetailPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: 0.1 }}
                   >
-                    {/* Top Contributors do projeto (ETAPA 13) — ranking principal */}
-                    <TopContributors projectId={data.id} scope="project" limit={5} />
-                  </motion.div>
-                  <motion.div
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: 0.2 }}
-                  >
-                    {/* Top Committers do projeto (ETAPA 11) — métrica secundária */}
+                    {/* Top Committers do projeto (ETAPA 11) */}
                     <TopCommitters projectId={data.id} scope="project" limit={5} />
                   </motion.div>
                 </TabsContent>
@@ -498,6 +504,32 @@ function ProjectDetailPage() {
                   </TabsContent>
                 )}
               </Tabs>
+              {isOwner && data && (
+                <Dialog open={linksDialogOpen} onOpenChange={setLinksDialogOpen}>
+                  <DialogContent className="rounded-2xl sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Links de trabalho do squad</DialogTitle>
+                      <DialogDescription>
+                        Atualize os links usados pelo time (GitHub, Figma, comunicação e
+                        documentação). Deixe vazio para remover.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <WorkspaceLinksForm
+                      initial={{
+                        repositorioUrl: data.repositorioUrl ?? "",
+                        figmaUrl: data.figmaUrl ?? "",
+                        discordUrl: data.discordUrl ?? "",
+                        documentacaoUrl: data.documentacaoUrl ?? "",
+                      }}
+                      submitting={updateLinks.isPending}
+                      onSave={(links) => {
+                        updateLinks.mutate(links);
+                        setLinksDialogOpen(false);
+                      }}
+                    />
+                  </DialogContent>
+                </Dialog>
+              )}
             </>
           )}
         </div>

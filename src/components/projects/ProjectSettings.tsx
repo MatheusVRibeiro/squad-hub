@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { AlertTriangle, Link2, Lock, Pencil, Settings } from "lucide-react";
 
@@ -39,6 +40,7 @@ export function ProjectSettings({
   closing,
   onCloseProject,
 }: ProjectSettingsProps) {
+  const [linksDialogOpen, setLinksDialogOpen] = useState(false);
   if (!isOwner) return null;
 
   return (
@@ -123,7 +125,7 @@ export function ProjectSettings({
               <Link2 className="h-4 w-4 text-muted-foreground" />
               <h2 className="text-base font-bold text-foreground">Links de trabalho do squad</h2>
               {isOwner && (
-                <Dialog>
+                <Dialog open={linksDialogOpen} onOpenChange={setLinksDialogOpen}>
                   <DialogTrigger asChild>
                     <Button
                       size="sm"
@@ -150,7 +152,10 @@ export function ProjectSettings({
                         documentacaoUrl: data.documentacaoUrl ?? "",
                       }}
                       submitting={updateLinks.isPending}
-                      onSave={(links) => updateLinks.mutate(links)}
+                      onSave={(links) => {
+                        updateLinks.mutate(links);
+                        setLinksDialogOpen(false);
+                      }}
                     />
                   </DialogContent>
                 </Dialog>

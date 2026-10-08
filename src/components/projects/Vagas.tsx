@@ -312,11 +312,27 @@ export function Vagas({
       </div>
 
       {vagas.length === 0 ? (
-        <Card className="rounded-2xl border-dashed border-border/80 bg-muted/10 p-8 text-center text-sm text-muted-foreground">
-          <Briefcase className="mx-auto mb-2 h-8 w-8 opacity-40" />
-          {isOwner
-            ? "Crie a primeira vaga para comunicar quais perfis o projeto procura."
-            : "Este projeto ainda não cadastrou vagas."}
+        <Card className="rounded-3xl border border-dashed border-border/70 bg-muted/5 p-10 text-center">
+          <div className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-primary shadow-inner">
+            <Briefcase className="h-7 w-7" />
+          </div>
+          <h4 className="text-base font-semibold text-foreground">
+            {isOwner ? "Nenhuma vaga aberta no squad" : "Nenhuma vaga disponível no momento"}
+          </h4>
+          <p className="mx-auto mt-1 max-w-sm text-xs leading-relaxed text-muted-foreground">
+            {isOwner
+              ? "Divulgue as posições que seu projeto necessita (ex: Frontend, Backend, UI/UX) para atrair novos membros."
+              : "Este squad não tem vagas em aberto no momento. Fique de olho para futuras oportunidades."}
+          </p>
+          {isOwner && (
+            <Button
+              size="sm"
+              onClick={openCreate}
+              className="mt-4 rounded-xl shadow-xs"
+            >
+              <Plus className="mr-1.5 h-4 w-4" /> Abrir primeira vaga
+            </Button>
+          )}
         </Card>
       ) : (
         <div className="grid gap-3">

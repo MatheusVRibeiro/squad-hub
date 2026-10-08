@@ -42,6 +42,7 @@ function DashboardPage() {
   // valor falso ('Level 1'/'0 projetos'/XP 0); a UI mostra estado de erro/retry.
   const {
     data: projects = [],
+    isLoading: projectsLoading,
     isError: projectsError,
     refetch: refetchProjects,
   } = useQuery({
@@ -61,6 +62,7 @@ function DashboardPage() {
 
   const {
     data: notifications = [],
+    isLoading: notificationsLoading,
     isError: notificationsError,
     refetch: refetchNotifications,
   } = useQuery({
@@ -175,7 +177,22 @@ function DashboardPage() {
             {/* Card de Nível e XP */}
             <Card className="w-full rounded-2xl border-border/60 bg-linear-to-br from-primary/5 via-card to-card md:max-w-xs">
               <CardContent className="flex flex-col gap-3 p-4">
-                {reputationError ? (
+                {reputationLoading ? (
+                  <div className="space-y-3 py-1">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Skeleton className="h-8 w-8 rounded-lg" />
+                        <div className="space-y-1">
+                          <Skeleton className="h-3 w-16" />
+                          <Skeleton className="h-4 w-12" />
+                        </div>
+                      </div>
+                      <Skeleton className="h-3 w-20" />
+                    </div>
+                    <Skeleton className="h-2.5 w-full rounded-full" />
+                    <Skeleton className="ml-auto h-2 w-28" />
+                  </div>
+                ) : reputationError ? (
                   <div className="flex flex-col items-center justify-center gap-2 py-3 text-center">
                     <AlertTriangle className="h-6 w-6 text-destructive" />
                     <p className="text-xs font-medium text-muted-foreground">
@@ -227,7 +244,9 @@ function DashboardPage() {
                 </span>
                 <div>
                   <p className="text-xs font-medium text-muted-foreground">Total de Projetos</p>
-                  {projectsError ? (
+                  {projectsLoading ? (
+                    <Skeleton className="my-1 h-7 w-12 rounded-md" />
+                  ) : projectsError ? (
                     <div className="flex items-center gap-1.5">
                       <AlertTriangle className="h-4 w-4 text-destructive" />
                       <button
@@ -252,7 +271,9 @@ function DashboardPage() {
                 </span>
                 <div>
                   <p className="text-xs font-medium text-muted-foreground">Tarefas Entregues</p>
-                  {tasksError ? (
+                  {tasksLoading ? (
+                    <Skeleton className="my-1 h-7 w-16 rounded-md" />
+                  ) : tasksError ? (
                     <div className="flex items-center gap-1.5">
                       <AlertTriangle className="h-4 w-4 text-destructive" />
                       <button
@@ -281,7 +302,9 @@ function DashboardPage() {
                 </span>
                 <div>
                   <p className="text-xs font-medium text-muted-foreground">Avisos Pendentes</p>
-                  {notificationsError ? (
+                  {notificationsLoading ? (
+                    <Skeleton className="my-1 h-7 w-10 rounded-md" />
+                  ) : notificationsError ? (
                     <div className="flex items-center gap-1.5">
                       <AlertTriangle className="h-4 w-4 text-destructive" />
                       <button
@@ -306,7 +329,9 @@ function DashboardPage() {
                 </span>
                 <div>
                   <p className="text-xs font-medium text-muted-foreground">Conquistas Ganhas</p>
-                  {reputationError ? (
+                  {reputationLoading ? (
+                    <Skeleton className="my-1 h-7 w-10 rounded-md" />
+                  ) : reputationError ? (
                     <div className="flex items-center gap-1.5">
                       <AlertTriangle className="h-4 w-4 text-destructive" />
                       <button

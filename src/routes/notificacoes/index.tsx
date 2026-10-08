@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
+  Bell,
   CheckCheck,
   ClipboardCheck,
   Megaphone,
@@ -117,10 +118,33 @@ function NotificacoesPage() {
               </CardContent>
             </Card>
           ) : notifications.length === 0 ? (
-            <Card className="rounded-2xl border-dashed">
-              <CardContent className="p-10 text-center text-sm text-muted-foreground">
-                Nenhuma notificação ainda.
-              </CardContent>
+            <Card className="rounded-3xl border border-dashed border-border/70 bg-muted/5 p-12 text-center">
+              <div className="relative mx-auto mb-4 w-fit">
+                <div className="grid h-16 w-16 place-items-center rounded-2xl bg-primary/10 text-primary shadow-inner">
+                  <Bell className="h-8 w-8" />
+                </div>
+                <div className="absolute -bottom-1 -right-1 grid h-6 w-6 place-items-center rounded-full bg-emerald-500 text-white shadow-xs">
+                  <CheckCheck className="h-3.5 w-3.5" />
+                </div>
+              </div>
+              <h3 className="text-lg font-semibold tracking-tight text-foreground">
+                Tudo em dia por aqui!
+              </h3>
+              <p className="mx-auto mt-1.5 max-w-sm text-sm leading-relaxed text-muted-foreground">
+                Você não tem nenhuma notificação pendente no momento. Avisaremos assim que houver novidades sobre seus squads e tarefas.
+              </p>
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                <Button asChild variant="outline" className="rounded-xl px-4">
+                  <Link to="/dashboard">
+                    Ir para o Dashboard
+                  </Link>
+                </Button>
+                <Button asChild className="rounded-xl px-4 shadow-sm">
+                  <Link to="/projetos">
+                    Explorar Projetos
+                  </Link>
+                </Button>
+              </div>
             </Card>
           ) : (
             <ul className="space-y-2">

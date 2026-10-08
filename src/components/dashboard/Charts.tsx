@@ -12,6 +12,7 @@ import {
 } from "recharts";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // ETAPA perf: este módulo contém recharts (~400KB) e só é carregado sob
 // demanda (lazy) quando o dashboard monta — não polui o bundle inicial.
@@ -94,8 +95,19 @@ export function Charts({
         </CardHeader>
         <CardContent className="h-72">
           {tasksLoading ? (
-            <div className="flex h-full items-center justify-center">
-              <p className="text-xs text-muted-foreground">Carregando tarefas...</p>
+            <div className="flex h-full flex-col justify-end gap-3 pb-3 pt-4">
+              <div className="flex h-36 items-end justify-around gap-4 px-6">
+                <Skeleton className="h-16 w-12 rounded-t-lg" />
+                <Skeleton className="h-28 w-12 rounded-t-lg" />
+                <Skeleton className="h-20 w-12 rounded-t-lg" />
+                <Skeleton className="h-32 w-12 rounded-t-lg" />
+              </div>
+              <div className="flex justify-around border-t border-border/40 px-6 pt-2">
+                <Skeleton className="h-3 w-12 rounded" />
+                <Skeleton className="h-3 w-16 rounded" />
+                <Skeleton className="h-3 w-14 rounded" />
+                <Skeleton className="h-3 w-14 rounded" />
+              </div>
             </div>
           ) : totalTasksCount === 0 ? (
             <div className="flex h-full flex-col items-center justify-center gap-2 text-center">

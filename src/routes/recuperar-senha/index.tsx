@@ -78,12 +78,12 @@ function RecuperarSenhaPage() {
       setStep("codigo");
       setCountdown(60);
       toast.success("Código de confirmação enviado para seu e-mail!");
-    } catch {
-      // Anti-enumeração: responde com sucesso visual e avança para a etapa do código
-      setEmail(values.email);
-      setStep("codigo");
-      setCountdown(60);
-      toast.success("Se o e-mail existir, enviaremos um código de recuperação.");
+    } catch (err: unknown) {
+      const message =
+        axios.isAxiosError(err) && err.response?.data?.message
+          ? (err.response.data as { message: string }).message
+          : "Nenhum usuário cadastrado com este e-mail.";
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }

@@ -72,7 +72,7 @@ export function Mural({
             className="flex gap-4 rounded-2xl border border-border/50 bg-card/65 p-4 shadow-sm backdrop-blur-sm transition-all duration-300 hover:border-primary/20 hover:shadow-md"
           >
             <Avatar className="h-10 w-10 border shadow-inner">
-              <AvatarFallback className="bg-gradient-to-tr from-primary/10 to-primary/20 text-primary text-xs font-semibold">
+              <AvatarFallback className="bg-linear-to-tr from-primary/10 to-primary/20 text-primary text-xs font-semibold">
                 {initials(m.author)}
               </AvatarFallback>
             </Avatar>
@@ -97,7 +97,7 @@ export function Mural({
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             placeholder="Compartilhe uma atualização com o squad..."
-            className="min-h-[90px] resize-none border-0 bg-transparent p-0 shadow-none focus-visible:ring-0 text-sm leading-relaxed"
+            className="min-h-22.5 resize-none border-0 bg-transparent p-0 shadow-none focus-visible:ring-0 text-sm leading-relaxed"
             onKeyDown={(e) => {
               if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
                 e.preventDefault();

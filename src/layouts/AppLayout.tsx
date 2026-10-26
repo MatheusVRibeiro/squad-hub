@@ -201,14 +201,14 @@ export function AppLayout({
               initial={{ scale: 0.5, rotate: -15, opacity: 0 }}
               animate={{ scale: [1, 1.2, 1], rotate: [0, 10, 0], opacity: 1 }}
               transition={{ type: "spring", stiffness: 200, damping: 12, duration: 0.8 }}
-              className="relative flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-400 text-white shadow-lg shadow-amber-500/20"
+              className="relative flex h-20 w-20 items-center justify-center rounded-2xl bg-linear-to-tr from-amber-500 to-yellow-400 text-white shadow-lg shadow-amber-500/20"
             >
               <Trophy className="h-10 w-10 animate-pulse" />
               <Sparkles className="absolute -top-2 -right-2 h-6 w-6 text-yellow-300 animate-bounce" />
             </motion.div>
 
             <div className="space-y-2">
-              <DialogTitle className="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 bg-clip-text text-transparent">
+              <DialogTitle className="text-2xl font-extrabold tracking-tight bg-linear-to-r from-amber-500 via-yellow-500 to-amber-600 bg-clip-text text-transparent">
                 LEVEL UP!
               </DialogTitle>
               <p className="text-3xl font-black text-foreground">Nível {levelUpData?.level}</p>
@@ -220,7 +220,7 @@ export function AppLayout({
 
             <Button
               onClick={() => setLevelUpData(null)}
-              className="rounded-xl px-8 h-10 text-xs font-bold shadow-md w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white"
+              className="rounded-xl px-8 h-10 text-xs font-bold shadow-md w-full bg-linear-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white"
             >
               Continuar
             </Button>

@@ -1,0 +1,6 @@
+@utility glassmorphic {
+  background-color: color-mix(in srgb, var(--color-card) 75%, transparent);
+  backdrop-filter: blur(16px);
+  border-width: 1px;
+  border-color: color-mix(in srgb, var(--color-border) 45%, transparent);
+}

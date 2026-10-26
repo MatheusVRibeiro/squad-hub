@@ -9,78 +9,28 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as ResetarSenhaRouteImport } from './routes/resetar-senha'
-import { Route as RegisterRouteImport } from './routes/register'
-import { Route as RecuperarSenhaRouteImport } from './routes/recuperar-senha'
-import { Route as RankingRouteImport } from './routes/ranking'
-import { Route as ProjetosRouteImport } from './routes/projetos'
-import { Route as PerfilRouteImport } from './routes/perfil'
-import { Route as NotificacoesRouteImport } from './routes/notificacoes'
-import { Route as MeusProjetosRouteImport } from './routes/meus-projetos'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as DashboardRouteImport } from './routes/dashboard'
-import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
+import { Route as ProjetosRouteRouteImport } from './routes/projetos/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ProjetosIndexRouteImport } from './routes/projetos.index'
-import { Route as ProjetosNovoRouteImport } from './routes/projetos.novo'
-import { Route as ProjetosIdRouteImport } from './routes/projetos.$id'
-import { Route as AuthGithubSuccessRouteImport } from './routes/auth.github.success'
-import { Route as AuthGithubEmailExistsRouteImport } from './routes/auth.github.email-exists'
-import { Route as AuthGithubCompleteProfileRouteImport } from './routes/auth.github.complete-profile'
+import { Route as ResetarSenhaIndexRouteImport } from './routes/resetar-senha/index'
+import { Route as RegisterIndexRouteImport } from './routes/register/index'
+import { Route as RecuperarSenhaIndexRouteImport } from './routes/recuperar-senha/index'
+import { Route as RankingIndexRouteImport } from './routes/ranking/index'
+import { Route as ProjetosIndexRouteImport } from './routes/projetos/index'
+import { Route as PerfilIndexRouteImport } from './routes/perfil/index'
+import { Route as NotificacoesIndexRouteImport } from './routes/notificacoes/index'
+import { Route as MeusProjetosIndexRouteImport } from './routes/meus-projetos/index'
+import { Route as LoginIndexRouteImport } from './routes/login/index'
+import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
+import { Route as ConfiguracoesIndexRouteImport } from './routes/configuracoes/index'
+import { Route as ProjetosNovoRouteImport } from './routes/projetos/novo'
+import { Route as ProjetosIdRouteImport } from './routes/projetos/$id'
+import { Route as AuthGithubSuccessRouteImport } from './routes/auth/github/success'
+import { Route as AuthGithubEmailExistsRouteImport } from './routes/auth/github/email-exists'
+import { Route as AuthGithubCompleteProfileRouteImport } from './routes/auth/github/complete-profile'
 
-const ResetarSenhaRoute = ResetarSenhaRouteImport.update({
-  id: '/resetar-senha',
-  path: '/resetar-senha',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RegisterRoute = RegisterRouteImport.update({
-  id: '/register',
-  path: '/register',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RecuperarSenhaRoute = RecuperarSenhaRouteImport.update({
-  id: '/recuperar-senha',
-  path: '/recuperar-senha',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RankingRoute = RankingRouteImport.update({
-  id: '/ranking',
-  path: '/ranking',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProjetosRoute = ProjetosRouteImport.update({
+const ProjetosRouteRoute = ProjetosRouteRouteImport.update({
   id: '/projetos',
   path: '/projetos',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PerfilRoute = PerfilRouteImport.update({
-  id: '/perfil',
-  path: '/perfil',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const NotificacoesRoute = NotificacoesRouteImport.update({
-  id: '/notificacoes',
-  path: '/notificacoes',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MeusProjetosRoute = MeusProjetosRouteImport.update({
-  id: '/meus-projetos',
-  path: '/meus-projetos',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
-  id: '/configuracoes',
-  path: '/configuracoes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -88,20 +38,70 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResetarSenhaIndexRoute = ResetarSenhaIndexRouteImport.update({
+  id: '/resetar-senha/',
+  path: '/resetar-senha/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegisterIndexRoute = RegisterIndexRouteImport.update({
+  id: '/register/',
+  path: '/register/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecuperarSenhaIndexRoute = RecuperarSenhaIndexRouteImport.update({
+  id: '/recuperar-senha/',
+  path: '/recuperar-senha/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RankingIndexRoute = RankingIndexRouteImport.update({
+  id: '/ranking/',
+  path: '/ranking/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProjetosIndexRoute = ProjetosIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => ProjetosRoute,
+  getParentRoute: () => ProjetosRouteRoute,
+} as any)
+const PerfilIndexRoute = PerfilIndexRouteImport.update({
+  id: '/perfil/',
+  path: '/perfil/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificacoesIndexRoute = NotificacoesIndexRouteImport.update({
+  id: '/notificacoes/',
+  path: '/notificacoes/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MeusProjetosIndexRoute = MeusProjetosIndexRouteImport.update({
+  id: '/meus-projetos/',
+  path: '/meus-projetos/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginIndexRoute = LoginIndexRouteImport.update({
+  id: '/login/',
+  path: '/login/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardIndexRoute = DashboardIndexRouteImport.update({
+  id: '/dashboard/',
+  path: '/dashboard/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfiguracoesIndexRoute = ConfiguracoesIndexRouteImport.update({
+  id: '/configuracoes/',
+  path: '/configuracoes/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ProjetosNovoRoute = ProjetosNovoRouteImport.update({
   id: '/novo',
   path: '/novo',
-  getParentRoute: () => ProjetosRoute,
+  getParentRoute: () => ProjetosRouteRoute,
 } as any)
 const ProjetosIdRoute = ProjetosIdRouteImport.update({
   id: '/$id',
   path: '/$id',
-  getParentRoute: () => ProjetosRoute,
+  getParentRoute: () => ProjetosRouteRoute,
 } as any)
 const AuthGithubSuccessRoute = AuthGithubSuccessRouteImport.update({
   id: '/auth/github/success',
@@ -122,39 +122,39 @@ const AuthGithubCompleteProfileRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/configuracoes': typeof ConfiguracoesRoute
-  '/dashboard': typeof DashboardRoute
-  '/login': typeof LoginRoute
-  '/meus-projetos': typeof MeusProjetosRoute
-  '/notificacoes': typeof NotificacoesRoute
-  '/perfil': typeof PerfilRoute
-  '/projetos': typeof ProjetosRouteWithChildren
-  '/ranking': typeof RankingRoute
-  '/recuperar-senha': typeof RecuperarSenhaRoute
-  '/register': typeof RegisterRoute
-  '/resetar-senha': typeof ResetarSenhaRoute
+  '/projetos': typeof ProjetosRouteRouteWithChildren
   '/projetos/$id': typeof ProjetosIdRoute
   '/projetos/novo': typeof ProjetosNovoRoute
+  '/configuracoes/': typeof ConfiguracoesIndexRoute
+  '/dashboard/': typeof DashboardIndexRoute
+  '/login/': typeof LoginIndexRoute
+  '/meus-projetos/': typeof MeusProjetosIndexRoute
+  '/notificacoes/': typeof NotificacoesIndexRoute
+  '/perfil/': typeof PerfilIndexRoute
   '/projetos/': typeof ProjetosIndexRoute
+  '/ranking/': typeof RankingIndexRoute
+  '/recuperar-senha/': typeof RecuperarSenhaIndexRoute
+  '/register/': typeof RegisterIndexRoute
+  '/resetar-senha/': typeof ResetarSenhaIndexRoute
   '/auth/github/complete-profile': typeof AuthGithubCompleteProfileRoute
   '/auth/github/email-exists': typeof AuthGithubEmailExistsRoute
   '/auth/github/success': typeof AuthGithubSuccessRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/configuracoes': typeof ConfiguracoesRoute
-  '/dashboard': typeof DashboardRoute
-  '/login': typeof LoginRoute
-  '/meus-projetos': typeof MeusProjetosRoute
-  '/notificacoes': typeof NotificacoesRoute
-  '/perfil': typeof PerfilRoute
-  '/ranking': typeof RankingRoute
-  '/recuperar-senha': typeof RecuperarSenhaRoute
-  '/register': typeof RegisterRoute
-  '/resetar-senha': typeof ResetarSenhaRoute
   '/projetos/$id': typeof ProjetosIdRoute
   '/projetos/novo': typeof ProjetosNovoRoute
+  '/configuracoes': typeof ConfiguracoesIndexRoute
+  '/dashboard': typeof DashboardIndexRoute
+  '/login': typeof LoginIndexRoute
+  '/meus-projetos': typeof MeusProjetosIndexRoute
+  '/notificacoes': typeof NotificacoesIndexRoute
+  '/perfil': typeof PerfilIndexRoute
   '/projetos': typeof ProjetosIndexRoute
+  '/ranking': typeof RankingIndexRoute
+  '/recuperar-senha': typeof RecuperarSenhaIndexRoute
+  '/register': typeof RegisterIndexRoute
+  '/resetar-senha': typeof ResetarSenhaIndexRoute
   '/auth/github/complete-profile': typeof AuthGithubCompleteProfileRoute
   '/auth/github/email-exists': typeof AuthGithubEmailExistsRoute
   '/auth/github/success': typeof AuthGithubSuccessRoute
@@ -162,20 +162,20 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/configuracoes': typeof ConfiguracoesRoute
-  '/dashboard': typeof DashboardRoute
-  '/login': typeof LoginRoute
-  '/meus-projetos': typeof MeusProjetosRoute
-  '/notificacoes': typeof NotificacoesRoute
-  '/perfil': typeof PerfilRoute
-  '/projetos': typeof ProjetosRouteWithChildren
-  '/ranking': typeof RankingRoute
-  '/recuperar-senha': typeof RecuperarSenhaRoute
-  '/register': typeof RegisterRoute
-  '/resetar-senha': typeof ResetarSenhaRoute
+  '/projetos': typeof ProjetosRouteRouteWithChildren
   '/projetos/$id': typeof ProjetosIdRoute
   '/projetos/novo': typeof ProjetosNovoRoute
+  '/configuracoes/': typeof ConfiguracoesIndexRoute
+  '/dashboard/': typeof DashboardIndexRoute
+  '/login/': typeof LoginIndexRoute
+  '/meus-projetos/': typeof MeusProjetosIndexRoute
+  '/notificacoes/': typeof NotificacoesIndexRoute
+  '/perfil/': typeof PerfilIndexRoute
   '/projetos/': typeof ProjetosIndexRoute
+  '/ranking/': typeof RankingIndexRoute
+  '/recuperar-senha/': typeof RecuperarSenhaIndexRoute
+  '/register/': typeof RegisterIndexRoute
+  '/resetar-senha/': typeof ResetarSenhaIndexRoute
   '/auth/github/complete-profile': typeof AuthGithubCompleteProfileRoute
   '/auth/github/email-exists': typeof AuthGithubEmailExistsRoute
   '/auth/github/success': typeof AuthGithubSuccessRoute
@@ -184,59 +184,59 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/configuracoes'
-    | '/dashboard'
-    | '/login'
-    | '/meus-projetos'
-    | '/notificacoes'
-    | '/perfil'
     | '/projetos'
-    | '/ranking'
-    | '/recuperar-senha'
-    | '/register'
-    | '/resetar-senha'
     | '/projetos/$id'
     | '/projetos/novo'
+    | '/configuracoes/'
+    | '/dashboard/'
+    | '/login/'
+    | '/meus-projetos/'
+    | '/notificacoes/'
+    | '/perfil/'
     | '/projetos/'
+    | '/ranking/'
+    | '/recuperar-senha/'
+    | '/register/'
+    | '/resetar-senha/'
     | '/auth/github/complete-profile'
     | '/auth/github/email-exists'
     | '/auth/github/success'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/projetos/$id'
+    | '/projetos/novo'
     | '/configuracoes'
     | '/dashboard'
     | '/login'
     | '/meus-projetos'
     | '/notificacoes'
     | '/perfil'
+    | '/projetos'
     | '/ranking'
     | '/recuperar-senha'
     | '/register'
     | '/resetar-senha'
-    | '/projetos/$id'
-    | '/projetos/novo'
-    | '/projetos'
     | '/auth/github/complete-profile'
     | '/auth/github/email-exists'
     | '/auth/github/success'
   id:
     | '__root__'
     | '/'
-    | '/configuracoes'
-    | '/dashboard'
-    | '/login'
-    | '/meus-projetos'
-    | '/notificacoes'
-    | '/perfil'
     | '/projetos'
-    | '/ranking'
-    | '/recuperar-senha'
-    | '/register'
-    | '/resetar-senha'
     | '/projetos/$id'
     | '/projetos/novo'
+    | '/configuracoes/'
+    | '/dashboard/'
+    | '/login/'
+    | '/meus-projetos/'
+    | '/notificacoes/'
+    | '/perfil/'
     | '/projetos/'
+    | '/ranking/'
+    | '/recuperar-senha/'
+    | '/register/'
+    | '/resetar-senha/'
     | '/auth/github/complete-profile'
     | '/auth/github/email-exists'
     | '/auth/github/success'
@@ -244,17 +244,17 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ConfiguracoesRoute: typeof ConfiguracoesRoute
-  DashboardRoute: typeof DashboardRoute
-  LoginRoute: typeof LoginRoute
-  MeusProjetosRoute: typeof MeusProjetosRoute
-  NotificacoesRoute: typeof NotificacoesRoute
-  PerfilRoute: typeof PerfilRoute
-  ProjetosRoute: typeof ProjetosRouteWithChildren
-  RankingRoute: typeof RankingRoute
-  RecuperarSenhaRoute: typeof RecuperarSenhaRoute
-  RegisterRoute: typeof RegisterRoute
-  ResetarSenhaRoute: typeof ResetarSenhaRoute
+  ProjetosRouteRoute: typeof ProjetosRouteRouteWithChildren
+  ConfiguracoesIndexRoute: typeof ConfiguracoesIndexRoute
+  DashboardIndexRoute: typeof DashboardIndexRoute
+  LoginIndexRoute: typeof LoginIndexRoute
+  MeusProjetosIndexRoute: typeof MeusProjetosIndexRoute
+  NotificacoesIndexRoute: typeof NotificacoesIndexRoute
+  PerfilIndexRoute: typeof PerfilIndexRoute
+  RankingIndexRoute: typeof RankingIndexRoute
+  RecuperarSenhaIndexRoute: typeof RecuperarSenhaIndexRoute
+  RegisterIndexRoute: typeof RegisterIndexRoute
+  ResetarSenhaIndexRoute: typeof ResetarSenhaIndexRoute
   AuthGithubCompleteProfileRoute: typeof AuthGithubCompleteProfileRoute
   AuthGithubEmailExistsRoute: typeof AuthGithubEmailExistsRoute
   AuthGithubSuccessRoute: typeof AuthGithubSuccessRoute
@@ -262,81 +262,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/resetar-senha': {
-      id: '/resetar-senha'
-      path: '/resetar-senha'
-      fullPath: '/resetar-senha'
-      preLoaderRoute: typeof ResetarSenhaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/register': {
-      id: '/register'
-      path: '/register'
-      fullPath: '/register'
-      preLoaderRoute: typeof RegisterRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/recuperar-senha': {
-      id: '/recuperar-senha'
-      path: '/recuperar-senha'
-      fullPath: '/recuperar-senha'
-      preLoaderRoute: typeof RecuperarSenhaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/ranking': {
-      id: '/ranking'
-      path: '/ranking'
-      fullPath: '/ranking'
-      preLoaderRoute: typeof RankingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/projetos': {
       id: '/projetos'
       path: '/projetos'
       fullPath: '/projetos'
-      preLoaderRoute: typeof ProjetosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/perfil': {
-      id: '/perfil'
-      path: '/perfil'
-      fullPath: '/perfil'
-      preLoaderRoute: typeof PerfilRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/notificacoes': {
-      id: '/notificacoes'
-      path: '/notificacoes'
-      fullPath: '/notificacoes'
-      preLoaderRoute: typeof NotificacoesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/meus-projetos': {
-      id: '/meus-projetos'
-      path: '/meus-projetos'
-      fullPath: '/meus-projetos'
-      preLoaderRoute: typeof MeusProjetosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/configuracoes': {
-      id: '/configuracoes'
-      path: '/configuracoes'
-      fullPath: '/configuracoes'
-      preLoaderRoute: typeof ConfiguracoesRouteImport
+      preLoaderRoute: typeof ProjetosRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -346,26 +276,96 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/resetar-senha/': {
+      id: '/resetar-senha/'
+      path: '/resetar-senha'
+      fullPath: '/resetar-senha/'
+      preLoaderRoute: typeof ResetarSenhaIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register/': {
+      id: '/register/'
+      path: '/register'
+      fullPath: '/register/'
+      preLoaderRoute: typeof RegisterIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recuperar-senha/': {
+      id: '/recuperar-senha/'
+      path: '/recuperar-senha'
+      fullPath: '/recuperar-senha/'
+      preLoaderRoute: typeof RecuperarSenhaIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ranking/': {
+      id: '/ranking/'
+      path: '/ranking'
+      fullPath: '/ranking/'
+      preLoaderRoute: typeof RankingIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/projetos/': {
       id: '/projetos/'
       path: '/'
       fullPath: '/projetos/'
       preLoaderRoute: typeof ProjetosIndexRouteImport
-      parentRoute: typeof ProjetosRoute
+      parentRoute: typeof ProjetosRouteRoute
+    }
+    '/perfil/': {
+      id: '/perfil/'
+      path: '/perfil'
+      fullPath: '/perfil/'
+      preLoaderRoute: typeof PerfilIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notificacoes/': {
+      id: '/notificacoes/'
+      path: '/notificacoes'
+      fullPath: '/notificacoes/'
+      preLoaderRoute: typeof NotificacoesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/meus-projetos/': {
+      id: '/meus-projetos/'
+      path: '/meus-projetos'
+      fullPath: '/meus-projetos/'
+      preLoaderRoute: typeof MeusProjetosIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login/': {
+      id: '/login/'
+      path: '/login'
+      fullPath: '/login/'
+      preLoaderRoute: typeof LoginIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard/': {
+      id: '/dashboard/'
+      path: '/dashboard'
+      fullPath: '/dashboard/'
+      preLoaderRoute: typeof DashboardIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/configuracoes/': {
+      id: '/configuracoes/'
+      path: '/configuracoes'
+      fullPath: '/configuracoes/'
+      preLoaderRoute: typeof ConfiguracoesIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/projetos/novo': {
       id: '/projetos/novo'
       path: '/novo'
       fullPath: '/projetos/novo'
       preLoaderRoute: typeof ProjetosNovoRouteImport
-      parentRoute: typeof ProjetosRoute
+      parentRoute: typeof ProjetosRouteRoute
     }
     '/projetos/$id': {
       id: '/projetos/$id'
       path: '/$id'
       fullPath: '/projetos/$id'
       preLoaderRoute: typeof ProjetosIdRouteImport
-      parentRoute: typeof ProjetosRoute
+      parentRoute: typeof ProjetosRouteRoute
     }
     '/auth/github/success': {
       id: '/auth/github/success'
@@ -391,35 +391,35 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface ProjetosRouteChildren {
+interface ProjetosRouteRouteChildren {
   ProjetosIdRoute: typeof ProjetosIdRoute
   ProjetosNovoRoute: typeof ProjetosNovoRoute
   ProjetosIndexRoute: typeof ProjetosIndexRoute
 }
 
-const ProjetosRouteChildren: ProjetosRouteChildren = {
+const ProjetosRouteRouteChildren: ProjetosRouteRouteChildren = {
   ProjetosIdRoute: ProjetosIdRoute,
   ProjetosNovoRoute: ProjetosNovoRoute,
   ProjetosIndexRoute: ProjetosIndexRoute,
 }
 
-const ProjetosRouteWithChildren = ProjetosRoute._addFileChildren(
-  ProjetosRouteChildren,
+const ProjetosRouteRouteWithChildren = ProjetosRouteRoute._addFileChildren(
+  ProjetosRouteRouteChildren,
 )
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ConfiguracoesRoute: ConfiguracoesRoute,
-  DashboardRoute: DashboardRoute,
-  LoginRoute: LoginRoute,
-  MeusProjetosRoute: MeusProjetosRoute,
-  NotificacoesRoute: NotificacoesRoute,
-  PerfilRoute: PerfilRoute,
-  ProjetosRoute: ProjetosRouteWithChildren,
-  RankingRoute: RankingRoute,
-  RecuperarSenhaRoute: RecuperarSenhaRoute,
-  RegisterRoute: RegisterRoute,
-  ResetarSenhaRoute: ResetarSenhaRoute,
+  ProjetosRouteRoute: ProjetosRouteRouteWithChildren,
+  ConfiguracoesIndexRoute: ConfiguracoesIndexRoute,
+  DashboardIndexRoute: DashboardIndexRoute,
+  LoginIndexRoute: LoginIndexRoute,
+  MeusProjetosIndexRoute: MeusProjetosIndexRoute,
+  NotificacoesIndexRoute: NotificacoesIndexRoute,
+  PerfilIndexRoute: PerfilIndexRoute,
+  RankingIndexRoute: RankingIndexRoute,
+  RecuperarSenhaIndexRoute: RecuperarSenhaIndexRoute,
+  RegisterIndexRoute: RegisterIndexRoute,
+  ResetarSenhaIndexRoute: ResetarSenhaIndexRoute,
   AuthGithubCompleteProfileRoute: AuthGithubCompleteProfileRoute,
   AuthGithubEmailExistsRoute: AuthGithubEmailExistsRoute,
   AuthGithubSuccessRoute: AuthGithubSuccessRoute,

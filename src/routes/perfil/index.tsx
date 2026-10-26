@@ -17,16 +17,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ReputationOverview } from "@/components/profile/ReputationOverview";
-import { ReputacaoTecnica } from "@/components/profile/ReputacaoTecnica";
 import { Achievements } from "@/components/profile/Achievements";
 import { ProjectHistory } from "@/components/profile/ProjectHistory";
 import { Reviews } from "@/components/profile/Reviews";
 import { VerifiedContributions } from "@/components/profile/VerifiedContributions";
 import { fetchReputation, type Reputation } from "@/services/reputation";
-import {
-  getReputacaoTecnica,
-  type ReputacaoTecnica as ReputacaoTecnicaData,
-} from "@/services/reputacaoTecnica";
 import { getPortfolio, type Portfolio } from "@/services/portfolio";
 import { fetchMe } from "@/services/perfil";
 import {
@@ -253,65 +248,6 @@ function PortfolioState({
   return <>{render(data)}</>;
 }
 
-/**
- * ETAPA 12 — estado de carregamento/erro/vazio da seção "Reputação técnica"
- * (GET /usuarios/me/reputacao-tecnica). Mesmo padrão do ReputationState:
- * falha exibe mensagem + ação de tentar novamente — nunca dados fictícios.
- */
-function ReputacaoTecnicaState({
-  data,
-  isLoading,
-  isError,
-  errorMessage,
-  onRetry,
-  skeletonClass,
-  render,
-}: {
-  data: ReputacaoTecnicaData | undefined;
-  isLoading: boolean;
-  isError: boolean;
-  errorMessage: string;
-  onRetry: () => void;
-  skeletonClass: string;
-  render: (rep: ReputacaoTecnicaData) => ReactNode;
-}) {
-  if (isLoading) return <Skeleton className={skeletonClass} />;
-
-  if (isError) {
-    return (
-      <div className="rounded-2xl border border-dashed p-8 text-center">
-        <p className="text-sm font-semibold text-foreground">
-          Não foi possível carregar sua reputação técnica
-        </p>
-        <p className="mx-auto mt-1 max-w-md text-xs text-muted-foreground">{errorMessage}</p>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={onRetry}
-          className="mt-4 cursor-pointer"
-        >
-          Tentar novamente
-        </Button>
-      </div>
-    );
-  }
-
-  if (!data) {
-    return (
-      <div className="rounded-2xl border border-dashed p-8 text-center">
-        <p className="text-sm font-semibold text-foreground">Sem dados de reputação técnica</p>
-        <p className="mx-auto mt-1 max-w-md text-xs text-muted-foreground">
-          Sua reputação técnica ainda não foi calculada. Entregas verificadas constroem evidência
-          separada do XP.
-        </p>
-      </div>
-    );
-  }
-
-  return <>{render(data)}</>;
-}
-
 function PerfilPage() {
   const { user, updateUser } = useAuth();
   const [name, setName] = useState(user?.name ?? "");
@@ -434,24 +370,6 @@ function PerfilPage() {
   const portfolioErrorMessage =
     portfolioErrorObj instanceof Error
       ? portfolioErrorObj.message
-      : "Tente novamente em instantes.";
-
-  // ETAPA 12 — reputação técnica (GET /usuarios/me/reputacao-tecnica):
-  // evidência de entrega verificável, separada do XP/engajamento.
-  const {
-    data: reputacaoTecnica,
-    isLoading: loadingRepTec,
-    isError: reputacaoTecnicaError,
-    error: reputacaoTecnicaErrorObj,
-    refetch: refetchReputacaoTecnica,
-  } = useQuery({
-    queryKey: ["reputacao-tecnica", user?.id ?? user?.email],
-    queryFn: () => getReputacaoTecnica(user?.id),
-  });
-
-  const reputacaoTecnicaErrorMessage =
-    reputacaoTecnicaErrorObj instanceof Error
-      ? reputacaoTecnicaErrorObj.message
       : "Tente novamente em instantes.";
 
   const initials =
@@ -626,7 +544,7 @@ function PerfilPage() {
           </div>
 
           <Card className="overflow-hidden rounded-3xl border border-border/60 bg-card shadow-sm">
-            <div className="h-32 bg-gradient-to-r from-primary/80 to-indigo-600/80" />
+            <div className="h-32 bg-linear-to-r from-primary/80 to-indigo-600/80" />
             <CardContent className="-mt-12 space-y-4 p-6 sm:px-8">
               <div className="flex flex-col sm:flex-row sm:items-end gap-4 text-center sm:text-left justify-between">
                 <div className="flex flex-col sm:flex-row sm:items-end gap-4">
@@ -634,7 +552,7 @@ function PerfilPage() {
                     {avatar ? (
                       <AvatarImage src={avatar} alt={name || "Avatar"} className="object-cover" />
                     ) : null}
-                    <AvatarFallback className="bg-gradient-to-tr from-primary to-indigo-600 text-xl font-semibold text-white">
+                    <AvatarFallback className="bg-linear-to-tr from-primary to-indigo-600 text-xl font-semibold text-white">
                       {initials}
                     </AvatarFallback>
                   </Avatar>
@@ -659,7 +577,7 @@ function PerfilPage() {
           </Card>
 
           {perfilTecnicoCarregado && perfilCompleto === false && (
-            <div className="rounded-3xl border border-primary/30 bg-gradient-to-r from-primary/10 via-indigo-500/10 to-primary/5 p-5 shadow-sm sm:p-6">
+            <div className="rounded-3xl border border-primary/30 bg-linear-to-r from-primary/10 via-indigo-500/10 to-primary/5 p-5 shadow-sm sm:p-6">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                 <div className="flex-1 space-y-2">
                   <div className="flex items-center gap-2">
@@ -698,19 +616,6 @@ function PerfilPage() {
             onRetry={() => refetchReputation()}
             skeletonClass="h-24 w-full rounded-2xl"
             render={(rep) => <ReputationOverview reputation={rep} />}
-          />
-
-          {/* ETAPA 12 — Reputação técnica: seção SEPARADA do Nível/XP. Enquanto o
-              XP mede engajamento (atividade), a reputação técnica mede evidência
-              de entrega verificável (tasks verificadas, PRs mergeados, commits). */}
-          <ReputacaoTecnicaState
-            data={reputacaoTecnica}
-            isLoading={loadingRepTec}
-            isError={reputacaoTecnicaError}
-            errorMessage={reputacaoTecnicaErrorMessage}
-            onRetry={() => refetchReputacaoTecnica()}
-            skeletonClass="h-24 w-full rounded-2xl"
-            render={(rep) => <ReputacaoTecnica reputacao={rep} />}
           />
 
           <Tabs defaultValue="sobre" className="space-y-6">
@@ -802,7 +707,7 @@ function PerfilPage() {
                           </div>
                         </PopoverAnchor>
                         <PopoverContent
-                          className="w-[var(--radix-popover-trigger-width)] p-0 rounded-2xl border border-border/60 shadow-lg bg-card"
+                          className="w-(--radix-popover-trigger-width) p-0 rounded-2xl border border-border/60 shadow-lg bg-card"
                           align="start"
                           onOpenAutoFocus={(e) => e.preventDefault()}
                           onInteractOutside={(e) => {
@@ -972,7 +877,7 @@ function PerfilPage() {
                                     mudarNivelSkill(s.nome, v as NivelHabilidade)
                                   }
                                 >
-                                  <SelectTrigger className="h-8 w-[132px] rounded-lg text-xs cursor-pointer">
+                                  <SelectTrigger className="h-8 w-33 rounded-lg text-xs cursor-pointer">
                                     <SelectValue placeholder="Nível" />
                                   </SelectTrigger>
                                   <SelectContent>
@@ -1024,7 +929,7 @@ function PerfilPage() {
                                   mudarNivelInteresse(f.nome, v as NivelInteresse)
                                 }
                               >
-                                <SelectTrigger className="h-6 w-[86px] cursor-pointer rounded-full border-0 bg-transparent px-1.5 text-[10px] [&>svg]:h-3 [&>svg]:w-3">
+                                <SelectTrigger className="h-6 w-21.5 cursor-pointer rounded-full border-0 bg-transparent px-1.5 text-[10px] [&>svg]:h-3 [&>svg]:w-3">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -1184,6 +1089,6 @@ function PerfilPage() {
   );
 }
 
-export const Route = createFileRoute("/perfil")({
+export const Route = createFileRoute("/perfil/")({
   component: PerfilPage,
 });

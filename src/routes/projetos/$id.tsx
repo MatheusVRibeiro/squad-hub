@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, ArrowLeft, Lock, RefreshCcw } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CheckCircle2, Lock, RefreshCcw } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
@@ -15,7 +15,6 @@ import { KanbanBoard } from "@/components/projects/KanbanBoard";
 import { TasksRecomendadas } from "@/components/projects/TasksRecomendadas";
 import { GithubProjectPanel } from "@/components/projects/GithubProjectPanel";
 import { TopCommitters } from "@/components/projects/TopCommitters";
-import { TopContributors } from "@/components/projects/TopContributors";
 import { InsightsResumo } from "@/components/projects/InsightsResumo";
 import { Mural } from "@/components/projects/Mural";
 import { MembersList } from "@/components/projects/MembersList";
@@ -23,6 +22,14 @@ import { Applications } from "@/components/projects/Applications";
 import { Vagas } from "@/components/projects/Vagas";
 import { ProjectTimeline } from "@/components/projects/ProjectTimeline";
 import { ProjectHeader } from "@/components/projects/ProjectHeader";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { WorkspaceLinksForm } from "@/components/projects/WorkspaceLinksForm";
 import { ProjectSettings } from "@/components/projects/ProjectSettings";
 import {
   fetchProjectDetail,
@@ -45,6 +52,7 @@ function ProjectDetailPage() {
   // Kanban é a aba padrão; Mural/Membros/Vagas/Recomendadas/Candidaturas foram
   // agrupados nas áreas (Atividade/Equipe) e saíram do primeiro nível.
   const [activeTab, setActiveTab] = useState("kanban");
+  const [linksDialogOpen, setLinksDialogOpen] = useState(false);
   const [activitySubTab, setActivitySubTab] = useState("timeline");
   const [teamSubTab, setTeamSubTab] = useState("membros");
 
@@ -202,7 +210,12 @@ function ProjectDetailPage() {
   }
 
   function goToSettings(anchor?: "privacidade" | "links") {
-    scrollToSection(anchor === "links" ? "secao-settings-links" : "secao-settings-privacidade");
+    if (anchor === "links") {
+      setLinksDialogOpen(true);
+      return;
+    }
+    setActiveTab("configuracoes");
+    scrollToSection("secao-settings-privacidade");
   }
 
   return (
@@ -257,7 +270,7 @@ function ProjectDetailPage() {
                 {[3, 2, 3, 2].map((cards, col) => (
                   <div
                     key={col}
-                    className="flex min-h-[450px] w-[280px] shrink-0 flex-col gap-4 rounded-2xl border border-border/60 bg-card p-4 xl:w-auto xl:min-w-0"
+                    className="flex min-h-112.5 w-70 shrink-0 flex-col gap-4 rounded-2xl border border-border/50 bg-card/45 p-4 backdrop-blur-sm xl:w-auto xl:min-w-0"
                   >
                     <div className="flex items-center justify-between">
                       <Skeleton className="h-5 w-24 rounded-md" />
@@ -349,6 +362,14 @@ function ProjectDetailPage() {
                 {/* KanbanSection (ETAPA 5+8) — o quadro aparece imediatamente após
                     header+navegação; TasksRecomendadas logo abaixo (só membros). */}
                 <TabsContent value="kanban" className="scroll-mt-16 space-y-6">
+                  {data.status === "Finalizado" && (
+                    <div className="flex items-center gap-3 rounded-2xl border border-blue-500/20 bg-blue-500/5 px-4 py-3 text-sm text-blue-800 shadow-sm backdrop-blur-sm dark:text-blue-300">
+                      <CheckCircle2 className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0" />
+                      <span>
+                        Este projeto foi finalizado. O quadro Kanban está em modo somente leitura para preservação do histórico de entregas.
+                      </span>
+                    </div>
+                  )}
                   <motion.div
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -358,13 +379,13 @@ function ProjectDetailPage() {
                       initial={data.tasks}
                       projectId={data.id}
                       projectName={data.name}
-                      readOnly={!isMember}
+                      readOnly={!isMember || data.status === "Finalizado"}
                       members={data.members}
                       onRefresh={() => refetch()}
                       updatedAt={dataUpdatedAt}
                     />
                   </motion.div>
-                  {isMember && (
+                  {isMember && data.status !== "Finalizado" && (
                     <motion.div
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -401,6 +422,7 @@ function ProjectDetailPage() {
                       />
                     </TabsContent>
                   </Tabs>
+              
                 </TabsContent>
 
                 {/* TeamSection (ETAPA 9) — Membros | Vagas | Candidaturas (owner). */}
@@ -462,15 +484,7 @@ function ProjectDetailPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: 0.1 }}
                   >
-                    {/* Top Contributors do projeto (ETAPA 13) — ranking principal */}
-                    <TopContributors projectId={data.id} scope="project" limit={5} />
-                  </motion.div>
-                  <motion.div
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: 0.2 }}
-                  >
-                    {/* Top Committers do projeto (ETAPA 11) — métrica secundária */}
+                    {/* Top Committers do projeto (ETAPA 11) */}
                     <TopCommitters projectId={data.id} scope="project" limit={5} />
                   </motion.div>
                 </TabsContent>
@@ -490,6 +504,32 @@ function ProjectDetailPage() {
                   </TabsContent>
                 )}
               </Tabs>
+              {isOwner && data && (
+                <Dialog open={linksDialogOpen} onOpenChange={setLinksDialogOpen}>
+                  <DialogContent className="rounded-2xl sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Links de trabalho do squad</DialogTitle>
+                      <DialogDescription>
+                        Atualize os links usados pelo time (GitHub, Figma, comunicação e
+                        documentação). Deixe vazio para remover.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <WorkspaceLinksForm
+                      initial={{
+                        repositorioUrl: data.repositorioUrl ?? "",
+                        figmaUrl: data.figmaUrl ?? "",
+                        discordUrl: data.discordUrl ?? "",
+                        documentacaoUrl: data.documentacaoUrl ?? "",
+                      }}
+                      submitting={updateLinks.isPending}
+                      onSave={(links) => {
+                        updateLinks.mutate(links);
+                        setLinksDialogOpen(false);
+                      }}
+                    />
+                  </DialogContent>
+                </Dialog>
+              )}
             </>
           )}
         </div>

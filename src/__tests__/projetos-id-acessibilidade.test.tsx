@@ -5,7 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
-import { Route as ProjetoRoute } from "@/routes/projetos.$id";
+import { Route as ProjetoRoute } from "@/routes/projetos/$id";
 import type { ProjectDetail } from "@/services/projectDetail";
 
 /**

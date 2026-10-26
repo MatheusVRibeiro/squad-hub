@@ -5,7 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
-import { Route as ProjetoRoute } from "@/routes/projetos.$id";
+import { Route as ProjetoRoute } from "@/routes/projetos/$id";
 import type { ProjectDetail } from "@/services/projectDetail";
 
 /**
@@ -263,10 +263,9 @@ describe("ETAPA 19 — lazy loading das abas secundárias", () => {
 
     await userEvent.click(screen.getByRole("tab", { name: "Insights" }));
 
-    await waitFor(() => expect(getProjectContributors).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(getProjectCommitters).toHaveBeenCalledTimes(1));
-    expect(getProjectContributors).toHaveBeenCalledWith("1", 5);
     expect(getProjectCommitters).toHaveBeenCalledWith("1", 5);
+    expect(getProjectContributors).not.toHaveBeenCalled();
 
     // Sem chamadas duplicadas na primeira abertura: cada query secundária 1x.
     expect(fetchEventosProjeto).not.toHaveBeenCalled();

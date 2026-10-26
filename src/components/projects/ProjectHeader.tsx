@@ -143,8 +143,8 @@ export function ProjectHeader({
   const github = githubQuery.data;
 
   return (
-    <Card className="overflow-hidden rounded-3xl border-border/60 bg-gradient-to-br from-card to-card/98 shadow-md dark:to-card/95">
-      <div className="h-2 bg-gradient-to-r from-primary via-primary/80 to-primary/30" />
+    <Card className="overflow-hidden rounded-3xl border-border/60 bg-linear-to-br from-card to-card/98 shadow-md dark:to-card/95">
+      <div className="h-2 bg-linear-to-r from-primary via-primary/80 to-primary/30" />
       <CardContent className="space-y-2 p-4 sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
@@ -183,7 +183,7 @@ export function ProjectHeader({
             {isMember && !finalizado && (
               <Button
                 size="sm"
-                className="rounded-xl bg-gradient-to-r from-primary to-primary/90"
+                className="rounded-xl bg-linear-to-r from-primary to-primary/90"
                 onClick={onNovaTarefa}
               >
                 <Plus className="mr-1 h-4 w-4" /> Nova tarefa
@@ -277,7 +277,7 @@ export function ProjectHeader({
                     <DialogTrigger asChild>
                       <Button
                         size="sm"
-                        className="rounded-xl bg-gradient-to-r from-primary to-primary/90"
+                        className="rounded-xl bg-linear-to-r from-primary to-primary/90"
                       >
                         Candidatar-se ao Squad
                       </Button>

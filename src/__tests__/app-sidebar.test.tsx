@@ -45,19 +45,17 @@ describe("ETAPA 19 — AppSidebar com grupo Ranking", () => {
     vi.clearAllMocks();
   });
 
-  it("exibe grupo Ranking com Top Contributors e Top Committers", () => {
+  it("exibe grupo Ranking com Top Committers e sem Top Contributors", () => {
     render(<AppSidebar />);
     expect(screen.getByText("Ranking")).toBeInTheDocument();
-    expect(screen.getByText("Top Contributors")).toBeInTheDocument();
+    expect(screen.queryByText("Top Contributors")).not.toBeInTheDocument();
     expect(screen.getByText("Top Committers")).toBeInTheDocument();
   });
 
-  it("links do ranking apontam para /ranking com tab correta", () => {
+  it("link do ranking aponta para /ranking com tab committers", () => {
     render(<AppSidebar />);
-    const contributors = screen.getByText("Top Contributors").closest("a");
     const committers = screen.getByText("Top Committers").closest("a");
-    expect(contributors?.getAttribute("href")).toContain("/ranking");
-    expect(contributors?.getAttribute("href")).toContain("contributors");
+    expect(committers?.getAttribute("href")).toContain("/ranking");
     expect(committers?.getAttribute("href")).toContain("committers");
   });
 

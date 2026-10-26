@@ -25,7 +25,9 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && typeof window !== "undefined") {
       window.localStorage.removeItem(TOKEN_KEY);
       window.localStorage.removeItem(USER_KEY);
-      if (!window.location.pathname.startsWith("/login")) {
+      const publicPaths = ["/login", "/register", "/recuperar-senha", "/resetar-senha", "/auth"];
+      const isPublicPath = publicPaths.some((p) => window.location.pathname.startsWith(p));
+      if (!isPublicPath) {
         window.location.href = "/login";
       }
     }

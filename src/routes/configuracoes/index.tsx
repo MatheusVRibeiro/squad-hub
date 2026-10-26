@@ -326,6 +326,6 @@ function ConfiguracoesPage() {
   );
 }
 
-export const Route = createFileRoute("/configuracoes")({
+export const Route = createFileRoute("/configuracoes/")({
   component: ConfiguracoesPage,
 });

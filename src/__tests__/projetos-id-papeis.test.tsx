@@ -78,6 +78,7 @@ vi.mock("@tanstack/react-router", () => ({
     <a {...rest}>{children}</a>
   ),
   useParams: () => ({ id: "1" }),
+  useSearch: () => ({}),
   useNavigate: () => vi.fn(),
 }));
 
@@ -145,13 +146,17 @@ const updateLocalApplicationStatus = vi.fn();
 const sairDoProjeto = vi.fn();
 const candidatarComVaga = vi.fn();
 
-vi.mock("@/services/projectDetail", () => ({
-  fetchProjectDetail: (...args: unknown[]) => fetchProjectDetail(...args),
-  closeProjectLocal: (...args: unknown[]) => closeProjectLocal(...args),
-  atualizarVisibilidadeProjeto: (...args: unknown[]) => atualizarVisibilidadeProjeto(...args),
-  atualizarLinksProjeto: (...args: unknown[]) => atualizarLinksProjeto(...args),
-  updateLocalApplicationStatus: (...args: unknown[]) => updateLocalApplicationStatus(...args),
-}));
+vi.mock("@/services/projectDetail", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/services/projectDetail")>();
+  return {
+    ...actual,
+    fetchProjectDetail: (...args: unknown[]) => fetchProjectDetail(...args),
+    closeProjectLocal: (...args: unknown[]) => closeProjectLocal(...args),
+    atualizarVisibilidadeProjeto: (...args: unknown[]) => atualizarVisibilidadeProjeto(...args),
+    atualizarLinksProjeto: (...args: unknown[]) => atualizarLinksProjeto(...args),
+    updateLocalApplicationStatus: (...args: unknown[]) => updateLocalApplicationStatus(...args),
+  };
+});
 
 vi.mock("@/services/membros", () => ({
   sairDoProjeto: (...args: unknown[]) => sairDoProjeto(...args),
@@ -272,7 +277,6 @@ describe("ETAPA 21 — testes funcionais por papel", () => {
 
       expect(screen.getByRole("menuitem", { name: "Privacidade" })).toBeInTheDocument();
       expect(screen.getByRole("menuitem", { name: "Gerenciar links" })).toBeInTheDocument();
-      expect(screen.getByRole("menuitem", { name: "Configurar GitHub" })).toBeInTheDocument();
       expect(screen.getByRole("menuitem", { name: "Encerrar projeto" })).toBeInTheDocument();
       expect(screen.queryByRole("menuitem", { name: "Sair do projeto" })).not.toBeInTheDocument();
     });
@@ -289,7 +293,7 @@ describe("ETAPA 21 — testes funcionais por papel", () => {
       expect(screen.getByRole("tab", { name: "Kanban" })).toHaveAttribute("aria-selected", "true");
     });
 
-    it("Equipe: membros listados e Vagas com Nova Vaga", async () => {
+    it("Equipe: membros listados", async () => {
       const user = userEvent.setup();
       setRole("owner");
       fetchProjectDetail.mockResolvedValue(makeData());
@@ -302,10 +306,6 @@ describe("ETAPA 21 — testes funcionais por papel", () => {
       // MembersList real: membros + badge Owner.
       expect(screen.getByText("Ana Souza")).toBeInTheDocument();
       expect(screen.getByText("Owner")).toBeInTheDocument();
-
-      await user.click(screen.getByRole("tab", { name: "Vagas" }));
-      expect(screen.getByRole("button", { name: "Nova Vaga" })).toBeInTheDocument();
-      expect(screen.getByText("Frontend")).toBeInTheDocument();
     });
 
     it("Candidaturas: aba visível só para o owner, com badge de pendentes", async () => {
@@ -323,30 +323,6 @@ describe("ETAPA 21 — testes funcionais por papel", () => {
 
       await user.click(candidaturas);
       expect(screen.getByText("Diego Rocha")).toBeInTheDocument();
-    });
-
-    it("GitHub: painel abre com isOwner=true", async () => {
-      const user = userEvent.setup();
-      setRole("owner");
-      fetchProjectDetail.mockResolvedValue(makeData());
-
-      renderRota();
-      await screen.findByTestId("kanban-board");
-
-      await user.click(screen.getByRole("tab", { name: "GitHub" }));
-      expect(screen.getByTestId("github-panel")).toHaveAttribute("data-isowner", "true");
-    });
-
-    it("Insights: resumo e rankings abrem", async () => {
-      const user = userEvent.setup();
-      setRole("owner");
-      fetchProjectDetail.mockResolvedValue(makeData());
-
-      renderRota();
-      await screen.findByTestId("kanban-board");
-
-      await user.click(screen.getByRole("tab", { name: "Insights" }));
-      expect(screen.getByText("InsightsResumo")).toBeInTheDocument();
     });
 
     it("privacidade: alterar visibilidade chama atualizarVisibilidadeProjeto", async () => {
@@ -440,7 +416,7 @@ describe("ETAPA 21 — testes funcionais por papel", () => {
       expect(screen.getByText("ProjectTimeline")).toBeInTheDocument();
     });
 
-    it("equipe: membros e vagas visíveis, sem aba Candidaturas", async () => {
+    it("equipe: membros visíveis, sem aba Candidaturas", async () => {
       const user = userEvent.setup();
       setRole("member");
       fetchProjectDetail.mockResolvedValue(makeData());
@@ -450,23 +426,7 @@ describe("ETAPA 21 — testes funcionais por papel", () => {
 
       await user.click(screen.getByRole("tab", { name: "Equipe" }));
       expect(screen.getByText("Ana Souza")).toBeInTheDocument();
-
-      await user.click(screen.getByRole("tab", { name: "Vagas" }));
-      expect(screen.getByText("Frontend")).toBeInTheDocument();
-      expect(screen.queryByRole("button", { name: "Nova Vaga" })).not.toBeInTheDocument();
       expect(screen.queryByRole("tab", { name: /candidaturas/i })).not.toBeInTheDocument();
-    });
-
-    it("GitHub permitido: painel abre com isOwner=false", async () => {
-      const user = userEvent.setup();
-      setRole("member");
-      fetchProjectDetail.mockResolvedValue(makeData());
-
-      renderRota();
-      await screen.findByTestId("kanban-board");
-
-      await user.click(screen.getByRole("tab", { name: "GitHub" }));
-      expect(screen.getByTestId("github-panel")).toHaveAttribute("data-isowner", "false");
     });
 
     it("links de trabalho do squad aparecem para o membro", async () => {
@@ -604,22 +564,6 @@ describe("ETAPA 21 — testes funcionais por papel", () => {
       expect(screen.queryByRole("tab", { name: "Timeline" })).not.toBeInTheDocument();
       // Trigger da sub-aba + conteúdo do Mural (stub) — ambos com o texto.
       expect(screen.getAllByText("Mural").length).toBeGreaterThan(0);
-    });
-
-    it("vagas públicas aparecem na aba Equipe sem ações admin", async () => {
-      const user = userEvent.setup();
-      setRole("visitor");
-      fetchProjectDetail.mockResolvedValue(makeData());
-
-      renderRota();
-      await screen.findByTestId("kanban-board");
-
-      await user.click(screen.getByRole("tab", { name: "Equipe" }));
-      await user.click(screen.getByRole("tab", { name: "Vagas" }));
-
-      expect(screen.getByText("Frontend")).toBeInTheDocument();
-      expect(screen.queryByRole("button", { name: "Nova Vaga" })).not.toBeInTheDocument();
-      expect(screen.queryByRole("tab", { name: /candidaturas/i })).not.toBeInTheDocument();
     });
 
     it("candidatura: envio chama candidatarComVaga", async () => {

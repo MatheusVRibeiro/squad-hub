@@ -8,6 +8,14 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ProjectCard } from "@/components/projects/ProjectCard";
 import { ProjectsToolbar, type SortKey } from "@/components/projects/ProjectsToolbar";
 import { ProjectsEmpty, ProjectsError, ProjectsSkeleton } from "@/components/projects/states";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { fetchProjects, type Project, type ProjectStatus } from "@/services/projects";
 
@@ -44,6 +52,8 @@ function ExplorarProjetosPage() {
   const [selectedTechs, setSelectedTechs] = useState<string[]>([]);
   const [status, setStatus] = useState<ProjectStatus | "all">("all");
   const [sort, setSort] = useState<SortKey>("recent");
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 6;
 
   const debouncedSearch = useDebouncedValue(search, 250);
 
@@ -92,11 +102,23 @@ function ExplorarProjetosPage() {
     return list;
   }, [data, debouncedSearch, selectedTechs, status, sort]);
 
+  // Reseta para a primeira página sempre que os filtros mudarem
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, selectedTechs, status, sort]);
+
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1;
+  const paginatedProjects = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filtered.slice(start, start + ITEMS_PER_PAGE);
+  }, [filtered, currentPage]);
+
   function resetFilters() {
     setSearch("");
     setSelectedTechs([]);
     setStatus("all");
     setSort("recent");
+    setCurrentPage(1);
   }
 
   return (
@@ -140,15 +162,71 @@ function ExplorarProjetosPage() {
             <>
               <div className="flex items-center justify-between px-1 text-xs text-muted-foreground">
                 <span>
-                  {filtered.length} {filtered.length === 1 ? "projeto" : "projetos"}
+                  Mostrando {paginatedProjects.length} de {filtered.length} {filtered.length === 1 ? "projeto" : "projetos"}
+                  {totalPages > 1 && ` (Página ${currentPage} de ${totalPages})`}
                 </span>
                 {isFetching && <span>Atualizando...</span>}
               </div>
+
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {filtered.map((project, i) => (
+                {paginatedProjects.map((project, i) => (
                   <ProjectCard key={project.id} project={project} index={i} />
                 ))}
               </div>
+
+              {/* Paginação */}
+              {totalPages > 1 && (
+                <div className="pt-4">
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (currentPage > 1) {
+                              setCurrentPage((p) => p - 1);
+                              window.scrollTo({ top: 0, behavior: "smooth" });
+                            }
+                          }}
+                          className={`cursor-pointer ${currentPage === 1 ? "pointer-events-none opacity-40" : ""}`}
+                        />
+                      </PaginationItem>
+
+                      {Array.from({ length: totalPages }).map((_, idx) => {
+                        const pageNumber = idx + 1;
+                        return (
+                          <PaginationItem key={pageNumber}>
+                            <PaginationLink
+                              isActive={currentPage === pageNumber}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setCurrentPage(pageNumber);
+                                window.scrollTo({ top: 0, behavior: "smooth" });
+                              }}
+                              className="cursor-pointer"
+                            >
+                              {pageNumber}
+                            </PaginationLink>
+                          </PaginationItem>
+                        );
+                      })}
+
+                      <PaginationItem>
+                        <PaginationNext
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (currentPage < totalPages) {
+                              setCurrentPage((p) => p + 1);
+                              window.scrollTo({ top: 0, behavior: "smooth" });
+                            }
+                          }}
+                          className={`cursor-pointer ${currentPage === totalPages ? "pointer-events-none opacity-40" : ""}`}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              )}
             </>
           )}
         </div>

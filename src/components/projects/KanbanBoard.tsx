@@ -60,7 +60,6 @@ import {
   type HistoricoResponsavel,
 } from "@/services/tasks";
 import { GithubTaskBadge } from "@/components/projects/GithubTaskBadge";
-import { GithubTaskActivity } from "@/components/projects/GithubTaskActivity";
 import { KanbanToolbar } from "@/components/projects/KanbanToolbar";
 import { KanbanListView } from "@/components/projects/KanbanListView";
 import { useAuth } from "@/contexts/AuthContext";
@@ -840,77 +839,82 @@ export function KanbanBoard({
                               >
                                 {/* ETAPA 7 — prioridade visual: 1. título · 2. prioridade */}
                                 <div className="flex items-start justify-between gap-2">
-                                  <p className="min-w-0 flex-1 font-medium leading-snug text-foreground/90 transition-colors group-hover:text-primary">
-                                    {t.title}
-                                  </p>
-                                  <span className="shrink-0 text-[10px] font-semibold text-muted-foreground/70">
-                                    #{t.id}
-                                  </span>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="break-words font-medium leading-snug text-foreground/90 transition-colors group-hover:text-primary">
+                                      {t.title}
+                                    </p>
+                                  </div>
 
-                                  {t.priority && (
-                                    <Badge
-                                      variant="outline"
-                                      className={cn(
-                                        "shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide",
-                                        PRIORITY_TONE[t.priority],
-                                      )}
-                                    >
-                                      {PRIORITY_LABEL[t.priority]}
-                                    </Badge>
-                                  )}
+                                  <div className="flex shrink-0 items-center gap-1.5 pt-0.5">
+                                    <span className="text-[10px] font-semibold text-muted-foreground/70">
+                                      #{t.id}
+                                    </span>
 
-                                  {/* Ação rápida para mobile */}
-                                  {!readOnly && (
-                                    <DropdownMenu>
-                                      <DropdownMenuTrigger asChild>
-                                        <button
-                                          type="button"
-                                          onClick={(e) => e.stopPropagation()}
-                                          className="grid h-6 w-6 shrink-0 cursor-pointer place-items-center rounded-lg text-muted-foreground outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                                          aria-label="Mover tarefa"
-                                        >
-                                          <MoreVertical className="h-3.5 w-3.5" />
-                                        </button>
-                                      </DropdownMenuTrigger>
-                                      <DropdownMenuContent
-                                        align="end"
-                                        className="w-40 rounded-xl shadow-md"
+                                    {t.priority && (
+                                      <Badge
+                                        variant="outline"
+                                        className={cn(
+                                          "rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide",
+                                          PRIORITY_TONE[t.priority],
+                                        )}
                                       >
-                                        <DropdownMenuLabel className="px-2 py-1 text-[9px] uppercase tracking-wider text-muted-foreground">
-                                          Mover para
-                                        </DropdownMenuLabel>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem
-                                          onClick={() => move(t.id, "todo")}
-                                          disabled={t.status === "todo"}
-                                          className="cursor-pointer px-2 py-1.5 text-xs"
+                                        {PRIORITY_LABEL[t.priority]}
+                                      </Badge>
+                                    )}
+
+                                    {/* Ação rápida para mobile */}
+                                    {!readOnly && (
+                                      <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                          <button
+                                            type="button"
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="grid h-6 w-6 cursor-pointer place-items-center rounded-lg text-muted-foreground outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                            aria-label="Mover tarefa"
+                                          >
+                                            <MoreVertical className="h-3.5 w-3.5" />
+                                          </button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent
+                                          align="end"
+                                          className="w-40 rounded-xl shadow-md"
                                         >
-                                          A fazer
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem
-                                          onClick={() => move(t.id, "doing")}
-                                          disabled={t.status === "doing"}
-                                          className="cursor-pointer px-2 py-1.5 text-xs"
-                                        >
-                                          Em progresso
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem
-                                          onClick={() => move(t.id, "review")}
-                                          disabled={t.status === "review"}
-                                          className="cursor-pointer px-2 py-1.5 text-xs"
-                                        >
-                                          Em revisão
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem
-                                          onClick={() => move(t.id, "done")}
-                                          disabled={t.status === "done"}
-                                          className="cursor-pointer px-2 py-1.5 text-xs"
-                                        >
-                                          Concluído
-                                        </DropdownMenuItem>
-                                      </DropdownMenuContent>
-                                    </DropdownMenu>
-                                  )}
+                                          <DropdownMenuLabel className="px-2 py-1 text-[9px] uppercase tracking-wider text-muted-foreground">
+                                            Mover para
+                                          </DropdownMenuLabel>
+                                          <DropdownMenuSeparator />
+                                          <DropdownMenuItem
+                                            onClick={() => move(t.id, "todo")}
+                                            disabled={t.status === "todo"}
+                                            className="cursor-pointer px-2 py-1.5 text-xs"
+                                          >
+                                            A fazer
+                                          </DropdownMenuItem>
+                                          <DropdownMenuItem
+                                            onClick={() => move(t.id, "doing")}
+                                            disabled={t.status === "doing"}
+                                            className="cursor-pointer px-2 py-1.5 text-xs"
+                                          >
+                                            Em progresso
+                                          </DropdownMenuItem>
+                                          <DropdownMenuItem
+                                            onClick={() => move(t.id, "review")}
+                                            disabled={t.status === "review"}
+                                            className="cursor-pointer px-2 py-1.5 text-xs"
+                                          >
+                                            Em revisão
+                                          </DropdownMenuItem>
+                                          <DropdownMenuItem
+                                            onClick={() => move(t.id, "done")}
+                                            disabled={t.status === "done"}
+                                            className="cursor-pointer px-2 py-1.5 text-xs"
+                                          >
+                                            Concluído
+                                          </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                      </DropdownMenu>
+                                    )}
+                                  </div>
                                 </div>
 
                                 {/* Resumo (descrição) — apenas se houver */}
@@ -1577,11 +1581,6 @@ export function KanbanBoard({
                   </Button>
                 </div>
               </div>
-
-              {/* Atividade GitHub da tarefa (ETAPA 8) — apenas no modo edição */}
-              {modalMode === "edit" && editingTask && (
-                <GithubTaskActivity projectId={projectId} taskId={editingTask.id} open />
-              )}
             </div>
           )}
 

@@ -2,11 +2,9 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Compass,
   FolderKanban,
-  GitCommitHorizontal,
   LogOut,
   PlusCircle,
   Settings,
-  Sparkles,
   User,
 } from "lucide-react";
 
@@ -33,27 +31,21 @@ const items = [
   { title: "Configurações", url: "/configuracoes", icon: Settings },
 ] as const;
 
-/** Ranking GLOBAL na sidebar (Top Contributors removido da visualização para implementação futura). */
-const rankingItems = [
-  { title: "Top Committers", url: "/ranking?tab=committers", icon: GitCommitHorizontal },
-] as const;
-
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { signOut } = useAuth();
   const currentPath = useRouterState({ select: (s) => s.location.pathname });
-  const currentTab = useRouterState({
-    select: (s) => (s.location.search as Record<string, unknown> | undefined)?.tab,
-  });
 
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="h-14 border-b justify-center">
         <Link to="/dashboard" className="flex items-center gap-2 px-2">
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground">
-            <Sparkles className="h-4 w-4" />
-          </span>
+          <img
+            src="/logo.png"
+            alt="MonteSquad"
+            className="h-8 w-8 shrink-0 rounded-lg object-cover"
+          />
           {!collapsed && <span className="font-semibold tracking-tight">MonteSquad</span>}
         </Link>
       </SidebarHeader>
@@ -76,34 +68,6 @@ export function AppSidebar() {
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton asChild isActive={active} tooltip={item.title}>
                       <Link to={item.url} className="flex items-center gap-2">
-                        <item.icon className="h-4 w-4" />
-                        {!collapsed && <span>{item.title}</span>}
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {/* Ranking global — endpoints existentes. */}
-        <SidebarGroup>
-          {!collapsed && <SidebarGroupLabel>Ranking</SidebarGroupLabel>}
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {rankingItems.map((item) => {
-                const active = currentPath === "/ranking";
-                return (
-                  <SidebarMenuItem key={item.url}>
-                    <SidebarMenuButton asChild isActive={active} tooltip={item.title}>
-                      <Link
-                        to="/ranking"
-                        search={{
-                          tab: "committers",
-                        }}
-                        className="flex items-center gap-2"
-                      >
                         <item.icon className="h-4 w-4" />
                         {!collapsed && <span>{item.title}</span>}
                       </Link>

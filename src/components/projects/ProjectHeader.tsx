@@ -19,8 +19,6 @@ import {
   UserPlus,
   Users,
 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -41,8 +39,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ApplicationForm } from "@/components/projects/ApplicationForm";
 import { cn } from "@/lib/utils";
-import { getProjectGithubStatus } from "@/services/github";
-import type { Application, ProjectDetail } from "@/services/projectDetail";
+import { parseRepositories, type Application, type ProjectDetail } from "@/services/projectDetail";
 
 /** Extrai "owner/repo" de uma URL do GitHub para o resumo compacto do header. */
 function githubRepoLabel(url: string): string {
@@ -101,8 +98,6 @@ type ProjectHeaderProps = {
   onNovaTarefa: () => void;
   /** Ação frequente: owner → área de vagas (mecanismo real de atrair membros). */
   onConvidar: () => void;
-  /** Menu admin: navega para a aba GitHub. */
-  onGoToGithub: () => void;
   /** Menu admin: navega para as configurações do projeto (privacidade/links). */
   onGoToSettings: (anchor?: "privacidade" | "links") => void;
   onApplicationSubmitted: () => void;
@@ -111,7 +106,7 @@ type ProjectHeaderProps = {
 /**
  * Cabeçalho compacto do projeto (refatoração UI/UX — ETAPA 2).
  * Apenas informações de leitura rápida + ações frequentes; controles
- * administrativos (privacidade, links, GitHub, encerrar) ficam no menu
+ * administrativos (privacidade, links, encerrar) ficam no menu
  * '...' e nas áreas próprias da página.
  */
 export function ProjectHeader({
@@ -126,21 +121,10 @@ export function ProjectHeader({
   onLeaveProject,
   onNovaTarefa,
   onConvidar,
-  onGoToGithub,
   onGoToSettings,
   onApplicationSubmitted,
 }: ProjectHeaderProps) {
   const finalizado = data.status === "Finalizado";
-
-  // Resumo GitHub do banner (ETAPA 1 do plano Kanban escalável) — reutiliza a
-  // MESMA query do GithubProjectPanel (query key compartilhada → TanStack deduplica).
-  const githubQuery = useQuery({
-    queryKey: ["project-github-status", String(data.id)],
-    queryFn: () => getProjectGithubStatus(data.id),
-    enabled: isMember,
-    staleTime: 60_000,
-  });
-  const github = githubQuery.data;
 
   return (
     <Card className="overflow-hidden rounded-3xl border-border/60 bg-linear-to-br from-card to-card/98 shadow-md dark:to-card/95">
@@ -225,10 +209,6 @@ export function ProjectHeader({
                       >
                         <Link2 className="mr-2 h-4 w-4" />
                         Gerenciar links
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="cursor-pointer" onClick={onGoToGithub}>
-                        <Github className="mr-2 h-4 w-4" />
-                        Configurar GitHub
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       {!finalizado && (
@@ -329,50 +309,25 @@ export function ProjectHeader({
           </span>
         </div>
 
-        {/* Resumo GitHub do banner (ETAPA 1) — compacto, nunca o painel inteiro.
-            Reutiliza a query de status existente; mostra repo + branch + estado. */}
-        {isMember && (
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl border border-border/40 bg-muted/30 px-3 py-1.5 text-xs">
-            <span className="inline-flex items-center gap-1.5 font-medium text-foreground/80">
-              <Github className="h-3.5 w-3.5" />
-              {github?.conectado && github.github_repository_full_name
-                ? github.github_repository_full_name
-                : data.repositorioUrl
-                  ? githubRepoLabel(data.repositorioUrl)
-                  : "GitHub não conectado"}
-            </span>
-            {github?.conectado && github.github_default_branch && (
-              <span className="inline-flex items-center gap-1 text-muted-foreground">
-                <GitBranch className="h-3 w-3" />
-                {github.github_default_branch}
-              </span>
-            )}
-            {github?.conectado ? (
-              <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                <CheckCircle2 className="h-3.5 w-3.5" /> Conectado
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 text-muted-foreground">
-                <Link2 className="h-3 w-3" /> Sem repositório
-              </span>
-            )}
-          </div>
-        )}
-
         {/* ETAPA 14: links de trabalho do squad — apenas os configurados, em
             formato compacto; membros/donos abrem em nova aba, visitantes não veem. */}
         {isMember &&
           (data.repositorioUrl || data.figmaUrl || data.discordUrl || data.documentacaoUrl) && (
             <div className="flex flex-wrap items-center gap-1.5">
-              {data.repositorioUrl && (
+              {parseRepositories(data.repositorioUrl).map((repo, idx) => (
                 <LinkPill
-                  href={data.repositorioUrl}
-                  label="GitHub"
-                  title={githubRepoLabel(data.repositorioUrl)}
-                  ariaLabel="Abrir repositório do projeto no GitHub"
+                  key={idx}
+                  href={repo.url}
+                  label={repo.nome && repo.nome.toLowerCase() !== "github" ? `GitHub (${repo.nome})` : "GitHub"}
+                  title={githubRepoLabel(repo.url)}
+                  ariaLabel={
+                    repo.nome && repo.nome.toLowerCase() !== "github"
+                      ? `Abrir repositório ${repo.nome} no GitHub`
+                      : "Abrir repositório do projeto no GitHub"
+                  }
                   icon={<Github className="h-3.5 w-3.5" />}
                 />
-              )}
+              ))}
               {data.figmaUrl && (
                 <LinkPill
                   href={data.figmaUrl}

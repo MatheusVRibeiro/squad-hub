@@ -136,7 +136,7 @@ export function ProjectSettings({
                       Editar links
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="rounded-2xl sm:max-w-md">
+                  <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl w-[95vw] sm:max-w-lg p-4 sm:p-6">
                     <DialogHeader>
                       <DialogTitle>Links de trabalho do squad</DialogTitle>
                       <DialogDescription>

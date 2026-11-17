@@ -74,15 +74,25 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Squad Hub" },
-      { name: "description", content: "Squad Hub Project" },
-      { name: "author", content: "Squad Hub" },
-      { property: "og:title", content: "Squad Hub" },
-      { property: "og:description", content: "Squad Hub Project" },
+      { title: "MonteSquad" },
+      { name: "description", content: "Monte squads. Construa projetos. Cresça junto." },
+      { name: "author", content: "MonteSquad" },
+      { property: "og:title", content: "MonteSquad" },
+      { property: "og:description", content: "Monte squads. Construa projetos. Cresça junto." },
+      { property: "og:image", content: "/logo.png" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
     links: [
+      {
+        rel: "icon",
+        type: "image/png",
+        href: "/logo.png",
+      },
+      {
+        rel: "apple-touch-icon",
+        href: "/logo.png",
+      },
       {
         rel: "preconnect",
         href: "https://fonts.googleapis.com",
@@ -110,9 +120,24 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="pt-BR" suppressHydrationWarning>
       <head>
         <HeadContent />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                const storedTheme = localStorage.getItem("theme");
+                const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+                if (storedTheme === "dark" || (!storedTheme && prefersDark)) {
+                  document.documentElement.classList.add("dark");
+                } else {
+                  document.documentElement.classList.remove("dark");
+                }
+              } catch (_) {}
+            `,
+          }}
+        />
       </head>
       <body>
         {children}

@@ -57,6 +57,7 @@ vi.mock("@tanstack/react-router", () => ({
     <a {...rest}>{children}</a>
   ),
   useParams: () => ({ id: "1" }),
+  useSearch: () => ({}),
   useNavigate: () => vi.fn(),
 }));
 
@@ -230,45 +231,5 @@ describe("ETAPA 19 — lazy loading das abas secundárias", () => {
     expect(getProjectGithubStatus).not.toHaveBeenCalled();
     expect(getProjectContributors).not.toHaveBeenCalled();
     expect(getProjectCommitters).not.toHaveBeenCalled();
-  });
-
-  it("GitHub: status dispara getProjectGithubStatus só quando a aba abre", async () => {
-    fetchProjectDetail.mockResolvedValue(makeData());
-    getProjectGithubStatus.mockResolvedValue({ conectado: false });
-
-    renderRota();
-    await screen.findByText("KanbanBoard");
-
-    expect(getProjectGithubStatus).not.toHaveBeenCalled();
-
-    await userEvent.click(screen.getByRole("tab", { name: "GitHub" }));
-    await waitFor(() => expect(getProjectGithubStatus).toHaveBeenCalledTimes(1));
-    expect(getProjectGithubStatus).toHaveBeenCalledWith("1");
-
-    expect(fetchEventosProjeto).not.toHaveBeenCalled();
-    expect(getProjectContributors).not.toHaveBeenCalled();
-    expect(getProjectCommitters).not.toHaveBeenCalled();
-  });
-
-  it("Insights: rankings disparam só quando a aba abre (e sem duplicar)", async () => {
-    fetchProjectDetail.mockResolvedValue(makeData());
-    getProjectContributors.mockResolvedValue([]);
-    getProjectCommitters.mockResolvedValue([]);
-
-    renderRota();
-    await screen.findByText("KanbanBoard");
-
-    expect(getProjectContributors).not.toHaveBeenCalled();
-    expect(getProjectCommitters).not.toHaveBeenCalled();
-
-    await userEvent.click(screen.getByRole("tab", { name: "Insights" }));
-
-    await waitFor(() => expect(getProjectCommitters).toHaveBeenCalledTimes(1));
-    expect(getProjectCommitters).toHaveBeenCalledWith("1", 5);
-    expect(getProjectContributors).not.toHaveBeenCalled();
-
-    // Sem chamadas duplicadas na primeira abertura: cada query secundária 1x.
-    expect(fetchEventosProjeto).not.toHaveBeenCalled();
-    expect(getProjectGithubStatus).not.toHaveBeenCalled();
   });
 });

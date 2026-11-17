@@ -18,7 +18,7 @@ export const notificationsIntegration = {
       type: "application",
       title,
       description,
-      link: `/projetos/${projectId}`,
+      link: `/projetos/${projectId}?tab=equipe&subtab=candidaturas`,
     });
 
     // 2. Dispara o toast sonner

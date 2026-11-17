@@ -765,6 +765,52 @@ export async function atualizarVisibilidadeProjeto(
   }
 }
 
+export type RepositoryLink = {
+  nome: string;
+  url: string;
+};
+
+/**
+ * Converte o campo repositorioUrl do banco (seja uma URL única ou um array JSON)
+ * em uma lista de repositórios estruturada.
+ */
+export function parseRepositories(raw?: string | null): RepositoryLink[] {
+  if (!raw || typeof raw !== "string" || !raw.trim()) return [];
+  const trimmed = raw.trim();
+  if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) {
+        return parsed
+          .filter((item) => item && typeof item.url === "string" && item.url.trim().length > 0)
+          .map((item) => ({
+            nome: item.nome?.trim() || "GitHub",
+            url: item.url.trim(),
+          }));
+      }
+    } catch {
+      // fallback se parse falhar
+    }
+  }
+  return [{ nome: "GitHub", url: trimmed }];
+}
+
+/**
+ * Converte a lista de repositórios para formato string para salvar no banco.
+ * Se houver apenas 1 repo padrão, salva direto a URL para retrocompatibilidade.
+ */
+export function serializeRepositories(repos: RepositoryLink[]): string | undefined {
+  const valid = repos
+    .map((r) => ({ nome: r.nome.trim() || "GitHub", url: r.url.trim() }))
+    .filter((r) => r.url.length > 0);
+
+  if (valid.length === 0) return undefined;
+  if (valid.length === 1 && (valid[0].nome.toLowerCase() === "github" || !valid[0].nome)) {
+    return valid[0].url;
+  }
+  return JSON.stringify(valid);
+}
+
 /**
  * ETAPA QA — PATCH /projetos/:id atualiza os links de trabalho do squad.
  *

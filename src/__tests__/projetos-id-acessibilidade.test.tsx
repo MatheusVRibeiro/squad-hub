@@ -61,6 +61,7 @@ vi.mock("@tanstack/react-router", () => ({
     <a {...rest}>{children}</a>
   ),
   useParams: () => ({ id: "1" }),
+  useSearch: () => ({}),
   useNavigate: () => vi.fn(),
 }));
 
@@ -118,12 +119,16 @@ const atualizarLinksProjeto = vi.fn();
 const sairDoProjeto = vi.fn();
 const candidatarComVaga = vi.fn();
 
-vi.mock("@/services/projectDetail", () => ({
-  fetchProjectDetail: (...args: unknown[]) => fetchProjectDetail(...args),
-  closeProjectLocal: (...args: unknown[]) => closeProjectLocal(...args),
-  atualizarVisibilidadeProjeto: (...args: unknown[]) => atualizarVisibilidadeProjeto(...args),
-  atualizarLinksProjeto: (...args: unknown[]) => atualizarLinksProjeto(...args),
-}));
+vi.mock("@/services/projectDetail", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/services/projectDetail")>();
+  return {
+    ...actual,
+    fetchProjectDetail: (...args: unknown[]) => fetchProjectDetail(...args),
+    closeProjectLocal: (...args: unknown[]) => closeProjectLocal(...args),
+    atualizarVisibilidadeProjeto: (...args: unknown[]) => atualizarVisibilidadeProjeto(...args),
+    atualizarLinksProjeto: (...args: unknown[]) => atualizarLinksProjeto(...args),
+  };
+});
 
 vi.mock("@/services/membros", () => ({
   sairDoProjeto: (...args: unknown[]) => sairDoProjeto(...args),
@@ -206,8 +211,6 @@ describe("ETAPA 20 — acessibilidade da tela de projeto", () => {
       "Kanban",
       "Atividade",
       "Equipe",
-      "GitHub",
-      "Insights",
       "Configurações",
     ]);
 
@@ -267,7 +270,6 @@ describe("ETAPA 20 — acessibilidade da tela de projeto", () => {
     await user.click(menu);
     expect(screen.getByRole("menuitem", { name: "Privacidade" })).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: "Gerenciar links" })).toBeInTheDocument();
-    expect(screen.getByRole("menuitem", { name: "Configurar GitHub" })).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: "Encerrar projeto" })).toBeInTheDocument();
   });
 
@@ -303,23 +305,6 @@ describe("ETAPA 20 — acessibilidade da tela de projeto", () => {
     const dialog = screen.getByRole("dialog", { name: "Links de trabalho do squad" });
     expect(dialog).toHaveAccessibleName("Links de trabalho do squad");
     expect(dialog).toHaveAccessibleDescription(/Deixe vazio para remover/i);
-  });
-
-  it("dialog de Nova Vaga tem título e descrição acessíveis (owner)", async () => {
-    const user = userEvent.setup();
-    authState.user = { id: "1", name: "Você", email: "voce@email.com", skills: [] };
-    fetchProjectDetail.mockResolvedValue(makeData());
-
-    renderRota();
-    await screen.findByText("KanbanBoard");
-
-    await user.click(screen.getByRole("tab", { name: "Equipe" }));
-    await user.click(screen.getByRole("tab", { name: "Vagas" }));
-    await user.click(screen.getByRole("button", { name: "Nova Vaga" }));
-
-    const dialog = screen.getByRole("dialog", { name: "Nova Vaga" });
-    expect(dialog).toHaveAccessibleName("Nova Vaga");
-    expect(dialog).toHaveAccessibleDescription(/Defina qual perfil o projeto está procurando/i);
   });
 
   it("botões destrutivos identificados: Encerrar Projeto (owner)", async () => {

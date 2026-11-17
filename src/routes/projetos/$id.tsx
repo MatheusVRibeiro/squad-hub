@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { createFileRoute, Link, useParams } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { createFileRoute, Link, useParams, useSearch } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, ArrowLeft, CheckCircle2, Lock, RefreshCcw } from "lucide-react";
 import { motion } from "framer-motion";
@@ -13,13 +13,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { KanbanBoard } from "@/components/projects/KanbanBoard";
 import { TasksRecomendadas } from "@/components/projects/TasksRecomendadas";
-import { GithubProjectPanel } from "@/components/projects/GithubProjectPanel";
-import { TopCommitters } from "@/components/projects/TopCommitters";
-import { InsightsResumo } from "@/components/projects/InsightsResumo";
 import { Mural } from "@/components/projects/Mural";
 import { MembersList } from "@/components/projects/MembersList";
 import { Applications } from "@/components/projects/Applications";
-import { Vagas } from "@/components/projects/Vagas";
 import { ProjectTimeline } from "@/components/projects/ProjectTimeline";
 import { ProjectHeader } from "@/components/projects/ProjectHeader";
 import {
@@ -51,10 +47,20 @@ function ProjectDetailPage() {
   // Refatoração UI/UX (ETAPA 1+4): navegação principal da tela de projeto.
   // Kanban é a aba padrão; Mural/Membros/Vagas/Recomendadas/Candidaturas foram
   // agrupados nas áreas (Atividade/Equipe) e saíram do primeiro nível.
-  const [activeTab, setActiveTab] = useState("kanban");
+  const search = useSearch({ strict: false }) as { tab?: string; subtab?: string };
+  const [activeTab, setActiveTab] = useState(search?.tab || "kanban");
   const [linksDialogOpen, setLinksDialogOpen] = useState(false);
   const [activitySubTab, setActivitySubTab] = useState("timeline");
-  const [teamSubTab, setTeamSubTab] = useState("membros");
+  const [teamSubTab, setTeamSubTab] = useState(search?.subtab || "membros");
+
+  useEffect(() => {
+    if (search?.tab) {
+      setActiveTab(search.tab);
+    }
+    if (search?.subtab) {
+      setTeamSubTab(search.subtab);
+    }
+  }, [search?.tab, search?.subtab]);
 
   const { data, isLoading, isError, error, refetch, dataUpdatedAt } = useQuery({
     queryKey: ["project", id],
@@ -197,16 +203,9 @@ function ProjectDetailPage() {
   }
 
   function goToConvidar() {
-    // Não existe endpoint de convite; a área de Vagas (Nova Vaga) é o mecanismo
-    // real de atrair membros — o botão leva o owner até ela.
     setActiveTab("equipe");
-    setTeamSubTab("vagas");
+    setTeamSubTab("membros");
     scrollToSection("secao-equipe");
-  }
-
-  function goToGithub() {
-    setActiveTab("github");
-    scrollToSection("secao-github");
   }
 
   function goToSettings(anchor?: "privacidade" | "links") {
@@ -329,7 +328,6 @@ function ProjectDetailPage() {
                 onLeaveProject={handleLeaveProject}
                 onNovaTarefa={goToKanban}
                 onConvidar={goToConvidar}
-                onGoToGithub={goToGithub}
                 onGoToSettings={goToSettings}
                 onApplicationSubmitted={refetch}
               />
@@ -353,8 +351,6 @@ function ProjectDetailPage() {
                     <TabsTrigger value="kanban">Kanban</TabsTrigger>
                     <TabsTrigger value="atividade">Atividade</TabsTrigger>
                     <TabsTrigger value="equipe">Equipe</TabsTrigger>
-                    <TabsTrigger value="github">GitHub</TabsTrigger>
-                    <TabsTrigger value="insights">Insights</TabsTrigger>
                     {isOwner && <TabsTrigger value="configuracoes">Configurações</TabsTrigger>}
                   </TabsList>
                 </div>
@@ -430,7 +426,7 @@ function ProjectDetailPage() {
                   <Tabs value={teamSubTab} onValueChange={setTeamSubTab} className="space-y-4">
                     <TabsList className="flex w-full justify-start overflow-x-auto rounded-xl">
                       <TabsTrigger value="membros">Membros</TabsTrigger>
-                      <TabsTrigger value="vagas">Vagas</TabsTrigger>
+                      {/* Sub-aba Vagas desativada temporariamente */}
                       {isOwner && (
                         <TabsTrigger value="candidaturas">
                           Candidaturas
@@ -448,9 +444,6 @@ function ProjectDetailPage() {
                     <TabsContent value="membros">
                       <MembersList members={data.members} />
                     </TabsContent>
-                    <TabsContent value="vagas">
-                      <Vagas initial={data.vagas} projectId={data.id} isOwner={isOwner} />
-                    </TabsContent>
                     {isOwner && (
                       <TabsContent value="candidaturas">
                         <Applications
@@ -461,32 +454,6 @@ function ProjectDetailPage() {
                       </TabsContent>
                     )}
                   </Tabs>
-                </TabsContent>
-
-                {/* GithubSection (ETAPA 11) — integração concentrada em um local. */}
-                <TabsContent value="github" className="scroll-mt-16 space-y-4">
-                  <GithubProjectPanel projectId={data.id} isOwner={isOwner} />
-                </TabsContent>
-
-                {/* InsightsSection (ETAPA 12) — resumo + rankings fora do fluxo vertical. */}
-                <TabsContent value="insights" className="scroll-mt-16 space-y-6">
-                  <motion.div
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    {/* Resumo do projeto (ETAPA 12) — métricas derivadas de data.tasks
-                        (zero queries novas); empty state compacto. */}
-                    <InsightsResumo tasks={data.tasks} />
-                  </motion.div>
-                  <motion.div
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: 0.1 }}
-                  >
-                    {/* Top Committers do projeto (ETAPA 11) */}
-                    <TopCommitters projectId={data.id} scope="project" limit={5} />
-                  </motion.div>
                 </TabsContent>
 
                 {/* SettingsSection (ETAPA 2 do plano Kanban escalável) — Privacidade +

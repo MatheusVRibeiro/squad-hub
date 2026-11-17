@@ -70,27 +70,26 @@ function DashboardPage() {
     queryFn: fetchNotifications,
   });
 
-  // 1. Dados para o gráfico de Pizza: Status dos Projetos (GET /projetos real)
-  const projectStatusData = useMemo(() => {
-    const counts = { Aberto: 0, "Em andamento": 0, Finalizado: 0 };
-    projects.forEach((p) => {
-      if (counts[p.status] !== undefined) {
-        counts[p.status]++;
-      }
+  // 1. Meus Squads (onde o usuário é dono ou membro confirmado pelo histórico/criador)
+  const myProjects = useMemo(() => {
+    if (!user) return [];
+    return projects.filter((p) => {
+      const isOwner = Number(p.creatorId) === Number(user.id) || p.createdBy === "Você";
+      const isHistoryMember = (reputation?.history ?? []).some(
+        (h) => String(h.id) === String(p.id) && h.memberStatus === "ativo"
+      );
+      return isOwner || isHistoryMember;
     });
-    return [
-      { name: "Aberto", value: counts["Aberto"], color: "#6366f1" },
-      { name: "Em progresso", value: counts["Em andamento"], color: "#f59e0b" },
-      { name: "Finalizado", value: counts["Finalizado"], color: "#10b981" },
-    ].filter((item) => item.value > 0);
-  }, [projects]);
+  }, [projects, user, reputation]);
 
-  // 2. Projetos em que o usuário é membro/dono — vindos do histórico real de
-  // reputação (GET /usuarios/me/reputacao → history, baseado em membros_equipe).
+  // IDs dos squads do usuário para consultar as tarefas reais
   const myProjectIds = useMemo(() => {
+    if (myProjects.length > 0) {
+      return myProjects.map((p) => String(p.id));
+    }
     if (!reputation) return [];
     return Array.from(new Set((reputation.history ?? []).map((h) => String(h.id)).filter(Boolean)));
-  }, [reputation]);
+  }, [myProjects, reputation]);
 
   // 3. Tarefas reais de cada squad do usuário (GET /projetos/:id/tarefas)
   const taskQueries = useQueries({
@@ -124,6 +123,54 @@ function DashboardPage() {
       { name: "Concluído", quantidade: done, fill: "#10b981" },
     ];
   }, [taskQueries]);
+
+  // Lista de todas as tarefas de todos os squads do usuário
+  const allUserSquadTasks = useMemo(() => {
+    const list: Array<{ task: KanbanTask; projectId: string; projectName: string }> = [];
+    myProjects.forEach((proj, idx) => {
+      const q = taskQueries[idx];
+      if (q && q.data) {
+        q.data.forEach((t) => {
+          list.push({ task: t, projectId: String(proj.id), projectName: proj.name });
+        });
+      }
+    });
+    return list;
+  }, [myProjects, taskQueries]);
+
+  // Tarefas atribuídas diretamente ao usuário conectado
+  const myAssignedTasks = useMemo(() => {
+    if (!user) return [];
+    const userNameNorm = user.name?.toLowerCase().trim();
+    return allUserSquadTasks.filter(({ task }) => {
+      if (task.assigneeId && Number(task.assigneeId) === Number(user.id)) return true;
+      if (task.assignee && userNameNorm && task.assignee.toLowerCase().trim() === userNameNorm) return true;
+      return false;
+    });
+  }, [allUserSquadTasks, user]);
+
+  const myPendingTasks = useMemo(() => {
+    return myAssignedTasks.filter(({ task }) => task.status !== "done");
+  }, [myAssignedTasks]);
+
+  const myCompletedTasks = useMemo(() => {
+    return myAssignedTasks.filter(({ task }) => task.status === "done");
+  }, [myAssignedTasks]);
+
+  // Gráfico do status dos squads do usuário
+  const projectStatusData = useMemo(() => {
+    const counts = { Aberto: 0, "Em andamento": 0, Finalizado: 0 };
+    myProjects.forEach((p) => {
+      if (counts[p.status] !== undefined) {
+        counts[p.status]++;
+      }
+    });
+    return [
+      { name: "Aberto", value: counts["Aberto"], color: "#6366f1" },
+      { name: "Em progresso", value: counts["Em andamento"], color: "#f59e0b" },
+      { name: "Finalizado", value: counts["Finalizado"], color: "#10b981" },
+    ].filter((item) => item.value > 0);
+  }, [myProjects]);
 
   const totalTasksCount = useMemo(() => {
     return taskStatusData.reduce((acc, curr) => acc + curr.quantidade, 0);
@@ -235,42 +282,44 @@ function DashboardPage() {
             </Card>
           </div>
 
-          {/* KPI Cards */}
+          {/* KPI Cards — Focado nos Dados Pessoais do Usuário */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Card className="rounded-2xl border-border/60">
-              <CardContent className="flex items-center gap-4 p-6">
-                <span className="grid h-12 w-12 place-items-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                  <FolderKanban className="h-6 w-6" />
-                </span>
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">Total de Projetos</p>
-                  {projectsLoading ? (
-                    <Skeleton className="my-1 h-7 w-12 rounded-md" />
-                  ) : projectsError ? (
-                    <div className="flex items-center gap-1.5">
-                      <AlertTriangle className="h-4 w-4 text-destructive" />
-                      <button
-                        onClick={() => refetchProjects()}
-                        className="text-xs font-medium text-primary hover:underline"
-                      >
-                        Tentar novamente
-                      </button>
-                    </div>
-                  ) : (
-                    <p className="text-2xl font-bold">{projects.length}</p>
-                  )}
-                  <p className="text-[10px] text-muted-foreground">no total</p>
-                </div>
-              </CardContent>
-            </Card>
+            <Link to="/meus-projetos" className="block">
+              <Card className="rounded-2xl border-border/60 transition-all hover:border-primary/40 hover:shadow-xs cursor-pointer">
+                <CardContent className="flex items-center gap-4 p-5">
+                  <span className="grid h-12 w-12 place-items-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                    <FolderKanban className="h-6 w-6" />
+                  </span>
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">Meus Squads Ativos</p>
+                    {projectsLoading ? (
+                      <Skeleton className="my-1 h-7 w-12 rounded-md" />
+                    ) : projectsError ? (
+                      <div className="flex items-center gap-1.5">
+                        <AlertTriangle className="h-4 w-4 text-destructive" />
+                        <button
+                          onClick={() => refetchProjects()}
+                          className="text-xs font-medium text-primary hover:underline"
+                        >
+                          Tentar novamente
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="text-2xl font-bold">{myProjects.length}</p>
+                    )}
+                    <p className="text-[10px] text-muted-foreground">como dono ou membro</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
 
             <Card className="rounded-2xl border-border/60">
-              <CardContent className="flex items-center gap-4 p-6">
-                <span className="grid h-12 w-12 place-items-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              <CardContent className="flex items-center gap-4 p-5">
+                <span className="grid h-12 w-12 place-items-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
                   <CheckSquare className="h-6 w-6" />
                 </span>
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground">Tarefas Entregues</p>
+                  <p className="text-xs font-medium text-muted-foreground">Minhas Tarefas Pendentes</p>
                   {tasksLoading ? (
                     <Skeleton className="my-1 h-7 w-16 rounded-md" />
                   ) : tasksError ? (
@@ -285,69 +334,158 @@ function DashboardPage() {
                     </div>
                   ) : (
                     <p className="text-2xl font-bold">
-                      {completedTasksCount}{" "}
+                      {myPendingTasks.length}{" "}
                       <span className="text-xs font-normal text-muted-foreground">
-                        / {totalTasksCount}
+                        em andamento
                       </span>
                     </p>
                   )}
+                  <p className="text-[10px] text-muted-foreground">
+                    {myCompletedTasks.length} concluídas por você
+                  </p>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="rounded-2xl border-border/60">
-              <CardContent className="flex items-center gap-4 p-6">
-                <span className="grid h-12 w-12 place-items-center rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
-                  <Bell className="h-6 w-6" />
-                </span>
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">Avisos Pendentes</p>
-                  {notificationsLoading ? (
-                    <Skeleton className="my-1 h-7 w-10 rounded-md" />
-                  ) : notificationsError ? (
-                    <div className="flex items-center gap-1.5">
-                      <AlertTriangle className="h-4 w-4 text-destructive" />
-                      <button
-                        onClick={() => refetchNotifications()}
-                        className="text-xs font-medium text-primary hover:underline"
-                      >
-                        Tentar novamente
-                      </button>
-                    </div>
-                  ) : (
-                    <p className="text-2xl font-bold">{unreadNotifCount}</p>
-                  )}
-                  <p className="text-[10px] text-muted-foreground">não lidas</p>
-                </div>
-              </CardContent>
-            </Card>
+            <Link to="/notificacoes" className="block">
+              <Card className="rounded-2xl border-border/60 transition-all hover:border-primary/40 hover:shadow-xs cursor-pointer">
+                <CardContent className="flex items-center gap-4 p-5">
+                  <span className="grid h-12 w-12 place-items-center rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
+                    <Bell className="h-6 w-6" />
+                  </span>
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">Avisos Pendentes</p>
+                    {notificationsLoading ? (
+                      <Skeleton className="my-1 h-7 w-10 rounded-md" />
+                    ) : notificationsError ? (
+                      <div className="flex items-center gap-1.5">
+                        <AlertTriangle className="h-4 w-4 text-destructive" />
+                        <button
+                          onClick={() => refetchNotifications()}
+                          className="text-xs font-medium text-primary hover:underline"
+                        >
+                          Tentar novamente
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="text-2xl font-bold">{unreadNotifCount}</p>
+                    )}
+                    <p className="text-[10px] text-muted-foreground">não lidas</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
 
-            <Card className="rounded-2xl border-border/60">
-              <CardContent className="flex items-center gap-4 p-6">
-                <span className="grid h-12 w-12 place-items-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                  <Sparkles className="h-6 w-6" />
-                </span>
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">Conquistas Ganhas</p>
-                  {reputationLoading ? (
-                    <Skeleton className="my-1 h-7 w-10 rounded-md" />
-                  ) : reputationError ? (
-                    <div className="flex items-center gap-1.5">
-                      <AlertTriangle className="h-4 w-4 text-destructive" />
-                      <button
-                        onClick={() => refetchReputation()}
-                        className="text-xs font-medium text-primary hover:underline"
-                      >
-                        Tentar novamente
-                      </button>
-                    </div>
-                  ) : (
-                    <p className="text-2xl font-bold">{reputation?.achievements.length || 0}</p>
-                  )}
-                  <p className="text-[10px] text-muted-foreground">no total</p>
-                </div>
-              </CardContent>
-            </Card>
+            <Link to="/perfil" className="block">
+              <Card className="rounded-2xl border-border/60 transition-all hover:border-primary/40 hover:shadow-xs cursor-pointer">
+                <CardContent className="flex items-center gap-4 p-5">
+                  <span className="grid h-12 w-12 place-items-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                    <Sparkles className="h-6 w-6" />
+                  </span>
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">Minhas Conquistas</p>
+                    {reputationLoading ? (
+                      <Skeleton className="my-1 h-7 w-10 rounded-md" />
+                    ) : reputationError ? (
+                      <div className="flex items-center gap-1.5">
+                        <AlertTriangle className="h-4 w-4 text-destructive" />
+                        <button
+                          onClick={() => refetchReputation()}
+                          className="text-xs font-medium text-primary hover:underline"
+                        >
+                          Tentar novamente
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="text-2xl font-bold">{reputation?.achievements.length || 0}</p>
+                    )}
+                    <p className="text-[10px] text-muted-foreground">badges desbloqueadas</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          </div>
+
+          {/* Minhas Tarefas em Foco / Próximos Passos */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold tracking-tight">Minhas Tarefas em Andamento</h2>
+                <p className="text-xs text-muted-foreground">
+                  Tarefas atribuídas a você nos seus squads que precisam de atenção.
+                </p>
+              </div>
+              <span className="text-xs font-semibold text-primary">
+                {myPendingTasks.length} {myPendingTasks.length === 1 ? "tarefa" : "tarefas"}
+              </span>
+            </div>
+
+            {tasksLoading ? (
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <Skeleton className="h-28 rounded-2xl" />
+                <Skeleton className="h-28 rounded-2xl" />
+                <Skeleton className="h-28 rounded-2xl" />
+              </div>
+            ) : myPendingTasks.length === 0 ? (
+              <Card className="rounded-2xl border-dashed border-border/70 bg-muted/10 p-6 text-center">
+                <p className="text-sm font-medium text-foreground">Você está em dia!</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Nenhuma tarefa pendente atribuída diretamente a você no momento. Acesse seus squads para assumir novas demandas.
+                </p>
+              </Card>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {myPendingTasks.slice(0, 6).map(({ task, projectId, projectName }) => (
+                  <Link
+                    key={`${projectId}-${task.id}`}
+                    to="/projetos/$id"
+                    params={{ id: projectId }}
+                    className="block"
+                  >
+                    <Card className="h-full rounded-2xl border-border/60 p-4 transition-all hover:border-primary/40 hover:shadow-xs">
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">
+                          {projectName}
+                        </span>
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${
+                            task.status === "doing"
+                              ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                              : task.status === "review"
+                              ? "bg-sky-500/10 text-sky-600 dark:text-sky-400"
+                              : "bg-muted text-muted-foreground"
+                          }`}
+                        >
+                          {task.status === "doing"
+                            ? "Em progresso"
+                            : task.status === "review"
+                            ? "Em revisão"
+                            : "A fazer"}
+                        </span>
+                      </div>
+                      <p className="mt-2 line-clamp-1 text-sm font-semibold text-foreground">
+                        {task.title}
+                      </p>
+                      {task.description && (
+                        <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                          {task.description}
+                        </p>
+                      )}
+                      <div className="mt-3 flex items-center justify-between text-[11px] text-muted-foreground pt-2 border-t border-border/40">
+                        <span>
+                          {task.subtasks && task.subtasks.length > 0
+                            ? `${task.subtasks.filter((s) => s.done).length}/${task.subtasks.length} subtarefas`
+                            : "Sem checklist"}
+                        </span>
+                        <span className="font-medium text-primary hover:underline">
+                          Abrir squad →
+                        </span>
+                      </div>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Recomendados para você (ETAPA 16 — matching desenvolvedor ↔ projeto) */}

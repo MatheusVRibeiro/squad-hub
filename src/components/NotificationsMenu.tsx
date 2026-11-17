@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import {
   fetchNotifications,
   markAllRead,
+  markAsRead,
   type AppNotification,
   type NotificationType,
 } from "@/services/notifications";
@@ -69,6 +70,18 @@ export function NotificationsMenu() {
     onError: () => {
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
       toast.error("Não foi possível marcar as notificações como lidas.");
+    },
+  });
+
+  const markSingleMutation = useMutation({
+    mutationFn: markAsRead,
+    onMutate: (id: string) => {
+      queryClient.setQueryData<AppNotification[]>(["notifications"], (old) =>
+        (old ?? []).map((n) => (n.id === id ? { ...n, read: true } : n)),
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
   });
 
@@ -152,11 +165,28 @@ export function NotificationsMenu() {
                 return (
                   <li key={n.id}>
                     {n.link ? (
-                      <Link to={n.link} className="block">
+                      <Link
+                        to={n.link}
+                        className="block"
+                        onClick={() => {
+                          if (!n.read) {
+                            markSingleMutation.mutate(n.id);
+                          }
+                        }}
+                      >
                         {body}
                       </Link>
                     ) : (
-                      body
+                      <div
+                        className="cursor-pointer"
+                        onClick={() => {
+                          if (!n.read) {
+                            markSingleMutation.mutate(n.id);
+                          }
+                        }}
+                      >
+                        {body}
+                      </div>
                     )}
                   </li>
                 );

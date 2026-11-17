@@ -193,3 +193,23 @@ export async function markAllRead(): Promise<void> {
     saveLocalNotifications(notifications);
   }
 }
+
+/**
+ * Marca uma notificação individual como lida (PATCH /notificacoes/:id/ler).
+ */
+export async function markAsRead(id: string): Promise<void> {
+  try {
+    await api.patch(`/notificacoes/${id}/ler`);
+  } catch (error) {
+    if (!isDev()) throw error;
+  }
+
+  if (isDev()) {
+    const notifications = getLocalNotifications();
+    const found = notifications.find((n) => n.id === id);
+    if (found) {
+      found.read = true;
+      saveLocalNotifications(notifications);
+    }
+  }
+}

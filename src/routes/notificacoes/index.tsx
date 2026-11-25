@@ -36,12 +36,22 @@ const ICONS: Record<NotificationType, React.ComponentType<{ className?: string }
   system: Sparkles,
 };
 
+function parseNotificationLink(link: string): { to: string; search?: Record<string, string> } {
+  const [pathname, queryString] = link.split("?");
+  if (!queryString) return { to: pathname };
+  const params = Object.fromEntries(new URLSearchParams(queryString).entries());
+  return { to: pathname, search: params };
+}
+
 function NotificacoesPage() {
   const queryClient = useQueryClient();
 
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: ["notifications"],
     queryFn: fetchNotifications,
+    staleTime: 0,
+    refetchInterval: 5_000,
+    refetchOnWindowFocus: true,
   });
 
   // Garante "mais recentes primeiro" mesmo se a ordem da API variar.
@@ -188,11 +198,13 @@ function NotificacoesPage() {
                     </CardContent>
                   </Card>
                 );
+                const parsedLink = n.link ? parseNotificationLink(n.link) : null;
                 return (
                   <li key={n.id}>
-                    {n.link ? (
+                    {parsedLink ? (
                       <Link
-                        to={n.link}
+                        to={parsedLink.to}
+                        search={parsedLink.search as never}
                         onClick={() => {
                           if (!n.read) {
                             markSingleMutation.mutate(n.id);

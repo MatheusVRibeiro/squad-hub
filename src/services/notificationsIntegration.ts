@@ -9,21 +9,11 @@ export const notificationsIntegration = {
   /**
    * Notifica quando uma nova candidatura é enviada
    */
-  notifyApplied(projectName: string, applicantName: string, projectId: string) {
-    const title = "Nova candidatura";
-    const description = `${applicantName} enviou uma solicitação para entrar no squad de ${projectName}.`;
-
-    // 1. Salva no banco local de notificações
-    addLocalNotification({
-      type: "application",
-      title,
-      description,
-      link: `/projetos/${projectId}?tab=equipe&subtab=candidaturas`,
-    });
-
-    // 2. Dispara o toast sonner
-    toast.success(`${applicantName} quer participar do seu projeto!`, {
-      description: "Confira a aba Candidaturas.",
+  notifyApplied(projectName: string, applicantName: string, _projectId: string) {
+    // Dispara feedback visual de confirmação para o candidato (a notificação no
+    // banco é criada pelo backend diretamente para o criador do projeto).
+    toast.success(`Solicitação enviada para ${projectName}!`, {
+      description: "O criador do projeto foi notificado e avaliará seu pedido.",
     });
 
     // Log para fins de simulação de chamada de API XYZ externa

@@ -53,3 +53,20 @@ export async function candidatarComVaga(
     throw toFriendlyError(err, "Não foi possível enviar a candidatura.");
   }
 }
+
+export async function cancelarMinhaCandidatura(
+  projetoId: string,
+  candidaturaId?: string,
+): Promise<void> {
+  try {
+    const endpoint = candidaturaId
+      ? `/projetos/${projetoId}/candidaturas/${candidaturaId}`
+      : `/projetos/${projetoId}/candidaturas/minha`;
+    const { data } = await api.delete<ApiEnvelope<unknown>>(endpoint);
+    if (data && data.sucesso === false) {
+      throw new Error(data.message || "Não foi possível cancelar a candidatura.");
+    }
+  } catch (err) {
+    throw toFriendlyError(err, "Não foi possível cancelar a candidatura.");
+  }
+}

@@ -30,6 +30,7 @@ import { ProjectSettings } from "@/components/projects/ProjectSettings";
 import {
   fetchProjectDetail,
   closeProjectLocal,
+  cancelarCandidaturaLocal,
   atualizarVisibilidadeProjeto,
   atualizarLinksProjeto,
   type ProjectDetail,
@@ -43,6 +44,7 @@ function ProjectDetailPage() {
   const queryClient = useQueryClient();
   const [closing, setClosing] = useState(false);
   const [saindo, setSaindo] = useState(false);
+  const [cancellingApplication, setCancellingApplication] = useState(false);
 
   // Refatoração UI/UX (ETAPA 1+4): navegação principal da tela de projeto.
   // Kanban é a aba padrão; Mural/Membros/Vagas/Recomendadas/Candidaturas foram
@@ -132,6 +134,22 @@ function ProjectDetailPage() {
     a.userId != null ? Number(a.userId) === Number(user?.id) : a.name === user?.name,
   );
   const hasApplied = !!application && application.status === "pending";
+
+  async function handleCancelApplication() {
+    if (!data) return;
+    setCancellingApplication(true);
+    try {
+      await cancelarCandidaturaLocal(data.id, application?.id);
+      toast.success("Candidatura cancelada com sucesso.");
+      queryClient.invalidateQueries({ queryKey: ["project", data.id] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      refetch();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao cancelar candidatura.");
+    } finally {
+      setCancellingApplication(false);
+    }
+  }
 
   async function handleCloseProject() {
     if (!data) return;
@@ -329,7 +347,14 @@ function ProjectDetailPage() {
                 onNovaTarefa={goToKanban}
                 onConvidar={goToConvidar}
                 onGoToSettings={goToSettings}
-                onApplicationSubmitted={refetch}
+                onApplicationSubmitted={() => {
+                  queryClient.invalidateQueries({ queryKey: ["project", id] });
+                  queryClient.invalidateQueries({ queryKey: ["projects"] });
+                  queryClient.invalidateQueries({ queryKey: ["notifications"] });
+                  refetch();
+                }}
+                onCancelApplication={handleCancelApplication}
+                cancellingApplication={cancellingApplication}
               />
 
               {!isMember && (

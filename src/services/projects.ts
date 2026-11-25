@@ -17,6 +17,11 @@ export type Project = {
   /** Id do usuário criador (mapeado de criador_id do GET /projetos) — permite
    *  "meus projetos" por id (A2) em vez de comparação por nome. */
   creatorId?: string;
+  /** Vínculo ativo do usuário autenticado com o projeto (vem de sou_membro em GET /projetos). */
+  isMember?: boolean;
+  /** Id e status da candidatura mais recente do usuário autenticado neste projeto. */
+  myApplicationId?: string;
+  myApplicationStatus?: "pending" | "approved" | "rejected" | null;
   createdAt: string; // ISO
   repositorioUrl?: string;
   figmaUrl?: string;
@@ -55,6 +60,9 @@ export async function fetchProjects(): Promise<Project[]> {
         discord_url?: string | null;
         documentacao_url?: string | null;
         tecnologias?: string[] | string | null;
+        sou_membro?: boolean;
+        minha_candidatura_id?: number | null;
+        minha_candidatura_status?: "pendente" | "aceito" | "rejeitado" | null;
       }[];
     }>("/projetos");
 
@@ -72,6 +80,14 @@ export async function fetchProjects(): Promise<Project[]> {
             ? p.tecnologias.split("||")
             : [];
 
+        let myApplicationStatus: Project["myApplicationStatus"] | undefined;
+        if (p.minha_candidatura_status !== undefined) {
+          if (p.minha_candidatura_status === "pendente") myApplicationStatus = "pending";
+          else if (p.minha_candidatura_status === "aceito") myApplicationStatus = "approved";
+          else if (p.minha_candidatura_status === "rejeitado") myApplicationStatus = "rejected";
+          else myApplicationStatus = null;
+        }
+
         return {
           id: String(p.id),
           name: p.titulo,
@@ -83,6 +99,11 @@ export async function fetchProjects(): Promise<Project[]> {
           createdBy: p.criador_nome || "Desconhecido",
           // A2: id do criador (criador_id) para "meus projetos" por id.
           creatorId: p.criador_id != null ? String(p.criador_id) : undefined,
+          ...(p.sou_membro !== undefined ? { isMember: Boolean(p.sou_membro) } : {}),
+          ...(p.minha_candidatura_id != null
+            ? { myApplicationId: String(p.minha_candidatura_id) }
+            : {}),
+          ...(myApplicationStatus !== undefined ? { myApplicationStatus } : {}),
           createdAt: p.criado_em,
           repositorioUrl: p.repositorio_url || undefined,
           figmaUrl: p.figma_url || undefined,

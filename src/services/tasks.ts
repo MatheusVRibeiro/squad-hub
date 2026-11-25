@@ -10,6 +10,7 @@ export type KanbanTask = {
   description?: string;
   status: KanbanStatus;
   assignee?: string;
+  assigneeId?: number;
   priority?: "low" | "medium" | "high";
   dueDate?: string;
   subtasks?: { id: string; title: string; done: boolean }[];
@@ -77,6 +78,7 @@ export async function fetchProjectTasks(projectId: string): Promise<KanbanTask[]
         description: t.descricao || undefined,
         status: t.status,
         assignee: t.responsavel_nome || undefined,
+        assigneeId: t.responsavel_id ?? undefined,
         priority: t.prioridade,
         dueDate: t.data_vencimento || undefined,
         subtasks: (t.subtasks ?? []).map((s) => ({

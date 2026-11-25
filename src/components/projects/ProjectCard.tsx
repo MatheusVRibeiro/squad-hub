@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { type Project } from "@/services/projects";
 import { useAuth } from "@/contexts/AuthContext";
-import { getLocalProjectDetail, applyToProjectLocal } from "@/services/projectDetail";
+import { applyToProjectLocal, cancelarCandidaturaLocal } from "@/services/projectDetail";
 import { notificationsIntegration } from "@/services/notificationsIntegration";
 import {
   Dialog,
@@ -57,29 +57,29 @@ export function ProjectCard({ project, index = 0 }: { project: Project; index?: 
   const [open, setOpen] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
   const [applyMessage, setApplyMessage] = useState("");
   const [selectedRole, setSelectedRole] = useState<string>("Full Stack");
   const [availability, setAvailability] = useState<string>("10h/sem");
   const [localApplied, setLocalApplied] = useState(false);
+  const [localCancelled, setLocalCancelled] = useState(false);
 
   const closed = project.status === "Finalizado";
 
-  // Busca detalhes locais para carregar status offline do relacionamento com o usuário
-  const detail = typeof window !== "undefined" ? getLocalProjectDetail(project.id) : null;
-  const isOwner = project.createdBy === user?.name || project.createdBy === "Você";
-  const isMember = detail
-    ? isOwner ||
-      detail.members.some(
-        (m) => m.name === user?.name || (m.name === "Você" && user?.name === "Você"),
-      )
-    : isOwner;
+  // Vínculo e candidatura reais vindos de GET /projetos (por ID do usuário autenticado)
+  const isOwner =
+    (project.creatorId != null &&
+      user?.id != null &&
+      Number(project.creatorId) === Number(user.id)) ||
+    project.createdBy === user?.name ||
+    project.createdBy === "Você";
 
-  const application = detail?.applications.find(
-    (a) => a.name === user?.name || (a.name === "Você" && user?.name === "Você"),
-  );
-  const hasApplied = !!application && application.status === "pending";
-  const isRejected = !!application && application.status === "rejected";
-  const hasAppliedFinal = hasApplied || localApplied;
+  const isMember = isOwner || Boolean(project.isMember);
+
+  const hasApplied =
+    !localCancelled && (project.myApplicationStatus === "pending" || localApplied);
+  const isRejected = !localApplied && project.myApplicationStatus === "rejected";
+  const hasAppliedFinal = hasApplied;
 
   // Cálculo da barra de lotação
   const percentFilled = Math.round((project.membersCount / project.membersLimit) * 100);
@@ -116,13 +116,31 @@ export function ProjectCard({ project, index = 0 }: { project: Project; index?: 
       // Invalida os dados do cache global do React Query
       queryClient.invalidateQueries({ queryKey: ["project", project.id] });
       queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
 
+      setLocalCancelled(false);
       setLocalApplied(true);
       setIsSuccess(true);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao enviar candidatura.");
     } finally {
       setIsApplying(false);
+    }
+  }
+
+  async function handleCancelApplication() {
+    setIsCancelling(true);
+    try {
+      await cancelarCandidaturaLocal(project.id, project.myApplicationId);
+      setLocalApplied(false);
+      setLocalCancelled(true);
+      toast.success("Solicitação cancelada com sucesso.");
+      queryClient.invalidateQueries({ queryKey: ["project", project.id] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao cancelar solicitação.");
+    } finally {
+      setIsCancelling(false);
     }
   }
 
@@ -164,14 +182,26 @@ export function ProjectCard({ project, index = 0 }: { project: Project; index?: 
     }
     if (hasAppliedFinal) {
       return (
-        <Button
-          disabled
-          variant="outline"
-          size="sm"
-          className="rounded-xl h-9 text-xs bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20 font-semibold"
-        >
-          Pendente
-        </Button>
+        <div className="flex items-center gap-1.5">
+          <Button
+            disabled
+            variant="outline"
+            size="sm"
+            className="rounded-xl h-9 text-xs bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20 font-semibold"
+          >
+            Pendente
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            disabled={isCancelling}
+            onClick={handleCancelApplication}
+            className="rounded-xl h-9 px-2.5 text-xs text-muted-foreground hover:text-destructive cursor-pointer"
+          >
+            {isCancelling ? "..." : "Cancelar"}
+          </Button>
+        </div>
       );
     }
     if (isRejected) {

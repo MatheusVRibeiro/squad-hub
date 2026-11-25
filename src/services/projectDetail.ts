@@ -704,8 +704,22 @@ export async function applyToProjectLocal(
       vaga_id: applicant.vagaId,
       mensagem: applicant.message,
     });
-  } catch {
-    throw new Error("Não foi possível enviar a candidatura.");
+  } catch (err) {
+    throw toFriendlyError(err, "Não foi possível enviar a candidatura.");
+  }
+}
+
+export async function cancelarCandidaturaLocal(
+  projectId: string,
+  candidaturaId?: string,
+): Promise<void> {
+  try {
+    const endpoint = candidaturaId
+      ? `/projetos/${projectId}/candidaturas/${candidaturaId}`
+      : `/projetos/${projectId}/candidaturas/minha`;
+    await api.delete(endpoint);
+  } catch (err) {
+    throw toFriendlyError(err, "Não foi possível cancelar a candidatura.");
   }
 }
 

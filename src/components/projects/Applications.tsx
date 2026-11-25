@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Check, X } from "lucide-react";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +30,11 @@ export function Applications({
   projectName: string;
 }) {
   const [items, setItems] = useState<Application[]>(initial);
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    setItems(initial);
+  }, [initial]);
 
   async function decide(id: string, status: "approved" | "rejected") {
     const app = items.find((a) => a.id === id);
@@ -41,8 +47,11 @@ export function Applications({
       setItems((arr) => arr.map((a) => (a.id === id ? { ...a, status } : a)));
       toast.success(status === "approved" ? "Candidatura aprovada" : "Candidatura recusada");
 
-      // 2. Envia notificação
+      // 2. Envia notificação e sincroniza cache global do projeto e listagem
       notificationsIntegration.notifyApplicationStatus(projectName, app.name, status, projectId);
+      queryClient.invalidateQueries({ queryKey: ["project", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao atualizar candidatura.");
     }

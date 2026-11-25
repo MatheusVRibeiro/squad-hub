@@ -26,7 +26,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { fetchProjects } from "@/services/projects";
 import { fetchReputation } from "@/services/reputation";
 import { fetchNotifications } from "@/services/notifications";
-import { fetchProjectTasks } from "@/services/tasks";
+import { fetchProjectTasks, type KanbanTask } from "@/services/tasks";
 
 const tiles = [
   { icon: Compass, label: "Explorar Projetos", hint: "Descubra squads", to: "/projetos" },
@@ -70,15 +70,16 @@ function DashboardPage() {
     queryFn: fetchNotifications,
   });
 
-  // 1. Meus Squads (onde o usuário é dono ou membro confirmado pelo histórico/criador)
+  // 1. Meus Squads (onde o usuário é dono ou membro confirmado pelo backend/histórico)
   const myProjects = useMemo(() => {
     if (!user) return [];
     return projects.filter((p) => {
       const isOwner = Number(p.creatorId) === Number(user.id) || p.createdBy === "Você";
+      const isDirectMember = Boolean(p.isMember);
       const isHistoryMember = (reputation?.history ?? []).some(
         (h) => String(h.id) === String(p.id) && h.memberStatus === "ativo"
       );
-      return isOwner || isHistoryMember;
+      return isOwner || isDirectMember || isHistoryMember;
     });
   }, [projects, user, reputation]);
 

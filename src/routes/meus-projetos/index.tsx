@@ -18,10 +18,12 @@ function MeusProjetosPage() {
     staleTime: 60_000,
   });
 
-  // A2: dono por ID (creatorId mapeado de criador_id do backend), não por nome —
-  // homônimos não quebram. `createdBy === "Você"` mantém o preview DEV (mock/recém-criado).
+  // Inclui projetos em que o usuário é dono (por creatorId) OU membro ativo do squad (isMember).
   const mine = (data ?? []).filter(
-    (p) => Number(p.creatorId) === Number(user?.id) || p.createdBy === "Você",
+    (p) =>
+      Number(p.creatorId) === Number(user?.id) ||
+      p.createdBy === "Você" ||
+      Boolean(p.isMember),
   );
 
   return (
@@ -33,7 +35,7 @@ function MeusProjetosPage() {
               <p className="text-xs font-bold tracking-widest text-primary uppercase">Workspace</p>
               <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Meus projetos</h1>
               <p className="text-sm text-muted-foreground">
-                Squads que você criou e gerencia como proprietário.
+                Squads que você criou como proprietário ou dos quais participa como membro.
               </p>
             </div>
             <Button asChild className="rounded-xl px-5 shadow-sm">

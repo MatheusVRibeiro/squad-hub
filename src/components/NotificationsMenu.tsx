@@ -43,15 +43,24 @@ function fromNow(iso: string) {
   return `${Math.floor(d / 86400)} d`;
 }
 
+function parseNotificationLink(link: string): { to: string; search?: Record<string, string> } {
+  const [pathname, queryString] = link.split("?");
+  if (!queryString) return { to: pathname };
+  const params = Object.fromEntries(new URLSearchParams(queryString).entries());
+  return { to: pathname, search: params };
+}
+
 export function NotificationsMenu() {
   const queryClient = useQueryClient();
 
   // Contador de não lidas REAL: derivado dos dados retornados por GET /notificacoes.
-  // Em caso de erro a query fica sem dados e o badge não é exibido (nada de mock).
-  const { data, isError } = useQuery({
+  // Polling ativo (5s) + refetch ao focar janela / abrir o menu para entregar notificações na hora.
+  const { data, isError, refetch } = useQuery({
     queryKey: ["notifications"],
     queryFn: fetchNotifications,
-    staleTime: 30_000,
+    staleTime: 0,
+    refetchInterval: 5_000,
+    refetchOnWindowFocus: true,
   });
 
   const items: AppNotification[] = data ?? [];
@@ -86,7 +95,13 @@ export function NotificationsMenu() {
   });
 
   return (
-    <DropdownMenu>
+    <DropdownMenu
+      onOpenChange={(open) => {
+        if (open) {
+          refetch();
+        }
+      }}
+    >
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
@@ -162,11 +177,13 @@ export function NotificationsMenu() {
                     {!n.read && <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary" />}
                   </div>
                 );
+                const parsedLink = n.link ? parseNotificationLink(n.link) : null;
                 return (
                   <li key={n.id}>
-                    {n.link ? (
+                    {parsedLink ? (
                       <Link
-                        to={n.link}
+                        to={parsedLink.to}
+                        search={parsedLink.search as never}
                         className="block"
                         onClick={() => {
                           if (!n.read) {

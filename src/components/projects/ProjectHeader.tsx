@@ -101,6 +101,8 @@ type ProjectHeaderProps = {
   /** Menu admin: navega para as configurações do projeto (privacidade/links). */
   onGoToSettings: (anchor?: "privacidade" | "links") => void;
   onApplicationSubmitted: () => void;
+  onCancelApplication?: () => void;
+  cancellingApplication?: boolean;
 };
 
 /**
@@ -123,6 +125,8 @@ export function ProjectHeader({
   onConvidar,
   onGoToSettings,
   onApplicationSubmitted,
+  onCancelApplication,
+  cancellingApplication,
 }: ProjectHeaderProps) {
   const finalizado = data.status === "Finalizado";
 
@@ -241,13 +245,27 @@ export function ProjectHeader({
             {!isMember && (
               <div className="flex items-center gap-2">
                 {hasApplied ? (
-                  <Button
-                    disabled
-                    size="sm"
-                    className="rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-400"
-                  >
-                    Candidatura Pendente
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      disabled
+                      size="sm"
+                      className="rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                    >
+                      Candidatura Pendente
+                    </Button>
+                    {onCancelApplication && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={cancellingApplication}
+                        onClick={onCancelApplication}
+                        className="rounded-xl text-xs text-muted-foreground hover:text-destructive cursor-pointer"
+                      >
+                        {cancellingApplication ? "Cancelando..." : "Cancelar pedido"}
+                      </Button>
+                    )}
+                  </div>
                 ) : application?.status === "rejected" ? (
                   <Button disabled variant="destructive" size="sm" className="rounded-xl">
                     Recusado

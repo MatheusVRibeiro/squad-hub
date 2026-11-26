@@ -741,7 +741,7 @@ export function KanbanBoard({
                     setDragId(null);
                   }}
                   className={cn(
-                    "flex min-h-[480px] max-h-[calc(100vh-240px)] w-72 shrink-0 flex-col gap-3.5 rounded-2xl border border-border/60 bg-card p-4 shadow-sm transition-all duration-300 xl:w-auto xl:min-w-0",
+                    "flex min-h-[480px] max-h-[calc(100vh-240px)] w-80 shrink-0 flex-col gap-3.5 rounded-2xl border border-border/60 bg-card p-4 shadow-sm transition-all duration-300 xl:w-auto xl:min-w-0",
                     dragId ? "border-primary/20 bg-primary/5/10 shadow-sm" : "",
                   )}
                 >
@@ -774,7 +774,7 @@ export function KanbanBoard({
                     )}
                   </div>
 
-                  <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pr-1">
+                  <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pr-1.5 [scrollbar-width:thin] [scrollbar-color:hsl(var(--muted-foreground)/0.2)_transparent]">
                     {/* ETAPA 9: coluna Concluído limitada a 8 por padrão (mais recentes
                                   primeiro) + footer "Ver mais N" + botão recolher. */}
                     {collapsedDone && col.key === "done" ? (
@@ -837,15 +837,9 @@ export function KanbanBoard({
                                     : "cursor-default",
                                 )}
                               >
-                                {/* ETAPA 7 — prioridade visual: 1. título · 2. prioridade */}
-                                <div className="flex items-start justify-between gap-2">
-                                  <div className="min-w-0 flex-1">
-                                    <p className="break-words font-medium leading-snug text-foreground/90 transition-colors group-hover:text-primary">
-                                      {t.title}
-                                    </p>
-                                  </div>
-
-                                  <div className="flex shrink-0 items-center gap-1.5 pt-0.5">
+                                {/* Cabeçalho do Card: ID, Prioridade e Ações */}
+                                <div className="flex items-center justify-between gap-1.5 pb-1">
+                                  <div className="flex items-center gap-1.5">
                                     <span className="text-[10px] font-semibold text-muted-foreground/70">
                                       #{t.id}
                                     </span>
@@ -861,60 +855,66 @@ export function KanbanBoard({
                                         {PRIORITY_LABEL[t.priority]}
                                       </Badge>
                                     )}
-
-                                    {/* Ação rápida para mobile */}
-                                    {!readOnly && (
-                                      <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                          <button
-                                            type="button"
-                                            onClick={(e) => e.stopPropagation()}
-                                            className="grid h-6 w-6 cursor-pointer place-items-center rounded-lg text-muted-foreground outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                                            aria-label="Mover tarefa"
-                                          >
-                                            <MoreVertical className="h-3.5 w-3.5" />
-                                          </button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent
-                                          align="end"
-                                          className="w-40 rounded-xl shadow-md"
-                                        >
-                                          <DropdownMenuLabel className="px-2 py-1 text-[9px] uppercase tracking-wider text-muted-foreground">
-                                            Mover para
-                                          </DropdownMenuLabel>
-                                          <DropdownMenuSeparator />
-                                          <DropdownMenuItem
-                                            onClick={() => move(t.id, "todo")}
-                                            disabled={t.status === "todo"}
-                                            className="cursor-pointer px-2 py-1.5 text-xs"
-                                          >
-                                            A fazer
-                                          </DropdownMenuItem>
-                                          <DropdownMenuItem
-                                            onClick={() => move(t.id, "doing")}
-                                            disabled={t.status === "doing"}
-                                            className="cursor-pointer px-2 py-1.5 text-xs"
-                                          >
-                                            Em progresso
-                                          </DropdownMenuItem>
-                                          <DropdownMenuItem
-                                            onClick={() => move(t.id, "review")}
-                                            disabled={t.status === "review"}
-                                            className="cursor-pointer px-2 py-1.5 text-xs"
-                                          >
-                                            Em revisão
-                                          </DropdownMenuItem>
-                                          <DropdownMenuItem
-                                            onClick={() => move(t.id, "done")}
-                                            disabled={t.status === "done"}
-                                            className="cursor-pointer px-2 py-1.5 text-xs"
-                                          >
-                                            Concluído
-                                          </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                      </DropdownMenu>
-                                    )}
                                   </div>
+
+                                  {!readOnly && (
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <button
+                                          type="button"
+                                          onClick={(e) => e.stopPropagation()}
+                                          className="grid h-6 w-6 cursor-pointer place-items-center rounded-lg text-muted-foreground outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                          aria-label="Mover tarefa"
+                                        >
+                                          <MoreVertical className="h-3.5 w-3.5" />
+                                        </button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent
+                                        align="end"
+                                        className="w-40 rounded-xl shadow-md"
+                                      >
+                                        <DropdownMenuLabel className="px-2 py-1 text-[9px] uppercase tracking-wider text-muted-foreground">
+                                          Mover para
+                                        </DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem
+                                          onClick={() => move(t.id, "todo")}
+                                          disabled={t.status === "todo"}
+                                          className="cursor-pointer px-2 py-1.5 text-xs"
+                                        >
+                                          A fazer
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                          onClick={() => move(t.id, "doing")}
+                                          disabled={t.status === "doing"}
+                                          className="cursor-pointer px-2 py-1.5 text-xs"
+                                        >
+                                          Em progresso
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                          onClick={() => move(t.id, "review")}
+                                          disabled={t.status === "review"}
+                                          className="cursor-pointer px-2 py-1.5 text-xs"
+                                        >
+                                          Em revisão
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                          onClick={() => move(t.id, "done")}
+                                          disabled={t.status === "done"}
+                                          className="cursor-pointer px-2 py-1.5 text-xs"
+                                        >
+                                          Concluído
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  )}
+                                </div>
+
+                                {/* Título da Tarefa ocupando 100% da largura útil sem quebra artificial de palavras */}
+                                <div>
+                                  <p className="break-normal hyphens-none font-medium leading-snug text-foreground/90 transition-colors group-hover:text-primary">
+                                    {t.title}
+                                  </p>
                                 </div>
 
                                 {/* Resumo (descrição) — apenas se houver */}

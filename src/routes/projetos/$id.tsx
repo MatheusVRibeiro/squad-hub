@@ -252,6 +252,41 @@ function ProjectDetailPage() {
     scrollToSection("secao-settings-privacidade");
   }
 
+  // Se o projeto estiver finalizado e o usuário NÃO participou do squad, acesso bloqueado
+  const isFinalizado = Boolean(
+    data &&
+      (data.status === "Finalizado" ||
+        String(data.status).toLowerCase() === "finalizado"),
+  );
+
+  if (data && isFinalizado && !isMember) {
+    return (
+      <ProtectedRoute>
+        <AppLayout>
+          <div className="mx-auto w-full max-w-2xl py-12 text-center">
+            <div className="rounded-3xl border border-border/80 bg-card/60 p-8 shadow-sm backdrop-blur-sm space-y-4">
+              <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                <Lock className="h-6 w-6" />
+              </span>
+              <h2 className="text-xl font-bold text-foreground">Projeto Finalizado</h2>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Este projeto foi concluído e encerrado. O acesso e a visualização do squad e das entregas
+                são restritos exclusivamente aos membros que fizeram parte da equipe.
+              </p>
+              <div className="pt-2">
+                <Button asChild variant="outline" className="rounded-xl">
+                  <Link to="/projetos">
+                    <ArrowLeft className="mr-1.5 h-4 w-4" /> Voltar para projetos
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </AppLayout>
+      </ProtectedRoute>
+    );
+  }
+
   return (
     <ProtectedRoute>
       <AppLayout>

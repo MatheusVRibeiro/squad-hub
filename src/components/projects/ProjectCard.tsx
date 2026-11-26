@@ -156,7 +156,7 @@ export function ProjectCard({ project, index = 0 }: { project: Project; index?: 
           className="rounded-xl h-9 text-xs bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 font-semibold shadow-sm"
         >
           <Link to="/projetos/$id" params={{ id: project.id }}>
-            {closed ? "Ver Squad" : "Gerenciar"}
+            {closed ? "Ver Projeto" : "Gerenciar"}
           </Link>
         </Button>
       );
@@ -170,7 +170,7 @@ export function ProjectCard({ project, index = 0 }: { project: Project; index?: 
           className="rounded-xl h-9 text-xs bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 font-semibold shadow-sm"
         >
           <Link to="/projetos/$id" params={{ id: project.id }}>
-            Ver Squad
+            {closed ? "Ver Projeto" : "Ver Squad"}
           </Link>
         </Button>
       );

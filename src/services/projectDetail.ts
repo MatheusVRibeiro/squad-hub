@@ -330,8 +330,15 @@ export async function fetchProjectDetail(id: string): Promise<ProjectDetail> {
       // FASE-03.H: o backend retorna criador_id em snake_case no detalhe; expõe
       // no contrato camelCase (creatorId) para comparações por id na UI. O spread
       // preserva todos os demais campos que a UI já consome.
+      let status: "Aberto" | "Em andamento" | "Finalizado" = "Aberto";
+      const rawStatus = String(data.dados.status || "").toLowerCase();
+      if (rawStatus === "em_andamento" || rawStatus === "em andamento") status = "Em andamento";
+      else if (rawStatus === "finalizado") status = "Finalizado";
+      else status = "Aberto";
+
       const detail: ProjectDetail = {
         ...data.dados,
+        status,
         creatorId: data.dados.criador_id != null ? String(data.dados.criador_id) : undefined,
         // ETAPA 4: vagas vêm no detalhe (camelCase) — normaliza para o contrato da UI.
         vagas: Array.isArray(data.dados.vagas) ? data.dados.vagas.map(normalizarVaga) : [],

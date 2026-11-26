@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/services/api";
-import { GitHubConnectionCard } from "@/components/settings/GitHubConnectionCard";
 
 function ConfiguracoesPage() {
   const { user, signOut } = useAuth();
@@ -312,13 +311,6 @@ function ConfiguracoesPage() {
               </CardContent>
             </Card>
 
-            {/* INTEGRAÇÕES (ETAPA 2) */}
-            <div className="space-y-3">
-              <p className="text-xs font-bold tracking-widest text-primary uppercase">
-                Integrações
-              </p>
-              <GitHubConnectionCard />
-            </div>
           </div>
         </div>
       </AppLayout>

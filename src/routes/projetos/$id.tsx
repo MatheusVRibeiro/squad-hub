@@ -121,12 +121,20 @@ function ProjectDetailPage() {
     },
   });
 
-  // FASE-03.H: permissões por id (não por nome) — homônimos não quebram.
-  // creatorId vem mapeado de criador_id do backend; Number() normaliza string/número.
-  const isOwner = data ? Number(data.creatorId) === Number(user?.id) : false;
+  // FASE-03.H: permissões por id e fallback por nome seguro
+  const isOwner = data
+    ? (data.creatorId != null && user?.id != null && Number(data.creatorId) === Number(user.id)) ||
+      Boolean(user?.name && data.createdBy && data.createdBy.toLowerCase() === user.name.toLowerCase()) ||
+      data.createdBy === "Você"
+    : false;
 
   const isMember = data
-    ? isOwner || data.members.some((m) => Number(m.id) === Number(user?.id))
+    ? isOwner ||
+      data.members.some(
+        (m) =>
+          (m.id != null && user?.id != null && Number(m.id) === Number(user.id)) ||
+          Boolean(user?.name && m.name && m.name.toLowerCase() === user.name.toLowerCase()),
+      )
     : false;
 
   const { data: reviewsData, refetch: refetchReviews } = useQuery({
@@ -316,28 +324,37 @@ function ProjectDetailPage() {
               </div>
             </div>
           ) : isError || !data ? (
-            /* A1: falha na API nunca deixa skeleton infinito — card de erro com retry. */
+            /* A1: falha na API nunca deixa skeleton infinito — card de erro com retry ou bloqueio de squad finalizado. */
             <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-8 text-center">
               <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-destructive/10 text-destructive">
-                <AlertTriangle className="h-6 w-6" />
+                <Lock className="h-6 w-6" />
               </span>
-              <p className="mt-3 text-sm font-semibold text-foreground">
-                Não foi possível carregar o projeto
+              <p className="mt-3 text-base font-semibold text-foreground">
+                {error instanceof Error && error.message.toLowerCase().includes("finalizado")
+                  ? "Acesso Restrito ao Squad Finalizado"
+                  : "Não foi possível carregar o projeto"}
               </p>
               <p className="mx-auto mt-1 max-w-md text-xs text-muted-foreground">
                 {error instanceof Error
                   ? error.message
                   : "Verifique sua conexão com o backend e tente novamente."}
               </p>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => refetch()}
-                className="mt-4 cursor-pointer"
-              >
-                <RefreshCcw className="mr-1.5 h-3.5 w-3.5" /> Tentar novamente
-              </Button>
+              <div className="mt-4 flex items-center justify-center gap-2">
+                <Button asChild variant="outline" size="sm" className="cursor-pointer rounded-xl">
+                  <Link to="/projetos">
+                    <ArrowLeft className="mr-1.5 h-3.5 w-3.5" /> Voltar para projetos
+                  </Link>
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => refetch()}
+                  className="cursor-pointer rounded-xl"
+                >
+                  <RefreshCcw className="mr-1.5 h-3.5 w-3.5" /> Tentar novamente
+                </Button>
+              </div>
             </div>
           ) : (
             <>

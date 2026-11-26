@@ -18,10 +18,11 @@ function MeusProjetosPage() {
     staleTime: 60_000,
   });
 
-  // Inclui projetos em que o usuário é dono (por creatorId) OU membro ativo do squad (isMember).
+  // Inclui projetos em que o usuário é dono (por creatorId ou nome) OU membro ativo do squad (isMember).
   const mine = (data ?? []).filter(
     (p) =>
-      Number(p.creatorId) === Number(user?.id) ||
+      (p.creatorId != null && user?.id != null && Number(p.creatorId) === Number(user.id)) ||
+      Boolean(user?.name && p.createdBy && p.createdBy.toLowerCase() === user.name.toLowerCase()) ||
       p.createdBy === "Você" ||
       Boolean(p.isMember),
   );

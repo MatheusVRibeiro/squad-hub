@@ -64,14 +64,16 @@ export function ProjectCard({ project, index = 0 }: { project: Project; index?: 
   const [localApplied, setLocalApplied] = useState(false);
   const [localCancelled, setLocalCancelled] = useState(false);
 
-  const closed = project.status === "Finalizado";
+  const closed =
+    project.status === "Finalizado" ||
+    String(project.status).toLowerCase() === "finalizado";
 
   // Vínculo e candidatura reais vindos de GET /projetos (por ID do usuário autenticado)
   const isOwner =
     (project.creatorId != null &&
       user?.id != null &&
       Number(project.creatorId) === Number(user.id)) ||
-    project.createdBy === user?.name ||
+    Boolean(user?.name && project.createdBy && project.createdBy.toLowerCase() === user.name.toLowerCase()) ||
     project.createdBy === "Você";
 
   const isMember = isOwner || Boolean(project.isMember);
@@ -176,14 +178,12 @@ export function ProjectCard({ project, index = 0 }: { project: Project; index?: 
     if (closed) {
       return (
         <Button
-          asChild
+          disabled
           variant="outline"
           size="sm"
-          className="rounded-xl h-9 text-xs border-emerald-500/20 text-muted-foreground hover:text-foreground"
+          className="rounded-xl h-9 text-xs border-muted-foreground/20 text-muted-foreground cursor-not-allowed opacity-60"
         >
-          <Link to="/projetos/$id" params={{ id: project.id }}>
-            Ver Projeto
-          </Link>
+          Finalizado
         </Button>
       );
     }
@@ -467,13 +467,19 @@ export function ProjectCard({ project, index = 0 }: { project: Project; index?: 
       <Card className="group flex h-full flex-col rounded-3xl border-border/60 bg-linear-to-b from-card to-card/98 transition-all duration-300 ease-out hover:-translate-y-1 hover:border-primary/50 hover:shadow-lg dark:to-card/95">
         <CardHeader className="space-y-3">
           <div className="flex items-start justify-between gap-3">
-            <Link
-              to="/projetos/$id"
-              params={{ id: project.id }}
-              className="line-clamp-1 text-base font-semibold leading-tight hover:text-primary"
-            >
-              {project.name}
-            </Link>
+            {closed && !isMember ? (
+              <span className="line-clamp-1 text-base font-semibold leading-tight text-muted-foreground cursor-not-allowed">
+                {project.name}
+              </span>
+            ) : (
+              <Link
+                to="/projetos/$id"
+                params={{ id: project.id }}
+                className="line-clamp-1 text-base font-semibold leading-tight hover:text-primary"
+              >
+                {project.name}
+              </Link>
+            )}
             <div className="flex items-center gap-1.5 shrink-0">
               <Badge
                 variant="outline"

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useParams, useSearch } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, ArrowLeft, CheckCircle2, Lock, RefreshCcw, Star } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CheckCircle2, Lock, RefreshCcw } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
@@ -403,10 +403,7 @@ function ProjectDetailPage() {
                     <TabsTrigger value="atividade">Atividade</TabsTrigger>
                     <TabsTrigger value="equipe">Equipe</TabsTrigger>
                     {data.status === "Finalizado" && (
-                      <TabsTrigger value="avaliacoes" className="gap-1.5">
-                        <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                        Avaliações
-                      </TabsTrigger>
+                      <TabsTrigger value="avaliacoes">Avaliações</TabsTrigger>
                     )}
                     {isOwner && <TabsTrigger value="configuracoes">Configurações</TabsTrigger>}
                   </TabsList>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useParams, useSearch } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, ArrowLeft, CheckCircle2, Lock, RefreshCcw } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CheckCircle2, Lock, RefreshCcw, Star } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
@@ -15,6 +15,7 @@ import { KanbanBoard } from "@/components/projects/KanbanBoard";
 import { TasksRecomendadas } from "@/components/projects/TasksRecomendadas";
 import { Mural } from "@/components/projects/Mural";
 import { MembersList } from "@/components/projects/MembersList";
+import { ProjectEvaluationsTab } from "@/components/projects/ProjectEvaluationsTab";
 import { Applications } from "@/components/projects/Applications";
 import { ProjectTimeline } from "@/components/projects/ProjectTimeline";
 import { ProjectHeader } from "@/components/projects/ProjectHeader";
@@ -401,6 +402,12 @@ function ProjectDetailPage() {
                     <TabsTrigger value="kanban">Kanban</TabsTrigger>
                     <TabsTrigger value="atividade">Atividade</TabsTrigger>
                     <TabsTrigger value="equipe">Equipe</TabsTrigger>
+                    {data.status === "Finalizado" && (
+                      <TabsTrigger value="avaliacoes" className="gap-1.5">
+                        <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                        Avaliações
+                      </TabsTrigger>
+                    )}
                     {isOwner && <TabsTrigger value="configuracoes">Configurações</TabsTrigger>}
                   </TabsList>
                 </div>
@@ -465,6 +472,8 @@ function ProjectDetailPage() {
                         projectId={data.id}
                         projectName={data.name}
                         readOnly={!isMember}
+                        isFinalizado={data.status === "Finalizado"}
+                        isOwner={isOwner}
                       />
                     </TabsContent>
                   </Tabs>
@@ -495,15 +504,7 @@ function ProjectDetailPage() {
                       <MembersList
                         members={data.members}
                         projectId={data.id}
-                        isProjectClosed={data.status === "Finalizado"}
                         currentUserId={user?.id != null ? Number(user.id) : undefined}
-                        isMemberOrOwner={isMember}
-                        reviewedMemberIds={reviewsData?.avaliadosPorMim ?? []}
-                        onReviewSubmitted={() => {
-                          refetchReviews();
-                          queryClient.invalidateQueries({ queryKey: ["projectReviews", id] });
-                          queryClient.invalidateQueries({ queryKey: ["reputation"] });
-                        }}
                       />
                     </TabsContent>
                     {isOwner && (
@@ -517,6 +518,24 @@ function ProjectDetailPage() {
                     )}
                   </Tabs>
                 </TabsContent>
+
+                {/* Seção Avaliações (exibida apenas quando o projeto estiver finalizado) */}
+                {data.status === "Finalizado" && (
+                  <TabsContent value="avaliacoes" className="scroll-mt-16 space-y-4">
+                    <ProjectEvaluationsTab
+                      projectId={data.id}
+                      members={data.members}
+                      currentUserId={user?.id != null ? Number(user.id) : undefined}
+                      isMemberOrOwner={isMember}
+                      reviewsData={reviewsData}
+                      onReviewSubmitted={() => {
+                        refetchReviews();
+                        queryClient.invalidateQueries({ queryKey: ["projectReviews", id] });
+                        queryClient.invalidateQueries({ queryKey: ["reputation"] });
+                      }}
+                    />
+                  </TabsContent>
+                )}
 
                 {/* SettingsSection (ETAPA 2 do plano Kanban escalável) — Privacidade +
                                     Links + Encerrar (somente dono), agora DENTRO da tab Configurações. */}

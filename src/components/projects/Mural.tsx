@@ -32,15 +32,21 @@ export function Mural({
   projectId,
   projectName,
   readOnly,
+  isFinalizado,
+  isOwner,
 }: {
   initial: MuralMessage[];
   projectId: string;
   projectName: string;
   readOnly?: boolean;
+  isFinalizado?: boolean;
+  isOwner?: boolean;
 }) {
   const { user } = useAuth();
   const [messages, setMessages] = useState<MuralMessage[]>(initial);
   const [draft, setDraft] = useState("");
+
+  const bloqueado = readOnly || (isFinalizado && !isOwner);
 
   async function send() {
     if (!draft.trim()) return;
@@ -91,7 +97,7 @@ export function Mural({
         ))}
       </div>
 
-      {!readOnly ? (
+      {!bloqueado ? (
         <div className="flex flex-col gap-3 rounded-2xl border border-border/70 bg-card/75 p-4 shadow-sm transition-all focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/40">
           <Textarea
             value={draft}
@@ -122,7 +128,11 @@ export function Mural({
         </div>
       ) : (
         <div className="rounded-2xl border border-dashed border-border/80 bg-muted/10 px-6 py-8 text-center text-sm text-muted-foreground">
-          🔒 Apenas membros do squad podem publicar atualizações no mural deste projeto.
+          {isFinalizado ? (
+            <span>🔒 Projeto finalizado. O mural está em modo de leitura (apenas o proprietário pode publicar anúncios finais).</span>
+          ) : (
+            <span>🔒 Apenas membros do squad podem publicar atualizações no mural deste projeto.</span>
+          )}
         </div>
       )}
     </div>

@@ -33,6 +33,7 @@ import {
   cancelarCandidaturaLocal,
   atualizarVisibilidadeProjeto,
   atualizarLinksProjeto,
+  fetchProjectReviews,
   type ProjectDetail,
 } from "@/services/projectDetail";
 import { sairDoProjeto } from "@/services/membros";
@@ -127,6 +128,13 @@ function ProjectDetailPage() {
   const isMember = data
     ? isOwner || data.members.some((m) => Number(m.id) === Number(user?.id))
     : false;
+
+  const { data: reviewsData, refetch: refetchReviews } = useQuery({
+    queryKey: ["projectReviews", id],
+    queryFn: () => fetchProjectReviews(id),
+    enabled: Boolean(id) && isMember,
+    staleTime: 30_000,
+  });
 
   // A2: candidatura do usuário por ID (a.userId mapeado de usuario_id) — cai
   // por nome apenas quando o backend ainda não envia o id (pré-correção).
@@ -443,7 +451,7 @@ function ProjectDetailPage() {
                       />
                     </TabsContent>
                   </Tabs>
-              
+
                 </TabsContent>
 
                 {/* TeamSection (ETAPA 9) — Membros | Vagas | Candidaturas (owner). */}
@@ -467,7 +475,19 @@ function ProjectDetailPage() {
                       )}
                     </TabsList>
                     <TabsContent value="membros">
-                      <MembersList members={data.members} />
+                      <MembersList
+                        members={data.members}
+                        projectId={data.id}
+                        isProjectClosed={data.status === "Finalizado"}
+                        currentUserId={user?.id != null ? Number(user.id) : undefined}
+                        isMemberOrOwner={isMember}
+                        reviewedMemberIds={reviewsData?.avaliadosPorMim ?? []}
+                        onReviewSubmitted={() => {
+                          refetchReviews();
+                          queryClient.invalidateQueries({ queryKey: ["projectReviews", id] });
+                          queryClient.invalidateQueries({ queryKey: ["reputation"] });
+                        }}
+                      />
                     </TabsContent>
                     {isOwner && (
                       <TabsContent value="candidaturas">

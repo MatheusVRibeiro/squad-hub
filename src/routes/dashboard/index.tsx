@@ -195,8 +195,8 @@ function DashboardPage() {
 
   const xpProgressPercent = useMemo(() => {
     if (!reputation) return 0;
-    if (reputation.xpToNext <= 0) return 0;
-    return (reputation.xp / reputation.xpToNext) * 100;
+    const target = reputation.xpToNext > 0 ? reputation.xpToNext : 250;
+    return Math.min(100, Math.round((reputation.xp / target) * 100));
   }, [reputation]);
 
   return (

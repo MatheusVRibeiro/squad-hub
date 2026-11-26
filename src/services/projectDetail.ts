@@ -339,14 +339,14 @@ export async function fetchProjectDetail(id: string): Promise<ProjectDetail> {
         // o backend já filtra, mas o frontend aplica defesa em profundidade.
         tasks: Array.isArray(data.dados.tasks)
           ? data.dados.tasks.filter(
-              (t) => !(t as KanbanTask & { excluida_em?: string | null }).excluida_em,
-            )
+            (t) => !(t as KanbanTask & { excluida_em?: string | null }).excluida_em,
+          )
           : [],
         // ETAPA 5: candidaturas ganham vaga_id/vaga_nome — normaliza (snake ou camel).
         applications: Array.isArray(data.dados.applications)
           ? data.dados.applications.map((a) =>
-              normalizarApplication(a as unknown as Record<string, unknown>),
-            )
+            normalizarApplication(a as unknown as Record<string, unknown>),
+          )
           : [],
         // ETAPA 14: permissão de portfólio público — aceita a variante snake_case
         // da coluna OU a camelCase do GET /projetos/:id. Ausência (backend
@@ -359,8 +359,8 @@ export async function fetchProjectDetail(id: string): Promise<ProjectDetail> {
         // mantém apenas vínculos ativos ('saiu'/'removido' ficam fora da lista).
         members: Array.isArray(data.dados.members)
           ? data.dados.members
-              .map((m) => normalizarMember(m as unknown as Record<string, unknown>))
-              .filter((m) => !m.status || m.status === "ativo")
+            .map((m) => normalizarMember(m as unknown as Record<string, unknown>))
+            .filter((m) => !m.status || m.status === "ativo")
           : [],
       };
       if (import.meta.env.DEV) {
@@ -851,5 +851,48 @@ export async function atualizarLinksProjeto(
     await api.patch(`/projetos/${projectId}`, payload);
   } catch (err) {
     throw toFriendlyError(err, "Não foi possível atualizar os links do projeto.");
+  }
+}
+
+export interface ProjectReview {
+  id: number;
+  projeto_id: number;
+  avaliador_id: number;
+  avaliador_nome: string;
+  avaliado_id: number;
+  avaliado_nome: string;
+  nota: number;
+  comentario?: string | null;
+  criado_em: string;
+}
+
+export interface ProjectReviewsData {
+  avaliacoes: ProjectReview[];
+  avaliadosPorMim: number[];
+}
+
+export async function fetchProjectReviews(projectId: string | number): Promise<ProjectReviewsData> {
+  try {
+    const { data } = await api.get<ApiResponse<ProjectReviewsData>>(`/projetos/${projectId}/avaliacoes`);
+    if (data?.sucesso && data?.dados) {
+      return data.dados;
+    }
+    return { avaliacoes: [], avaliadosPorMim: [] };
+  } catch {
+    return { avaliacoes: [], avaliadosPorMim: [] };
+  }
+}
+
+export async function enviarAvaliacaoMembro(
+  projectId: string | number,
+  payload: { avaliado_id: number; nota: number; comentario?: string },
+): Promise<void> {
+  try {
+    const { data } = await api.post<ApiResponse<unknown>>(`/projetos/${projectId}/avaliacoes`, payload);
+    if (!data?.sucesso) {
+      throw new Error(data?.message || "Não foi possível enviar a avaliação.");
+    }
+  } catch (err) {
+    throw toFriendlyError(err, "Erro ao enviar avaliação.");
   }
 }

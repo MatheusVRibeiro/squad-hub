@@ -145,13 +145,6 @@ export function ProjectCard({ project, index = 0 }: { project: Project; index?: 
   }
 
   const footerButton = (() => {
-    if (closed) {
-      return (
-        <Button disabled variant="outline" size="sm" className="rounded-xl h-9 text-xs">
-          Encerrado
-        </Button>
-      );
-    }
     if (isOwner) {
       return (
         <Button
@@ -161,7 +154,7 @@ export function ProjectCard({ project, index = 0 }: { project: Project; index?: 
           className="rounded-xl h-9 text-xs bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 font-semibold shadow-sm"
         >
           <Link to="/projetos/$id" params={{ id: project.id }}>
-            Gerenciar
+            {closed ? "Ver Squad" : "Gerenciar"}
           </Link>
         </Button>
       );
@@ -176,6 +169,20 @@ export function ProjectCard({ project, index = 0 }: { project: Project; index?: 
         >
           <Link to="/projetos/$id" params={{ id: project.id }}>
             Ver Squad
+          </Link>
+        </Button>
+      );
+    }
+    if (closed) {
+      return (
+        <Button
+          asChild
+          variant="outline"
+          size="sm"
+          className="rounded-xl h-9 text-xs border-emerald-500/20 text-muted-foreground hover:text-foreground"
+        >
+          <Link to="/projetos/$id" params={{ id: project.id }}>
+            Ver Projeto
           </Link>
         </Button>
       );

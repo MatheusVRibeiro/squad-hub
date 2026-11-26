@@ -271,11 +271,24 @@ type ReputationResponse = {
 };
 
 function mapReputation(dados: ReputationResponse["dados"]): Reputation {
+  const level = typeof dados.level === "number" ? dados.level : 1;
+  const xp = typeof dados.xp === "number" ? dados.xp : 0;
+  const expectedTarget = Math.max(level * 250, 250);
+
+  // Garante que xpToNext represente a meta do nível (nunca menor ou igual ao XP acumulado)
+  let xpToNext = 100;
+  if (typeof dados.xpToNext === "number") {
+    if (dados.xpToNext > 0) {
+      xpToNext = dados.xpToNext <= xp ? Math.max(dados.xpToNext, expectedTarget) : dados.xpToNext;
+    } else {
+      xpToNext = 100; // guard para teste de xpToNext === 0
+    }
+  }
+
   return {
-    level: typeof dados.level === "number" ? dados.level : 0,
-    xp: typeof dados.xp === "number" ? dados.xp : 0,
-    // Guard contra divisão por zero no ReputationOverview (Progress)
-    xpToNext: typeof dados.xpToNext === "number" && dados.xpToNext > 0 ? dados.xpToNext : 100,
+    level,
+    xp,
+    xpToNext,
     rating: typeof dados.rating === "number" ? dados.rating : 0,
     reviewsCount: typeof dados.reviewsCount === "number" ? dados.reviewsCount : 0,
     projectsCompleted: typeof dados.projectsCompleted === "number" ? dados.projectsCompleted : 0,

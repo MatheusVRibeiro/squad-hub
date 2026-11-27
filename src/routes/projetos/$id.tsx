@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useParams, useSearch } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, ArrowLeft, CheckCircle2, Lock, RefreshCcw } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CheckCircle2, Clock, Lock, RefreshCcw, UserPlus } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
@@ -25,7 +25,9 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
+import { ApplicationForm } from "@/components/projects/ApplicationForm";
 import { WorkspaceLinksForm } from "@/components/projects/WorkspaceLinksForm";
 import { ProjectSettings } from "@/components/projects/ProjectSettings";
 import {
@@ -418,31 +420,78 @@ function ProjectDetailPage() {
                 cancellingApplication={cancellingApplication}
               />
 
-              {!isMember && (
-                <div className="flex items-center gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-sm text-amber-800 shadow-sm backdrop-blur-sm dark:text-amber-400/90">
-                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                    <Lock className="h-4 w-4" />
-                  </span>
-                  <span>
-                    Você está visualizando este projeto como visitante. Para participar do mural ou
-                    do quadro Kanban, candidate-se ao squad.
-                  </span>
-                </div>
-              )}
+              {!isMember ? (
+                <Card className="rounded-2xl border-border/60 bg-card p-8 text-center shadow-sm">
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                    <Lock className="h-7 w-7" />
+                  </div>
+                  <h3 className="mt-4 text-xl font-bold tracking-tight text-foreground">
+                    Área restrita aos membros do Squad
+                  </h3>
+                  <p className="mx-auto mt-2 max-w-lg text-sm text-muted-foreground leading-relaxed">
+                    O quadro Kanban, o mural de avisos internos e a gestão de atividades deste projeto são exclusivos para os integrantes que fazem parte da equipe.
+                  </p>
 
-              {/* Navegação principal (ETAPA 4) — sticky abaixo do header global (h-14). */}
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-                <div className="sticky top-14 z-20 -mx-1 rounded-xl bg-background/85 px-1 py-2 backdrop-blur">
-                  <TabsList className="flex w-full justify-start overflow-x-auto rounded-xl">
-                    <TabsTrigger value="kanban">Kanban</TabsTrigger>
-                    <TabsTrigger value="atividade">Atividade</TabsTrigger>
-                    <TabsTrigger value="equipe">Equipe</TabsTrigger>
-                    {data.status === "Finalizado" && (
-                      <TabsTrigger value="avaliacoes">Avaliações</TabsTrigger>
+                  <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                    {hasApplied ? (
+                      <div className="inline-flex items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-2 text-sm font-semibold text-amber-700 dark:text-amber-400">
+                        <Clock className="h-4 w-4" />
+                        <span>Sua candidatura está pendente de aprovação pelo criador</span>
+                      </div>
+                    ) : application?.status === "rejected" ? (
+                      <div className="inline-flex items-center gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-2 text-sm font-semibold text-rose-700 dark:text-rose-400">
+                        <AlertTriangle className="h-4 w-4" />
+                        <span>Sua candidatura para este projeto não foi aprovada</span>
+                      </div>
+                    ) : (
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button size="lg" className="cursor-pointer gap-2 rounded-xl font-semibold shadow-sm">
+                            <UserPlus className="h-4 w-4" />
+                            Candidatar-se ao Squad
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-md rounded-2xl">
+                          <DialogHeader>
+                            <DialogTitle>Candidatar-se ao projeto</DialogTitle>
+                            <DialogDescription>
+                              Envie sua candidatura para fazer parte da equipe de {data.name}.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <ApplicationForm
+                            projectId={data.id}
+                            onSuccess={() => {
+                              queryClient.invalidateQueries({ queryKey: ["project", id] });
+                              queryClient.invalidateQueries({ queryKey: ["projects"] });
+                              queryClient.invalidateQueries({ queryKey: ["notifications"] });
+                              refetch();
+                            }}
+                          />
+                        </DialogContent>
+                      </Dialog>
                     )}
-                    {isOwner && <TabsTrigger value="configuracoes">Configurações</TabsTrigger>}
-                  </TabsList>
-                </div>
+
+                    <Button asChild variant="outline" size="lg" className="rounded-xl">
+                      <Link to="/projetos">
+                        <ArrowLeft className="mr-2 h-4 w-4" /> Explorar outros projetos
+                      </Link>
+                    </Button>
+                  </div>
+                </Card>
+              ) : (
+                /* Navegação principal para membros — Kanban, Atividade, Equipe, etc. */
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+                  <div className="sticky top-14 z-20 -mx-1 rounded-xl bg-background/85 px-1 py-2 backdrop-blur">
+                    <TabsList className="flex w-full justify-start overflow-x-auto rounded-xl">
+                      <TabsTrigger value="kanban">Kanban</TabsTrigger>
+                      <TabsTrigger value="atividade">Atividade</TabsTrigger>
+                      <TabsTrigger value="equipe">Equipe</TabsTrigger>
+                      {data.status === "Finalizado" && (
+                        <TabsTrigger value="avaliacoes">Avaliações</TabsTrigger>
+                      )}
+                      {isOwner && <TabsTrigger value="configuracoes">Configurações</TabsTrigger>}
+                    </TabsList>
+                  </div>
 
                 {/* KanbanSection (ETAPA 5+8) — o quadro aparece imediatamente após
                     header+navegação; TasksRecomendadas logo abaixo (só membros). */}
@@ -584,6 +633,7 @@ function ProjectDetailPage() {
                   </TabsContent>
                 )}
               </Tabs>
+              )}
               {isOwner && data && (
                 <Dialog open={linksDialogOpen} onOpenChange={setLinksDialogOpen}>
                   <DialogContent className="rounded-2xl sm:max-w-md">

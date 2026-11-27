@@ -417,7 +417,9 @@ function DashboardPage() {
                 </p>
               </div>
               <span className="text-xs font-semibold text-primary">
-                {myPendingTasks.length} {myPendingTasks.length === 1 ? "tarefa" : "tarefas"}
+                {myPendingTasks.length > 3
+                  ? `Mostrando 3 de ${myPendingTasks.length} tarefas`
+                  : `${myPendingTasks.length} ${myPendingTasks.length === 1 ? "tarefa" : "tarefas"}`}
               </span>
             </div>
 
@@ -436,7 +438,7 @@ function DashboardPage() {
               </Card>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {myPendingTasks.slice(0, 6).map(({ task, projectId, projectName }) => (
+                {myPendingTasks.slice(0, 3).map(({ task, projectId, projectName }) => (
                   <Link
                     key={`${projectId}-${task.id}`}
                     to="/projetos/$id"

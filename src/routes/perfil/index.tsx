@@ -633,12 +633,6 @@ function PerfilPage() {
                 Histórico
               </TabsTrigger>
               <TabsTrigger
-                value="portfolio"
-                className="rounded-xl px-4 py-2 text-xs font-semibold cursor-pointer"
-              >
-                Contribuições
-              </TabsTrigger>
-              <TabsTrigger
                 value="avaliacoes"
                 className="rounded-xl px-4 py-2 text-xs font-semibold cursor-pointer"
               >
@@ -1044,18 +1038,6 @@ function PerfilPage() {
                 onRetry={() => refetchReputation()}
                 skeletonClass="h-48 w-full rounded-2xl"
                 render={(rep) => <ProjectHistory items={rep.history} />}
-              />
-            </TabsContent>
-
-            <TabsContent value="portfolio">
-              <PortfolioState
-                data={portfolio}
-                isLoading={loadingPortfolio}
-                isError={portfolioError}
-                errorMessage={portfolioErrorMessage}
-                onRetry={() => refetchPortfolio()}
-                skeletonClass="h-48 w-full rounded-2xl"
-                render={(pf) => <VerifiedContributions projetos={pf.projetos} />}
               />
             </TabsContent>
 

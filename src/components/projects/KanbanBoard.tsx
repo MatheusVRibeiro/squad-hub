@@ -749,7 +749,7 @@ export function KanbanBoard({
                     <div className="flex items-center gap-2">
                       <span
                         className={cn(
-                          "rounded-full px-2.5 py-0.5 text-xs font-semibold tracking-wide shadow-sm",
+                          "shrink-0 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold tracking-wide shadow-sm",
                           col.tone,
                         )}
                       >

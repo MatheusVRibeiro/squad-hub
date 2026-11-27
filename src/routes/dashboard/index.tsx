@@ -447,11 +447,11 @@ function DashboardPage() {
                   >
                     <Card className="h-full rounded-2xl border-border/60 p-4 transition-all hover:border-primary/40 hover:shadow-xs">
                       <div className="flex items-start justify-between gap-2">
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">
+                        <span className="line-clamp-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
                           {projectName}
                         </span>
                         <span
-                          className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${
+                          className={`shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${
                             task.status === "doing"
                               ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
                               : task.status === "review"

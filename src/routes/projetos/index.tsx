@@ -86,6 +86,22 @@ function ExplorarProjetosPage() {
     });
 
     list = [...list].sort((a, b) => {
+      // Prioridade por status: abertos e em andamento primeiro, finalizados por último
+      const pesoStatus = (st: string) => {
+        const s = st?.toLowerCase();
+        if (s === "aberto") return 1;
+        if (s === "em andamento" || s === "em_andamento") return 2;
+        if (s === "finalizado") return 3;
+        return 4;
+      };
+
+      const pesoA = pesoStatus(a.status);
+      const pesoB = pesoStatus(b.status);
+
+      if (pesoA !== pesoB) {
+        return pesoA - pesoB;
+      }
+
       switch (sort) {
         case "name":
           return a.name.localeCompare(b.name);

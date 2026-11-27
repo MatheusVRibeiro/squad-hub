@@ -19,13 +19,33 @@ function MeusProjetosPage() {
   });
 
   // Inclui projetos em que o usuário é dono (por creatorId ou nome) OU membro ativo do squad (isMember).
-  const mine = (data ?? []).filter(
-    (p) =>
-      (p.creatorId != null && user?.id != null && Number(p.creatorId) === Number(user.id)) ||
-      Boolean(user?.name && p.createdBy && p.createdBy.toLowerCase() === user.name.toLowerCase()) ||
-      p.createdBy === "Você" ||
-      Boolean(p.isMember),
-  );
+  // Ordenação: projetos em andamento e abertos primeiro, finalizados por último.
+  const mine = (data ?? [])
+    .filter(
+      (p) =>
+        (p.creatorId != null && user?.id != null && Number(p.creatorId) === Number(user.id)) ||
+        Boolean(user?.name && p.createdBy && p.createdBy.toLowerCase() === user.name.toLowerCase()) ||
+        p.createdBy === "Você" ||
+        Boolean(p.isMember),
+    )
+    .sort((a, b) => {
+      const pesoStatus = (st: string) => {
+        const s = st?.toLowerCase();
+        if (s === "em andamento" || s === "em_andamento") return 1;
+        if (s === "aberto") return 2;
+        if (s === "finalizado") return 3;
+        return 4;
+      };
+
+      const pesoA = pesoStatus(a.status);
+      const pesoB = pesoStatus(b.status);
+
+      if (pesoA !== pesoB) {
+        return pesoA - pesoB;
+      }
+
+      return Number(b.id) - Number(a.id);
+    });
 
   return (
     <ProtectedRoute>

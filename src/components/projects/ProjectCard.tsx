@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { Calendar, Check, Loader2, Users, User, Sparkles, Layers } from "lucide-react";
+import { Calendar, Check, Loader2, Users, User, Sparkles, Layers, Info } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -13,6 +13,7 @@ import { type Project } from "@/services/projects";
 import { useAuth } from "@/contexts/AuthContext";
 import { applyToProjectLocal, cancelarCandidaturaLocal } from "@/services/projectDetail";
 import { notificationsIntegration } from "@/services/notificationsIntegration";
+import { ProjectDetailsModal } from "./ProjectDetailsModal";
 import {
   Dialog,
   DialogContent,
@@ -55,6 +56,7 @@ export function ProjectCard({ project, index = 0 }: { project: Project; index?: 
   const queryClient = useQueryClient();
 
   const [open, setOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
@@ -459,94 +461,106 @@ export function ProjectCard({ project, index = 0 }: { project: Project; index?: 
   })();
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.04, duration: 0.3, ease: "easeOut" }}
-    >
-      <Card className="group flex h-full flex-col rounded-3xl border-border/60 bg-linear-to-b from-card to-card/98 transition-all duration-300 ease-out hover:-translate-y-1 hover:border-primary/50 hover:shadow-lg dark:to-card/95">
-        <CardHeader className="space-y-3">
-          <div className="flex items-start justify-between gap-3">
-            {closed && !isMember ? (
-              <span className="line-clamp-1 text-base font-semibold leading-tight text-muted-foreground cursor-not-allowed">
-                {project.name}
-              </span>
-            ) : (
-              <Link
-                to="/projetos/$id"
-                params={{ id: project.id }}
-                className="line-clamp-1 text-base font-semibold leading-tight hover:text-primary"
+    <>
+      <ProjectDetailsModal
+        project={project}
+        open={detailsOpen}
+        onOpenChange={setDetailsOpen}
+        onApplyClick={() => setOpen(true)}
+      />
+
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.04, duration: 0.3, ease: "easeOut" }}
+      >
+        <Card
+          onClick={() => setDetailsOpen(true)}
+          className="group flex h-full flex-col rounded-3xl border-border/60 bg-linear-to-b from-card to-card/98 transition-all duration-300 ease-out hover:-translate-y-1 hover:border-primary/50 hover:shadow-lg dark:to-card/95 cursor-pointer"
+        >
+          <CardHeader className="space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDetailsOpen(true);
+                }}
+                className="line-clamp-1 text-base font-semibold leading-tight text-left text-foreground hover:text-primary transition-colors cursor-pointer"
               >
                 {project.name}
-              </Link>
-            )}
-            <div className="flex items-center gap-1.5 shrink-0">
-              <Badge
-                variant="outline"
-                className={cn("rounded-full text-xs", statusStyles[project.status])}
-              >
-                {project.status}
-              </Badge>
+              </button>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <Badge
+                  variant="outline"
+                  className={cn("rounded-full text-xs", statusStyles[project.status])}
+                >
+                  {project.status}
+                </Badge>
+              </div>
             </div>
-          </div>
-          <p className="line-clamp-2 text-sm text-muted-foreground leading-relaxed">
-            {project.description}
-          </p>
-        </CardHeader>
-
-        <CardContent className="space-y-5 pb-4">
-          <div className="flex flex-wrap gap-1.5">
-            {project.technologies.map((tech) => (
-              <Badge
-                key={tech}
-                variant="secondary"
-                className="rounded-full text-[11px] font-medium border"
-              >
-                {tech}
-              </Badge>
-            ))}
-          </div>
-
-          {/* Barra de progresso de lotação de membros */}
-          <div className="space-y-1.5 border-t border-border/10 pt-3">
-            <div className="flex items-center justify-between text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-              <span className="inline-flex items-center gap-1.5">
-                <Users className="h-3.5 w-3.5 text-muted-foreground/80" />
-                {project.membersCount}/{project.membersLimit} membros
-              </span>
-              <span>{percentFilled}% ocupado</span>
-            </div>
-            <div className="h-1.5 w-full rounded-full bg-muted/40 overflow-hidden border border-border/10">
-              <div
-                className={cn(
-                  "h-full rounded-full transition-all duration-500",
-                  percentFilled >= 100
-                    ? "bg-destructive"
-                    : percentFilled >= 75
-                      ? "bg-amber-500"
-                      : "bg-primary",
-                )}
-                style={{ width: `${Math.min(percentFilled, 100)}%` }}
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Calendar className="h-3.5 w-3.5 text-muted-foreground/80" />
-            <span>Criado em {formatDate(project.createdAt)}</span>
-          </div>
-        </CardContent>
-
-        <CardFooter className="mt-auto flex items-center justify-between gap-3 border-t pt-4">
-          <div className="min-w-0">
-            <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-bold">
-              Criado por
+            <p className="line-clamp-2 text-sm text-muted-foreground leading-relaxed">
+              {project.description}
             </p>
-            <p className="truncate text-xs font-semibold text-foreground/90">{project.createdBy}</p>
-          </div>
-          {footerButton}
-        </CardFooter>
-      </Card>
-    </motion.div>
+          </CardHeader>
+
+          <CardContent className="space-y-5 pb-4">
+            <div className="flex flex-wrap gap-1.5">
+              {project.technologies.map((tech) => (
+                <Badge
+                  key={tech}
+                  variant="secondary"
+                  className="rounded-full text-[11px] font-medium border"
+                >
+                  {tech}
+                </Badge>
+              ))}
+            </div>
+
+            {/* Barra de progresso de lotação de membros */}
+            <div className="space-y-1.5 border-t border-border/10 pt-3">
+              <div className="flex items-center justify-between text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                <span className="inline-flex items-center gap-1.5">
+                  <Users className="h-3.5 w-3.5 text-muted-foreground/80" />
+                  {project.membersCount}/{project.membersLimit} membros
+                </span>
+                <span>{percentFilled}% ocupado</span>
+              </div>
+              <div className="h-1.5 w-full rounded-full bg-muted/40 overflow-hidden border border-border/10">
+                <div
+                  className={cn(
+                    "h-full rounded-full transition-all duration-500",
+                    percentFilled >= 100
+                      ? "bg-destructive"
+                      : percentFilled >= 75
+                        ? "bg-amber-500"
+                        : "bg-primary",
+                  )}
+                  style={{ width: `${Math.min(percentFilled, 100)}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Calendar className="h-3.5 w-3.5 text-muted-foreground/80" />
+              <span>Criado em {formatDate(project.createdAt)}</span>
+            </div>
+          </CardContent>
+
+          <CardFooter
+            onClick={(e) => e.stopPropagation()}
+            className="mt-auto flex items-center justify-between gap-3 border-t pt-4 cursor-default"
+          >
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-bold">
+                Criado por
+              </p>
+              <p className="truncate text-xs font-semibold text-foreground/90">{project.createdBy}</p>
+            </div>
+            {footerButton}
+          </CardFooter>
+        </Card>
+      </motion.div>
+    </>
   );
 }
